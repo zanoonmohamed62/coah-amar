@@ -1,0 +1,298 @@
+// ─────────────────────────────────────────────────────────────
+// PRISMA SCHEMA — Coach Amar Digital Fitness Platform
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum ProductType {
+  TRAINING_PLAN       // one-time, lifetime access
+  PERSONAL_COACHING   // 3 months, renewable
+}
+
+enum OrderStatus {
+  PENDING
+  AWAITING_CONFIRMATION  // instapay — manual confirm
+  CONFIRMED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  INSTAPAY
+  VISA_CARD
+  PAYPAL
+}
+
+enum EntitlementStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// ─────────────────────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String
+  role         Role     @default(CUSTOMER)
+  phone        String?
+  avatar       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders       Order[]
+  entitlements Entitlement[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PRODUCTS
+// ─────────────────────────────────────────────────────────────
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  type        ProductType
+  price       Int         // price in smallest currency unit (piastres)
+  currency    String      @default("EGP")
+  description String?
+  features    Json?       // string[] of feature bullets
+  isActive    Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  orders        Order[]
+  entitlements  Entitlement[]
+  programs      TrainingProgram[]
+
+  @@map("products")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ORDERS & PAYMENTS
+// ─────────────────────────────────────────────────────────────
+
+model Order {
+  id            String        @id @default(cuid())
+  userId        String?       // null if user not yet created
+  user          User?         @relation(fields: [userId], references: [id])
+  productId     String
+  product       Product       @relation(fields: [productId], references: [id])
+
+  orderRef      String        @unique // AMAR-xxxxxx
+  amount        Int           // piastres
+  currency      String        @default("EGP")
+  paymentMethod PaymentMethod
+  status        OrderStatus   @default(PENDING)
+  isRenewal     Boolean       @default(false)
+
+  // Gateway data
+  gatewayRef    String?
+  gatewayData   Json?
+
+  // Snapshot of customer info at time of order
+  customerName  String
+  customerEmail String
+  customerPhone String
+  customerGoal  String?
+  customerNotes String?
+  customerLevel String?
+
+  confirmedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  entitlement   Entitlement?
+
+  @@map("orders")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENTITLEMENTS — access control
+// ─────────────────────────────────────────────────────────────
+
+model Entitlement {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product           @relation(fields: [productId], references: [id])
+  orderId   String            @unique
+  order     Order             @relation(fields: [orderId], references: [id])
+
+  status    EntitlementStatus @default(ACTIVE)
+  startDate DateTime          @default(now())
+  expiresAt DateTime?         // null = lifetime (Training Plan)
+
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@map("entitlements")
+}
+
+// ─────────────────────────────────────────────────────────────
+// TRAINING CONTENT
+// ─────────────────────────────────────────────────────────────
+
+model TrainingProgram {
+  id          String    @id @default(cuid())
+  productId   String?
+  product     Product?  @relation(fields: [productId], references: [id])
+
+  title       String
+  description String?
+  split       String    // e.g. "Push / Pull / Legs"
+  totalWeeks  Int       @default(1)
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  days        TrainingDay[]
+
+  @@map("training_programs")
+}
+
+model TrainingDay {
+  id        String          @id @default(cuid())
+  programId String
+  program   TrainingProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  name      String          // e.g. "Day 1 — Push"
+  dayLabel  String?         // e.g. "Monday"
+  focus     String?         // e.g. "Chest, Shoulders, Triceps"
+  isRestDay Boolean         @default(false)
+  sortOrder Int             @default(0)
+  notes     String?
+
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  exercises Exercise[]
+
+  @@map("training_days")
+}
+
+model Exercise {
+  id           String      @id @default(cuid())
+  dayId        String
+  day          TrainingDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  name         String
+  sets         Int?
+  reps         String?     // "8-12" or "AMRAP"
+  rest         String?     // "90 sec"
+  instructions String?
+  notes        String?
+  sortOrder    Int         @default(0)
+
+  imageId      String?
+  image        MediaAsset? @relation("ExerciseImage", fields: [imageId], references: [id])
+  videoId      String?
+  video        MediaAsset? @relation("ExerciseVideo", fields: [videoId], references: [id])
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("exercises")
+}
+
+// ─────────────────────────────────────────────────────────────
+// MEDIA ASSETS
+// ─────────────────────────────────────────────────────────────
+
+model MediaAsset {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int      // bytes
+  storageKey   String   // local path or cloud key
+  isProtected  Boolean  @default(true) // true = requires entitlement
+  uploadedBy   String   // admin user id
+
+  createdAt    DateTime @default(now())
+
+  exerciseImages Exercise[] @relation("ExerciseImage")
+  exerciseVideos Exercise[] @relation("ExerciseVideo")
+
+  @@map("media_assets")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CMS — Site Content
+// ─────────────────────────────────────────────────────────────
+
+model SiteContent {
+  id           String        @id @default(cuid())
+  sectionId    String        // "hero", "pricing", "coach", etc.
+  fieldId      String        // "headline", "price_1", etc.
+  lang         String        @default("en")
+
+  value        String        // published value
+  draftValue   String?       // pending draft (null = no pending change)
+  status       ContentStatus @default(PUBLISHED)
+
+  updatedAt    DateTime      @updatedAt
+  updatedBy    String?
+  publishedAt  DateTime?
+
+  revisions    SiteRevision[]
+
+  @@unique([sectionId, fieldId, lang])
+  @@map("site_content")
+}
+
+model SiteRevision {
+  id        String      @id @default(cuid())
+  contentId String
+  content   SiteContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  value       String
+  publishedAt DateTime @default(now())
+  publishedBy String?
+
+  @@map("site_revisions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SETTINGS
+// ─────────────────────────────────────────────────────────────
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("settings")
+}
