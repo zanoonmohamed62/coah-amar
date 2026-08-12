@@ -22,7 +22,7 @@ async function activateOrder(orderRef: string, gatewayRef: string, gatewayData: 
   let userId = order.userId;
   let tempPassword: string | null = null;
 
-  await db.$transaction(async tx => {
+  await db.$transaction(async (tx: any) => {
     await tx.order.update({ where: { orderRef }, data: { status: OrderStatus.CONFIRMED, confirmedAt: new Date(), gatewayRef, gatewayData: gatewayData as never } });
 
     // Create/find user

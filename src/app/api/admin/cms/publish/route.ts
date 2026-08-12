@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   const drafts = await db.siteContent.findMany({ where });
 
-  await db.$transaction(drafts.map(d =>
+  await db.$transaction(drafts.map((d: any) =>
     db.siteContent.update({
       where: { id: d.id },
       data: {

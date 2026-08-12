@@ -43,7 +43,7 @@ export async function PUT(req: NextRequest) {
 
   let tempPassword: string | null = null;
 
-  await db.$transaction(async tx => {
+  await db.$transaction(async (tx: any) => {
     await tx.order.update({ where: { orderRef }, data: { status: OrderStatus.CONFIRMED, confirmedAt: new Date() } });
 
     let user = await tx.user.findUnique({ where: { email: order.customerEmail } });

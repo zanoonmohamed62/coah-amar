@@ -11,8 +11,10 @@ type Entitlement = { id: string; status: string; startDate: string; expiresAt: s
 const statusColors: Record<string, string> = { CONFIRMED: "text-emerald-400", PENDING: "text-yellow-400", AWAITING_CONFIRMATION: "text-yellow-400", FAILED: "text-red-400", REFUNDED: "text-[var(--text-muted)]" };
 const statusLabels: Record<string, string> = { CONFIRMED: "Confirmed", PENDING: "Pending", AWAITING_CONFIRMATION: "Awaiting Confirmation", FAILED: "Failed", REFUNDED: "Refunded" };
 
+export const dynamic = "force-dynamic";
+
 export default function AccountPage() {
-  const { data: session } = useSession();
+  const session = useSession()?.data;
   const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
 

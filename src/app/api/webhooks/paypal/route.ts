@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   let tempPassword: string | null = null;
   let userEmail = order.customerEmail;
 
-  await db.$transaction(async tx => {
+  await db.$transaction(async (tx: any) => {
     await tx.order.update({ where: { orderRef }, data: { status: OrderStatus.CONFIRMED, confirmedAt: new Date(), gatewayRef: capture.id } });
 
     let user = await tx.user.findUnique({ where: { email: order.customerEmail } });
