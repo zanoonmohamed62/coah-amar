@@ -10,12 +10,6 @@ export function CoachSection() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
-  const infoCards = [
-    { label: t.coach.card1, icon: Users, value: "1-on-1" },
-    { label: t.coach.card2, icon: Award, value: isArabic ? "علمي مثبت" : "Evidence-Based" },
-    { label: t.coach.card3, icon: Target, value: isArabic ? "نظام ١٢ أسبوع" : "12-Week System" },
-  ];
-
   return (
     <section id="coach" className="section-padding px-6 border-t border-[var(--border)] relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,rgba(59,130,246,0.08)_0%,transparent_60%)]" />
@@ -45,33 +39,6 @@ export function CoachSection() {
             <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] via-[rgba(7,9,14,0.2)] to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[rgba(7,9,14,0.3)]" />
           </div>
-
-          {/* Floating info cards */}
-          {infoCards.map((card, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 + i * 0.15 }}
-              className={`absolute glass-accent border border-[var(--border-accent)] rounded-sm px-3.5 py-2.5 flex items-center gap-2.5 shadow-lg ${
-                i === 0
-                  ? isArabic ? "top-6 -left-4" : "top-6 -right-4"
-                  : i === 1
-                  ? isArabic ? "top-1/3 -left-6" : "top-1/3 -right-6"
-                  : isArabic ? "bottom-16 -left-4" : "bottom-16 -right-4"
-              }`}
-              style={{ animation: `float ${4 + i}s ease-in-out infinite ${i * 1.2}s` }}
-            >
-              <div className="w-7 h-7 rounded-sm bg-[var(--accent-glow)] flex items-center justify-center">
-                <card.icon size={13} className="text-[var(--accent)]" />
-              </div>
-              <div>
-                <p className="text-[0.6rem] text-[var(--text-muted)] leading-none mb-0.5 tracking-wide">{card.label}</p>
-                <p className="text-xs font-semibold text-[var(--text-primary)] leading-none">{card.value}</p>
-              </div>
-            </motion.div>
-          ))}
 
           {/* Decorative corner accent */}
           <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[var(--accent)] opacity-60" />
