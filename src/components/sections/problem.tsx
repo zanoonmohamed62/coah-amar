@@ -83,16 +83,15 @@ export function ProblemSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="glass-accent border border-[var(--border-accent)] rounded-sm p-8 relative overflow-hidden"
+            className="bg-[#0f1522] border border-blue-500/30 rounded-sm p-8 relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[radial-gradient(circle,rgba(59,130,246,0.18)_0%,transparent_70%)] pointer-events-none" />
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded-sm bg-[var(--accent-glow)] flex items-center justify-center flex-shrink-0">
-                <Check size={16} className="text-[var(--accent)]" />
+              <div className="w-8 h-8 rounded-sm bg-blue-500/10 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                <Check size={16} className="text-blue-400" />
               </div>
               <div>
-                <p className="text-xs text-[var(--accent)] tracking-wider uppercase mb-0.5">{t.problem.coachingTitleBadge}</p>
-                <p className="text-lg font-bold text-[var(--text-primary)]">
+                <p className="text-xs text-blue-400 tracking-wider uppercase mb-0.5">{t.problem.coachingTitleBadge}</p>
+                <p className="text-lg font-bold text-white">
                   {t.problem.coachingHeading}
                 </p>
               </div>
@@ -106,9 +105,9 @@ export function ProblemSection() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="flex items-start gap-3 text-sm text-[var(--text-secondary)]"
+                  className="flex items-start gap-3 text-sm text-slate-300"
                 >
-                  <Check size={15} className="text-[var(--accent)] mt-0.5 flex-shrink-0" />
+                  <Check size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
                   <span>{item}</span>
                 </motion.li>
               ))}
