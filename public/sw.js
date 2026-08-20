@@ -11,7 +11,6 @@ const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 const SHELL_URLS = [
   "/app",
   "/app/my-split",
-  "/assets/AMARX-SPLIT.pdf",
 ];
 
 // ── Install: pre-cache app shell ──────────────────────
@@ -41,7 +40,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   // App shell pages & static PDF — Cache-first with network fallback
-  if (url.pathname.startsWith("/app") || url.pathname.startsWith("/assets/AMARX-SPLIT.pdf")) {
+  if (url.pathname.startsWith("/app")) {
     event.respondWith(handleShellFetch(event.request));
     return;
   }
