@@ -6,11 +6,14 @@ import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
+import { usePWAInstall } from "@/lib/pwa-install-context";
+import { Smartphone } from "lucide-react";
 
 export function HeroSection() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const get = useSiteContent();
+  const { canInstall, triggerInstall } = usePWAInstall();
 
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-28 pb-16 bg-[#07090e]">
@@ -57,16 +60,26 @@ export function HeroSection() {
               <ArrowIcon size={15} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
 
-            <Link
-              href="/app"
-              className="px-5 py-3.5 bg-blue-600/15 border border-blue-500/40 text-blue-300 hover:text-white hover:bg-blue-600/25 hover:border-blue-400 rounded-sm transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-lg shadow-blue-600/10 group"
-            >
-              <div className="w-5 h-5 rounded-md overflow-hidden flex-shrink-0 border border-blue-400/40 shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/icon-192.png" alt="X" className="w-full h-full object-cover" />
-              </div>
-              <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "تطبيق المتدربين X App" : "Customer X App"))}</span>
-            </Link>
+            {canInstall ? (
+              <button
+                onClick={triggerInstall}
+                className="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-sm transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-lg shadow-blue-600/30 group"
+              >
+                <Smartphone size={16} />
+                <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "ثبّت التطبيق" : "Install App"))}</span>
+              </button>
+            ) : (
+              <Link
+                href="/app"
+                className="px-5 py-3.5 bg-blue-600/15 border border-blue-500/40 text-blue-300 hover:text-white hover:bg-blue-600/25 hover:border-blue-400 rounded-sm transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-lg shadow-blue-600/10 group"
+              >
+                <div className="w-5 h-5 rounded-md overflow-hidden flex-shrink-0 border border-blue-400/40 shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/icons/icon-192.png" alt="X" className="w-full h-full object-cover" />
+                </div>
+                <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "تطبيق المتدربين X App" : "Customer X App"))}</span>
+              </Link>
+            )}
 
             <a
               href="https://wa.me/34610354255"

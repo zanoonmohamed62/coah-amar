@@ -43,6 +43,7 @@ export const metadata: Metadata = {
 };
 
 import { LayoutShell } from "@/components/layout/layout-shell";
+import { PWAInstallProvider } from "@/lib/pwa-install-context";
 
 export default function RootLayout({
   children,
@@ -74,9 +75,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <LanguageProvider>
-          <LayoutShell>{children}</LayoutShell>
-        </LanguageProvider>
+        <PWAInstallProvider>
+          <LanguageProvider>
+            <LayoutShell>{children}</LayoutShell>
+          </LanguageProvider>
+        </PWAInstallProvider>
       </body>
     </html>
   );

@@ -86,21 +86,27 @@ function PdfCanvasPage({
     let cancelled = false;
     pdfDoc.getPage(pageNum).then((page: any) => {
       if (cancelled || !canvasRef.current) return;
-      const viewport = page.getViewport({ scale });
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d")!;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+      const dpr = window.devicePixelRatio || 1;
+      const viewport = page.getViewport({ scale });
+      // Set physical pixel size (multiplied by DPR for crisp rendering)
+      canvas.width = Math.floor(viewport.width * dpr);
+      canvas.height = Math.floor(viewport.height * dpr);
+      // Set CSS display size to the logical viewport size (no stretching)
+      canvas.style.width = viewport.width + "px";
+      canvas.style.height = viewport.height + "px";
+      // Scale context so pdf.js draws at logical coords but renders at physical resolution
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       page.render({ canvasContext: ctx, viewport });
     });
     return () => { cancelled = true; };
   }, [pdfDoc, pageNum, scale]);
 
   return (
-    <div className="relative select-none" style={{ userSelect: "none" }}>
+    <div className="relative select-none overflow-x-auto" style={{ userSelect: "none" }}>
       <canvas
         ref={canvasRef}
-        className="w-full block"
         style={{ pointerEvents: "none", display: "block" }}
       />
       {/* Anti-screenshot overlay — transparent, blocks drag-to-save */}
