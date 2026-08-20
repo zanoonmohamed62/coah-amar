@@ -11,6 +11,7 @@ const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 const SHELL_URLS = [
   "/app",
   "/app/my-split",
+  "/assets/AMARX-SPLIT.pdf",
 ];
 
 // ── Install: pre-cache app shell ──────────────────────
@@ -39,14 +40,8 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // PDF API — Network-first with cache fallback + update signal
-  if (url.pathname === "/api/split") {
-    event.respondWith(handlePdfFetch(event.request));
-    return;
-  }
-
-  // App shell pages — Cache-first with network fallback
-  if (url.pathname.startsWith("/app")) {
+  // App shell pages & static PDF — Cache-first with network fallback
+  if (url.pathname.startsWith("/app") || url.pathname.startsWith("/assets/AMARX-SPLIT.pdf")) {
     event.respondWith(handleShellFetch(event.request));
     return;
   }
@@ -54,44 +49,6 @@ self.addEventListener("fetch", (event) => {
   // Everything else — pass through
   event.respondWith(fetch(event.request));
 });
-
-// ── PDF: Network-first, cache fallback ───────────────
-async function handlePdfFetch(request) {
-  const cache = await caches.open(PDF_CACHE);
-
-  try {
-    const networkResponse = await fetch(request.clone());
-
-    if (networkResponse.ok) {
-      // Check if PDF has been updated via ETag
-      const cachedResponse = await cache.match(request);
-      if (cachedResponse) {
-        const cachedEtag = cachedResponse.headers.get("etag");
-        const networkEtag = networkResponse.headers.get("etag");
-        if (cachedEtag && networkEtag && cachedEtag !== networkEtag) {
-          // New version available — notify all clients
-          broadcastUpdate("PDF_UPDATED");
-        }
-      }
-
-      // Store fresh copy
-      await cache.put(request, networkResponse.clone());
-      return networkResponse;
-    }
-
-    throw new Error("Network response not ok");
-  } catch {
-    // Offline or error — serve from cache
-    const cached = await cache.match(request);
-    if (cached) return cached;
-
-    // No cache either
-    return new Response(JSON.stringify({ error: "Offline — no cached split" }), {
-      status: 503,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-}
 
 // ── Shell: Cache-first, network fallback ─────────────
 async function handleShellFetch(request) {
@@ -129,8 +86,5 @@ function broadcastUpdate(type) {
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") {
     self.skipWaiting();
-  }
-  if (event.data?.type === "CLEAR_PDF_CACHE") {
-    caches.open(PDF_CACHE).then((c) => c.delete("/api/split"));
   }
 });
