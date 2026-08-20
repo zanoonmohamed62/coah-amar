@@ -10,8 +10,6 @@ import {
   Zap,
   ArrowRight,
   ArrowLeft,
-  CreditCard,
-  Smartphone,
   Send,
   MessageCircle,
   Clock,
@@ -45,6 +43,23 @@ function CheckoutContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [products, setProducts] = useState<{ training?: string; coaching?: string }>({});
+
+  // Fetch product IDs on mount
+  useEffect(() => {
+    fetch("/api/products")
+      .then(r => r.json())
+      .then((data: { products?: { id: string; slug: string }[] }) => {
+        const map: { training?: string; coaching?: string } = {};
+        (data.products || []).forEach((p) => {
+          if (p.slug === "training-plan") map.training = p.id;
+          if (p.slug === "personal-coaching") map.coaching = p.id;
+        });
+        setProducts(map);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (planParam === "training") {
@@ -57,16 +72,51 @@ function CheckoutContent() {
   const price = selectedPlan === "training" ? "399" : "1,399";
   const currency = isArabic ? "ج.م" : "LE";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const generatedId = "AMAR-" + Math.floor(100000 + Math.random() * 900000);
-    setOrderNumber(generatedId);
+    setSubmitError("");
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+    const generatedId = "AMAR-" + Math.floor(100000 + Math.random() * 900000);
+    const productId = selectedPlan === "training" ? products.training : products.coaching;
+
+    const paymentMethodMap: Record<string, string> = {
+      instapay: "INSTAPAY",
+      paypal: "PAYPAL",
+      telda: "TELDA",
+    };
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: productId || "",
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          paymentMethod: paymentMethodMap[paymentMethod],
+          goal: formData.goal,
+          level: formData.level,
+          notes: formData.notes,
+          isRenewal: false,
+          orderRef: generatedId,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.error || "Something went wrong");
+      }
+
+      const data = await res.json();
+      setOrderNumber(data.order?.orderRef || generatedId);
       setIsSuccess(true);
-    }, 1200);
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to submit order. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const whatsappMessage = encodeURIComponent(
@@ -256,7 +306,7 @@ function CheckoutContent() {
                 {/* 3. Payment Method */}
                 <div className="glass border border-[var(--border)] rounded-sm p-6">
                   <h2 className="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-                    <CreditCard size={18} className="text-[var(--accent)]" />
+                    <Wallet size={18} className="text-[var(--accent)]" />
                     <span>{t.checkout.paymentTitle}</span>
                   </h2>
 
@@ -372,6 +422,12 @@ function CheckoutContent() {
                       </span>
                     </div>
                   </div>
+
+                  {submitError && (
+                    <div className="mb-3 rounded-sm bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400">
+                      {submitError}
+                    </div>
+                  )}
 
                   <button
                     type="submit"

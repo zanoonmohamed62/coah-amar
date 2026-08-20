@@ -16,8 +16,8 @@ export async function sendOrderConfirmationEmail({
 }) {
   const methodLabel: Record<string, string> = {
     INSTAPAY: "InstaPay",
-    VISA_CARD: "Visa / Mastercard",
     PAYPAL: "PayPal",
+    TELDA: "Telda",
   };
   const isInstapay = paymentMethod === "INSTAPAY";
 

@@ -23,7 +23,7 @@ export const createOrderSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   phone: z.string().min(7),
-  paymentMethod: z.enum(["INSTAPAY", "VISA_CARD", "PAYPAL"]),
+  paymentMethod: z.enum(["INSTAPAY", "PAYPAL", "TELDA"]),
   goal: z.string().optional(),
   level: z.string().optional(),
   notes: z.string().optional(),

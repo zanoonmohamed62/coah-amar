@@ -72,27 +72,8 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Actions: Dev Preview Buttons, Lang Switcher & CTA */}
+          {/* Actions: Lang Switcher & CTA */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Developer Preview Buttons */}
-            <div className="flex items-center gap-1.5 p-1 rounded-sm border border-blue-500/40 bg-blue-500/10">
-              <a
-                href="/api/dev-login?role=ADMIN"
-                className="px-2 py-1 rounded-xs text-[10px] font-bold tracking-wider uppercase text-blue-400 hover:bg-blue-500/20 transition-colors"
-                title="Bypass login & open Admin Dashboard"
-              >
-                ⚡ Dev Admin
-              </a>
-              <span className="text-blue-500/40 text-[10px]">•</span>
-              <a
-                href="/api/dev-login?role=CUSTOMER"
-                className="px-2 py-1 rounded-xs text-[10px] font-bold tracking-wider uppercase text-blue-400 hover:bg-blue-500/20 transition-colors"
-                title="Bypass login & open Customer Portal"
-              >
-                ⚡ Dev Customer
-              </a>
-            </div>
-
             {/* Language Switch Button */}
             <button
               onClick={toggleLang}

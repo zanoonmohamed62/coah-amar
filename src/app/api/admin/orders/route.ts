@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const orders = await db.order.findMany({
     where: {
       ...(status ? { status: status as OrderStatus } : {}),
-      ...(method ? { paymentMethod: method as "INSTAPAY" | "VISA_CARD" | "PAYPAL" } : {}),
+      ...(method ? { paymentMethod: method as "INSTAPAY" | "PAYPAL" | "TELDA" } : {}),
     },
     include: { product: { select: { name: true, type: true } }, user: { select: { name: true, email: true } } },
     orderBy: { createdAt: "desc" },

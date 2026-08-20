@@ -6,7 +6,7 @@ import { CheckCircle2, Clock, XCircle, ChevronDown } from "lucide-react";
 type Order = { id: string; orderRef: string; status: string; paymentMethod: string; amount: number; confirmedAt: string | null; isRenewal: boolean; customerName: string; customerEmail: string; customerPhone: string; product: { name: string; type: string }; user: { name: string; email: string } | null };
 
 const statusColors: Record<string, string> = { CONFIRMED: "text-emerald-400", PENDING: "text-yellow-400", AWAITING_CONFIRMATION: "text-yellow-400", FAILED: "text-red-400", REFUNDED: "text-[var(--text-muted)]" };
-const methodLabels: Record<string, string> = { INSTAPAY: "InstaPay", VISA_CARD: "Visa", PAYPAL: "PayPal" };
+const methodLabels: Record<string, string> = { INSTAPAY: "InstaPay", PAYPAL: "PayPal", TELDA: "Telda" };
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);

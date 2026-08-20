@@ -34,8 +34,8 @@ enum OrderStatus {
 
 enum PaymentMethod {
   INSTAPAY
-  VISA_CARD
   PAYPAL
+  TELDA
 }
 
 enum EntitlementStatus {
