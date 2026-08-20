@@ -9,31 +9,30 @@ import {
   Users,
   ShoppingBag,
   Package,
-  Dumbbell,
-  Image,
   FileText,
-  Monitor,
   Settings,
   LogOut,
   ChevronRight,
+  ChevronLeft,
   Sparkles,
 } from "lucide-react";
-
-const links = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/admin/orders", label: "Orders & Payments", icon: ShoppingBag, badgeKey: "orders" },
-  { href: "/admin/customers", label: "Athletes / Clients", icon: Users },
-  { href: "/admin/products", label: "Products & Pricing", icon: Package },
-  { href: "/admin/programs", label: "Training Builder", icon: Dumbbell },
-  { href: "/admin/media", label: "Media Library", icon: Image },
-  { href: "/admin/cms", label: "Website CMS", icon: FileText },
-  { href: "/admin/preview", label: "Live Preview", icon: Monitor },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
-];
+import { useLanguage } from "@/lib/language-context";
+import { adminTranslations } from "@/lib/admin-translations";
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const [pendingOrders, setPendingOrders] = useState(0);
+  const { lang, isArabic } = useLanguage();
+  const t = adminTranslations[lang].sidebar;
+
+  const links = [
+    { href: "/admin", label: t.overview, icon: LayoutDashboard, exact: true },
+    { href: "/admin/orders", label: t.orders, icon: ShoppingBag, badgeKey: "orders" },
+    { href: "/admin/customers", label: t.customers, icon: Users },
+    { href: "/admin/products", label: t.products, icon: Package },
+    { href: "/admin/cms", label: t.cms, icon: FileText },
+    { href: "/admin/settings", label: t.settings, icon: Settings },
+  ];
 
   useEffect(() => {
     fetch("/api/admin/orders?status=AWAITING_CONFIRMATION")
@@ -42,8 +41,14 @@ export function AdminSidebar() {
       .catch(() => {});
   }, [pathname]);
 
+  const ArrowIcon = isArabic ? ChevronLeft : ChevronRight;
+
   return (
-    <aside className="fixed top-0 left-0 h-full w-64 flex flex-col bg-[var(--bg-card)] border-r border-[var(--border)] z-40">
+    <aside
+      className={`fixed top-0 ${
+        isArabic ? "right-0 border-l" : "left-0 border-r"
+      } h-full w-64 flex flex-col bg-[var(--bg-card)] border-[var(--border)] z-40`}
+    >
       {/* Brand Header */}
       <div className="p-6 border-b border-[var(--border)]">
         <Link href="/admin" className="flex items-center gap-2.5 group">
@@ -55,7 +60,7 @@ export function AdminSidebar() {
               THE <span className="text-[var(--accent)]">AMMAR</span>
             </span>
             <span className="block text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
-              Operations Suite
+              {t.brandSub}
             </span>
           </div>
         </Link>
@@ -64,7 +69,7 @@ export function AdminSidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         <p className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)]">
-          Management
+          {t.management}
         </p>
 
         {links.map(({ href, label, icon: Icon, exact, badgeKey }) => {
@@ -92,7 +97,7 @@ export function AdminSidebar() {
                     {pendingOrders}
                   </span>
                 )}
-                {active && <ChevronRight size={13} className="text-[var(--accent)]" />}
+                {active && <ArrowIcon size={13} className="text-[var(--accent)]" />}
               </div>
             </Link>
           );
@@ -107,16 +112,16 @@ export function AdminSidebar() {
           className="w-full flex items-center justify-between px-3 py-2 rounded-sm text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors border border-transparent"
         >
           <span className="flex items-center gap-2">
-            <Sparkles size={13} className="text-[var(--accent)]" /> Client App View
+            <Sparkles size={13} className="text-[var(--accent)]" /> {t.clientApp}
           </span>
-          <ChevronRight size={12} className="text-[var(--text-muted)]" />
+          <ArrowIcon size={12} className="text-[var(--text-muted)]" />
         </Link>
 
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-semibold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
-          <LogOut size={14} /> Sign Out Admin
+          <LogOut size={14} /> {t.signOut}
         </button>
       </div>
     </aside>

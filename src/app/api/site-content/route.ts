@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-// Public endpoint — no auth needed, read published site content for the homepage
-export async function GET() {
+// Public endpoint — reads published site content for homepage (supports ?lang=en or ?lang=ar)
+export async function GET(req: NextRequest) {
   try {
+    const lang = req.nextUrl.searchParams.get("lang") || "en";
+
     const content = await db.siteContent.findMany({
-      where: { lang: "en" },
+      where: { lang },
       select: { sectionId: true, fieldId: true, value: true },
     });
 
@@ -16,8 +18,8 @@ export async function GET() {
       map[row.sectionId][row.fieldId] = row.value;
     }
 
-    return NextResponse.json({ content: map });
+    return NextResponse.json({ content: map, lang });
   } catch {
-    return NextResponse.json({ content: {} });
+    return NextResponse.json({ content: {}, lang: "en" });
   }
 }

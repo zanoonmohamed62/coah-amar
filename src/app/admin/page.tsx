@@ -15,6 +15,7 @@ import {
   Sparkles,
   ExternalLink,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -225,12 +226,12 @@ export default function AdminOverview() {
               </Link>
 
               <Link
-                href="/admin/programs"
+                href="/admin/cms"
                 className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
               >
-                <Dumbbell size={16} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">Workout Builder</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Splits & exercises</p>
+                <FileText size={16} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
+                <p className="text-xs font-bold text-[var(--text-primary)]">Website CMS</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Edit copy & images</p>
               </Link>
 
               <Link

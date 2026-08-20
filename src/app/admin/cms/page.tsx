@@ -4,18 +4,18 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Save,
   Eye,
-  Send,
   Type,
   Image as ImageIcon,
   RefreshCw,
-  ChevronRight,
   ExternalLink,
-  CheckCircle2,
   Smartphone,
   Monitor,
   LayoutTemplate,
   X,
+  Languages,
 } from "lucide-react";
+import { useLanguage } from "@/lib/language-context";
+import { adminTranslations } from "@/lib/admin-translations";
 
 // ─────────────────────────────────────────────────────────────
 // Section & Field Definitions
@@ -23,157 +23,144 @@ import {
 
 type FieldDef = {
   id: string;
-  label: string;
+  labelEn: string;
+  labelAr: string;
   type: "text" | "textarea" | "image" | "url";
-  hint?: string;
+  hintEn?: string;
+  hintAr?: string;
 };
 
 type SectionDef = {
   id: string;
-  label: string;
   emoji: string;
-  description: string;
+  key: keyof typeof adminTranslations.en.cms.sections;
   fields: FieldDef[];
 };
 
 const SECTIONS: SectionDef[] = [
   {
     id: "hero",
-    label: "Hero Section",
     emoji: "🏠",
-    description: "The first thing visitors see — headline, subtext, stats and CTA buttons.",
+    key: "hero",
     fields: [
-      { id: "badge", label: "Badge Text", type: "text", hint: 'e.g. X "MÉTHODE"' },
-      { id: "titleLine1", label: "Headline Line 1", type: "text", hint: "e.g. THE AMMAR" },
-      { id: "titleLine2", label: "Headline Line 2", type: "text", hint: 'e.g. "X SPLIT"' },
-      { id: "titleLine3", label: "Headline Line 3", type: "text", hint: "e.g. BUILD DIFFERENT" },
-      { id: "description", label: "Hero Description", type: "textarea", hint: "Subheadline text below the main title" },
-      { id: "startBtn", label: "Start Button Text", type: "text", hint: "e.g. Start Your Transformation" },
-      { id: "meetBtn", label: "Meet Button Text", type: "text", hint: "e.g. Let's Talk" },
-      { id: "stat1Value", label: "Stat 1 — Number", type: "text", hint: "e.g. 100+" },
-      { id: "stat1Label", label: "Stat 1 — Label", type: "text", hint: "e.g. Clients Coached" },
-      { id: "stat2Value", label: "Stat 2 — Number", type: "text", hint: "e.g. 95%" },
-      { id: "stat2Label", label: "Stat 2 — Label", type: "text", hint: "e.g. Completion Rate" },
-      { id: "heroImage", label: "Hero Background / Coach Image URL", type: "image", hint: "Paste a direct image URL or Supabase URL" },
+      { id: "badge", labelEn: "Badge Text", labelAr: "نص الشارة العلوية (Badge)", type: "text", hintEn: 'e.g. X "MÉTHODE"', hintAr: 'مثال: X "MÉTHODE"' },
+      { id: "titleLine1", labelEn: "Headline Line 1", labelAr: "العنوان الرئيسي - السطر 1", type: "text", hintEn: "e.g. THE AMMAR", hintAr: "مثال: THE AMMAR" },
+      { id: "titleLine2", labelEn: "Headline Line 2", labelAr: "العنوان الرئيسي - السطر 2", type: "text", hintEn: 'e.g. "X SPLIT"', hintAr: 'مثال: "X SPLIT"' },
+      { id: "titleLine3", labelEn: "Headline Line 3", labelAr: "العنوان الرئيسي - السطر 3", type: "text", hintEn: "e.g. BUILD DIFFERENT", hintAr: "مثال: ابني جسمك بذكاء" },
+      { id: "description", labelEn: "Hero Description", labelAr: "الوصف الترويجي أسفل العنوان", type: "textarea", hintEn: "Subheadline text below the main title", hintAr: "نص الوصف التوضيحي للنظام" },
+      { id: "startBtn", labelEn: "Start Button Text", labelAr: "نص زر ابدأ الآن", type: "text", hintEn: "e.g. Start Your Transformation", hintAr: "مثال: ابدأ رحلة تحولك الآن" },
+      { id: "meetBtn", labelEn: "Meet / Contact Button Text", labelAr: "نص زر التواصل", type: "text", hintEn: "e.g. Let's Talk", hintAr: "مثال: تواصل معي" },
+      { id: "stat1Value", labelEn: "Stat 1 — Number", labelAr: "الرقم الإحصائي 1", type: "text", hintEn: "e.g. 100+", hintAr: "مثال: +100" },
+      { id: "stat1Label", labelEn: "Stat 1 — Label", labelAr: "عنوان الإحصائية 1", type: "text", hintEn: "e.g. Clients Coached", hintAr: "مثال: متدرب وصل لهدفه" },
+      { id: "stat2Value", labelEn: "Stat 2 — Number", labelAr: "الرقم الإحصائي 2", type: "text", hintEn: "e.g. 95%", hintAr: "مثال: 95%" },
+      { id: "stat2Label", labelEn: "Stat 2 — Label", labelAr: "عنوان الإحصائية 2", type: "text", hintEn: "e.g. Completion Rate", hintAr: "مثال: نسبة الالتزام" },
+      { id: "heroImage", labelEn: "Hero Image URL", labelAr: "رابط صورة الهيدر الرئيسية", type: "image", hintEn: "Paste image URL or Supabase storage link", hintAr: "ضع رابط الصورة المباشر هنا" },
     ],
   },
   {
     id: "coach",
-    label: "Coach Section",
     emoji: "👤",
-    description: "The About the Coach section — bio, credentials, and portrait photo.",
+    key: "coach",
     fields: [
-      { id: "name", label: "Coach Name", type: "text", hint: "e.g. Coach Amar" },
-      { id: "sub", label: "Coach Title / Credentials", type: "text", hint: "e.g. Certified Fitness Coach · Sports Nutritionist" },
-      { id: "bio", label: "Coach Biography", type: "textarea", hint: "The full bio paragraph displayed on the site" },
-      { id: "point1", label: "Expertise Point 1", type: "text", hint: "e.g. Specialized in body recomposition..." },
-      { id: "point2", label: "Expertise Point 2", type: "text", hint: "e.g. Evidence-based approach..." },
-      { id: "point3", label: "Expertise Point 3", type: "text", hint: "e.g. Hands-on weekly monitoring..." },
-      { id: "portraitImage", label: "Coach Portrait Photo URL", type: "image", hint: "Paste direct URL to portrait image" },
-      { id: "igUrl", label: "Instagram Profile URL", type: "url", hint: "https://instagram.com/your.handle" },
-      { id: "btn", label: "CTA Button Text", type: "text", hint: "e.g. Start Coaching With Amar" },
+      { id: "name", labelEn: "Coach Name", labelAr: "اسم الكوتش", type: "text", hintEn: "e.g. Coach Amar", hintAr: "مثال: كوتش عمار" },
+      { id: "sub", labelEn: "Coach Title / Credentials", labelAr: "المسمى والشهادات", type: "text", hintEn: "e.g. Certified Fitness Coach · Sports Nutritionist", hintAr: "مثال: مدرب لياقة معتمد · أخصائي تغذية رياضية" },
+      { id: "bio", labelEn: "Coach Biography", labelAr: "نبذة عن الكوتش والخبرة", type: "textarea", hintEn: "The full bio paragraph displayed on the site", hintAr: "الفقرة الكاملة للتعريف بالخبرة والمنهج التدريبي" },
+      { id: "point1", labelEn: "Expertise Point 1", labelAr: "الميزة الأولى", type: "text", hintEn: "e.g. Specialized in body recomposition...", hintAr: "مثال: متخصص في إعادة تشكيل الجسم وبناء العضلات" },
+      { id: "point2", labelEn: "Expertise Point 2", labelAr: "الميزة الثانية", type: "text", hintEn: "e.g. Evidence-based approach...", hintAr: "مثال: أسلوب علمي قائم على أحدث الأبحاث الرياضية" },
+      { id: "point3", labelEn: "Expertise Point 3", labelAr: "الميزة الثالثة", type: "text", hintEn: "e.g. Hands-on weekly monitoring...", hintAr: "مثال: متابعة أسبوعية دقيقة وتعديلات مستمرة" },
+      { id: "portraitImage", labelEn: "Coach Portrait Photo URL", labelAr: "رابط صورة الكوتش الشخصية", type: "image", hintEn: "Paste direct URL to portrait image", hintAr: "ضع رابط صورة الكوتش هنا" },
+      { id: "igUrl", labelEn: "Instagram Profile URL", labelAr: "رابط حساب الانستجرام", type: "url", hintEn: "https://instagram.com/amar.el.7ewety", hintAr: "https://instagram.com/amar.el.7ewety" },
+      { id: "btn", labelEn: "CTA Button Text", labelAr: "نص زر الاشتراك مع الكوتش", type: "text", hintEn: "e.g. Start Coaching With Amar", hintAr: "مثال: ابدأ التدريب مع عمار" },
     ],
   },
   {
     id: "pricing",
-    label: "Pricing / Plans",
     emoji: "💳",
-    description: "The two offer cards — Training Plan and Personal Coaching pricing & features.",
+    key: "pricing",
     fields: [
-      { id: "offer1_title", label: "Plan 1 — Title", type: "text", hint: "e.g. TRAINING PLAN" },
-      { id: "offer1_sub", label: "Plan 1 — Subtitle", type: "text", hint: "e.g. Do It Yourself" },
-      { id: "offer1_price", label: "Plan 1 — Price", type: "text", hint: "e.g. 399" },
-      { id: "offer1_currency", label: "Plan 1 — Currency Label", type: "text", hint: "e.g. LE / 19 €" },
-      { id: "offer1_btn", label: "Plan 1 — CTA Button Text", type: "text", hint: "e.g. Get The Plan — 399 LE" },
-      { id: "offer1_features", label: "Plan 1 — Features (one per line)", type: "textarea", hint: "Each line = one bullet point" },
-      { id: "offer2_title", label: "Plan 2 — Title", type: "text", hint: "e.g. PERSONAL COACHING" },
-      { id: "offer2_sub", label: "Plan 2 — Subtitle", type: "text", hint: "e.g. Full System · 3 Months" },
-      { id: "offer2_price", label: "Plan 2 — Price", type: "text", hint: "e.g. 1,399" },
-      { id: "offer2_currency", label: "Plan 2 — Currency Label", type: "text", hint: "e.g. LE / 79 €" },
-      { id: "offer2_btn", label: "Plan 2 — CTA Button Text", type: "text", hint: "e.g. Start Coaching — 1,399 LE" },
-      { id: "offer2_renewal", label: "Plan 2 — Renewal Text", type: "text", hint: "e.g. Renewal: 999 LE / 69 € / 3 months" },
-      { id: "offer2_features", label: "Plan 2 — Features (one per line)", type: "textarea", hint: "Each line = one bullet point" },
+      { id: "offer1_title", labelEn: "Plan 1 — Title", labelAr: "الباقة 1 — الاسم", type: "text", hintEn: "e.g. TRAINING PLAN", hintAr: "مثال: جدول التمرين الذاتي" },
+      { id: "offer1_sub", labelEn: "Plan 1 — Subtitle", labelAr: "الباقة 1 — الوصف المختصر", type: "text", hintEn: "e.g. Do It Yourself", hintAr: "مثال: تدريب ذاتي بجدول متكامل" },
+      { id: "offer1_price", labelEn: "Plan 1 — Price", labelAr: "الباقة 1 — السعر", type: "text", hintEn: "e.g. 399", hintAr: "مثال: 399" },
+      { id: "offer1_currency", labelEn: "Plan 1 — Currency Label", labelAr: "الباقة 1 — العملة", type: "text", hintEn: "e.g. LE / 19 €", hintAr: "مثال: ج.م / 19 €" },
+      { id: "offer1_btn", labelEn: "Plan 1 — Button Text", labelAr: "الباقة 1 — نص الزر", type: "text", hintEn: "e.g. Get The Plan — 399 LE", hintAr: "مثال: احصل على الجدول — 399 ج.م" },
+      { id: "offer2_title", labelEn: "Plan 2 — Title", labelAr: "الباقة 2 — الاسم", type: "text", hintEn: "e.g. PERSONAL COACHING", hintAr: "مثال: التدريب والمتابعة الشخصية" },
+      { id: "offer2_sub", labelEn: "Plan 2 — Subtitle", labelAr: "الباقة 2 — الوصف المختصر", type: "text", hintEn: "e.g. Full System · 3 Months", hintAr: "مثال: النظام المتكامل · 3 شهور" },
+      { id: "offer2_price", labelEn: "Plan 2 — Price", labelAr: "الباقة 2 — السعر", type: "text", hintEn: "e.g. 1,399", hintAr: "مثال: 1,399" },
+      { id: "offer2_currency", labelEn: "Plan 2 — Currency Label", labelAr: "الباقة 2 — العملة", type: "text", hintEn: "e.g. LE / 79 €", hintAr: "مثال: ج.م / 79 €" },
+      { id: "offer2_btn", labelEn: "Plan 2 — Button Text", labelAr: "الباقة 2 — نص الزر", type: "text", hintEn: "e.g. Start Coaching — 1,399 LE", hintAr: "مثال: ابدأ المتابعة — 1,399 ج.م" },
+      { id: "offer2_renewal", labelEn: "Plan 2 — Renewal Text", labelAr: "الباقة 2 — نص التجديد", type: "text", hintEn: "e.g. Renewal: 999 LE / 69 €", hintAr: "مثال: التجديد: 999 ج.م / 69 €" },
     ],
   },
   {
     id: "testimonials",
-    label: "Testimonials",
     emoji: "⭐",
-    description: "Client results and review quotes displayed in the social proof section.",
+    key: "testimonials",
     fields: [
-      { id: "t1_name", label: "Review 1 — Client Name", type: "text", hint: "e.g. Ahmed M." },
-      { id: "t1_duration", label: "Review 1 — Duration / Plan", type: "text", hint: "e.g. 12 Weeks · Coaching" },
-      { id: "t1_result", label: "Review 1 — Result Badge", type: "text", hint: "e.g. −14 kg" },
-      { id: "t1_text", label: "Review 1 — Quote", type: "textarea", hint: "The full testimonial text" },
-      { id: "t2_name", label: "Review 2 — Client Name", type: "text" },
-      { id: "t2_duration", label: "Review 2 — Duration / Plan", type: "text" },
-      { id: "t2_result", label: "Review 2 — Result Badge", type: "text" },
-      { id: "t2_text", label: "Review 2 — Quote", type: "textarea" },
-      { id: "t3_name", label: "Review 3 — Client Name", type: "text" },
-      { id: "t3_duration", label: "Review 3 — Duration / Plan", type: "text" },
-      { id: "t3_result", label: "Review 3 — Result Badge", type: "text" },
-      { id: "t3_text", label: "Review 3 — Quote", type: "textarea" },
+      { id: "t1_name", labelEn: "Review 1 — Client Name", labelAr: "التقييم 1 — اسم المشترك", type: "text", hintEn: "e.g. Ahmed M.", hintAr: "مثال: أحمد م." },
+      { id: "t1_duration", labelEn: "Review 1 — Duration", labelAr: "التقييم 1 — مدة الاشتراك", type: "text", hintEn: "e.g. 12 Weeks · Coaching", hintAr: "مثال: 12 أسبوع متابعة" },
+      { id: "t1_result", labelEn: "Review 1 — Result Badge", labelAr: "التقييم 1 — النتيجة المحققة", type: "text", hintEn: "e.g. −14 kg", hintAr: "مثال: −14 كجم دهون" },
+      { id: "t1_text", labelEn: "Review 1 — Quote", labelAr: "التقييم 1 — نص الرأي", type: "textarea", hintEn: "Testimonial quote text...", hintAr: "رأي المشترك وتجربته..." },
+      { id: "t2_name", labelEn: "Review 2 — Client Name", labelAr: "التقييم 2 — اسم المشترك", type: "text" },
+      { id: "t2_duration", labelEn: "Review 2 — Duration", labelAr: "التقييم 2 — مدة الاشتراك", type: "text" },
+      { id: "t2_result", labelEn: "Review 2 — Result Badge", labelAr: "التقييم 2 — النتيجة المحققة", type: "text" },
+      { id: "t2_text", labelEn: "Review 2 — Quote", labelAr: "التقييم 2 — نص الرأي", type: "textarea" },
     ],
   },
   {
     id: "faq",
-    label: "FAQ",
     emoji: "❓",
-    description: "Frequently asked questions shown in the collapsible accordion section.",
+    key: "faq",
     fields: [
-      { id: "q1", label: "Question 1", type: "text" },
-      { id: "a1", label: "Answer 1", type: "textarea" },
-      { id: "q2", label: "Question 2", type: "text" },
-      { id: "a2", label: "Answer 2", type: "textarea" },
-      { id: "q3", label: "Question 3", type: "text" },
-      { id: "a3", label: "Answer 3", type: "textarea" },
-      { id: "q4", label: "Question 4", type: "text" },
-      { id: "a4", label: "Answer 4", type: "textarea" },
-      { id: "q5", label: "Question 5", type: "text" },
-      { id: "a5", label: "Answer 5", type: "textarea" },
+      { id: "q1", labelEn: "Question 1", labelAr: "السؤال 1", type: "text" },
+      { id: "a1", labelEn: "Answer 1", labelAr: "الإجابة 1", type: "textarea" },
+      { id: "q2", labelEn: "Question 2", labelAr: "السؤال 2", type: "text" },
+      { id: "a2", labelEn: "Answer 2", labelAr: "الإجابة 2", type: "textarea" },
+      { id: "q3", labelEn: "Question 3", labelAr: "السؤال 3", type: "text" },
+      { id: "a3", labelEn: "Answer 3", labelAr: "الإجابة 3", type: "textarea" },
+      { id: "q4", labelEn: "Question 4", labelAr: "السؤال 4", type: "text" },
+      { id: "a4", labelEn: "Answer 4", labelAr: "الإجابة 4", type: "textarea" },
+      { id: "q5", labelEn: "Question 5", labelAr: "السؤال 5", type: "text" },
+      { id: "a5", labelEn: "Answer 5", labelAr: "الإجابة 5", type: "textarea" },
     ],
   },
   {
     id: "howItWorks",
-    label: "How It Works",
     emoji: "📋",
-    description: "Step-by-step process explanation for training plan and coaching tracks.",
+    key: "howItWorks",
     fields: [
-      { id: "title", label: "Section Title", type: "text", hint: "e.g. How It Works" },
-      { id: "subtitle", label: "Section Subtitle", type: "textarea" },
-      { id: "step1_title", label: "Plan Step 1 — Title", type: "text", hint: "e.g. Purchase" },
-      { id: "step1_desc", label: "Plan Step 1 — Description", type: "text" },
-      { id: "step2_title", label: "Plan Step 2 — Title", type: "text" },
-      { id: "step2_desc", label: "Plan Step 2 — Description", type: "text" },
-      { id: "step3_title", label: "Plan Step 3 — Title", type: "text" },
-      { id: "step3_desc", label: "Plan Step 3 — Description", type: "text" },
+      { id: "title", labelEn: "Section Title", labelAr: "عنوان القسم", type: "text", hintEn: "e.g. How It Works", hintAr: "مثال: كيف يعمل النظام" },
+      { id: "subtitle", labelEn: "Section Subtitle", labelAr: "الوصف الفرعي", type: "textarea" },
+      { id: "step1_title", labelEn: "Step 1 — Title", labelAr: "الخطوة 1 — العنوان", type: "text", hintEn: "e.g. Purchase", hintAr: "مثال: الدفع وتأكيد الحجز" },
+      { id: "step1_desc", labelEn: "Step 1 — Description", labelAr: "الخطوة 1 — الشرح", type: "text" },
+      { id: "step2_title", labelEn: "Step 2 — Title", labelAr: "الخطوة 2 — العنوان", type: "text", hintEn: "e.g. Assessment", hintAr: "مثال: تعبئة استبيان التقييم" },
+      { id: "step2_desc", labelEn: "Step 2 — Description", labelAr: "الخطوة 2 — الشرح", type: "text" },
+      { id: "step3_title", labelEn: "Step 3 — Title", labelAr: "الخطوة 3 — العنوان", type: "text", hintEn: "e.g. Your Custom Plan", hintAr: "مثال: استلام خطتك المخصصة" },
+      { id: "step3_desc", labelEn: "Step 3 — Description", labelAr: "الخطوة 3 — الشرح", type: "text" },
     ],
   },
   {
     id: "footer",
-    label: "Footer & Links",
     emoji: "🔗",
-    description: "Footer text, social media links, and copyright.",
+    key: "footer",
     fields: [
-      { id: "copyright", label: "Copyright Text", type: "text", hint: "e.g. © 2025 Coach Amar. All rights reserved." },
-      { id: "brand", label: "Brand Name in Footer", type: "text", hint: "e.g. Coach Amar" },
-      { id: "instagram_url", label: "Instagram URL", type: "url", hint: "https://instagram.com/..." },
-      { id: "tiktok_url", label: "TikTok URL", type: "url" },
-      { id: "youtube_url", label: "YouTube URL", type: "url" },
+      { id: "copyright", labelEn: "Copyright Text", labelAr: "حقوق النشر", type: "text", hintEn: "e.g. © 2025 Coach Amar.", hintAr: "مثال: جميع الحقوق محفوظة © 2025 كوتش عمار" },
+      { id: "brand", labelEn: "Brand Name in Footer", labelAr: "اسم البراند في الفوتر", type: "text" },
+      { id: "instagram_url", labelEn: "Instagram URL", labelAr: "رابط انستجرام", type: "url" },
+      { id: "tiktok_url", labelEn: "TikTok URL", labelAr: "رابط تيك توك", type: "url" },
+      { id: "youtube_url", labelEn: "YouTube URL", labelAr: "رابط يوتيوب", type: "url" },
     ],
   },
   {
     id: "nav",
-    label: "Navigation",
     emoji: "🧭",
-    description: "Navbar menu items and call-to-action button text.",
+    key: "nav",
     fields: [
-      { id: "brand", label: "Brand Name (Logo Text)", type: "text", hint: "e.g. Coach Amar" },
-      { id: "plans", label: "Plans Link Text", type: "text", hint: "e.g. Plans" },
-      { id: "coach", label: "Coach Link Text", type: "text", hint: "e.g. Coach" },
-      { id: "results", label: "Results Link Text", type: "text", hint: "e.g. Results" },
-      { id: "faq", label: "FAQ Link Text", type: "text", hint: "e.g. FAQ" },
-      { id: "startNow", label: "CTA Button Text", type: "text", hint: "e.g. Start Now" },
+      { id: "brand", labelEn: "Brand Name (Logo)", labelAr: "اسم اللوجو", type: "text", hintEn: "e.g. Coach Amar", hintAr: "مثال: كوتش عمار" },
+      { id: "plans", labelEn: "Plans Link Text", labelAr: "رابط الباقات", type: "text", hintEn: "e.g. Plans", hintAr: "مثال: الباقات" },
+      { id: "coach", labelEn: "Coach Link Text", labelAr: "رابط عن الكوتش", type: "text", hintEn: "e.g. Coach", hintAr: "مثال: عن الكوتش" },
+      { id: "results", labelEn: "Results Link Text", labelAr: "رابط النتائج", type: "text", hintEn: "e.g. Results", hintAr: "مثال: النتائج" },
+      { id: "faq", labelEn: "FAQ Link Text", labelAr: "رابط الأسئلة", type: "text", hintEn: "e.g. FAQ", hintAr: "مثال: الأسئلة الشائعة" },
+      { id: "startNow", labelEn: "CTA Button Text", labelAr: "نص زر ابدأ الآن", type: "text", hintEn: "e.g. Start Now", hintAr: "مثال: ابدأ الآن" },
     ],
   },
 ];
@@ -181,32 +168,33 @@ const SECTIONS: SectionDef[] = [
 type ContentMap = Record<string, Record<string, string>>;
 
 export default function CMSPage() {
+  const { lang: adminLang, isArabic: isAdminArabic } = useLanguage();
+  const t = adminTranslations[adminLang].cms;
+
+  // Language of the content currently being edited: "en" or "ar"
+  const [contentLang, setContentLang] = useState<"en" | "ar">("en");
   const [saved, setSaved] = useState<ContentMap>({});
   const [edits, setEdits] = useState<ContentMap>({});
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
-  const [previewWidth, setPreviewWidth] = useState<"full" | "mobile">("full");
+  const [previewWidth, setPreviewWidth] = useState<"full" | "mobile">("mobile");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Load all saved content from DB
-  const loadContent = useCallback(async () => {
+  // Load content for active contentLang from DB
+  const loadContent = useCallback(async (langToLoad: "en" | "ar") => {
     try {
-      const res = await fetch("/api/admin/cms");
+      const res = await fetch(`/api/site-content?lang=${langToLoad}`);
       const d = await res.json();
-      const map: ContentMap = {};
-      for (const row of d.content || []) {
-        if (!map[row.sectionId]) map[row.sectionId] = {};
-        map[row.sectionId][row.fieldId] = row.draftValue ?? row.value;
-      }
+      const map: ContentMap = d.content || {};
       setSaved(map);
       setEdits(map);
     } catch {}
   }, []);
 
   useEffect(() => {
-    loadContent();
-  }, [loadContent]);
+    loadContent(contentLang);
+  }, [contentLang, loadContent]);
 
   function getVal(sectionId: string, fieldId: string) {
     return edits[sectionId]?.[fieldId] ?? saved[sectionId]?.[fieldId] ?? "";
@@ -227,7 +215,7 @@ export default function CMSPage() {
     return section?.fields.some((f) => isDirty(sectionId, f.id)) ?? false;
   };
 
-  // Save all fields in the current section
+  // Save all fields in the current section for the selected contentLang
   async function saveSection() {
     setSaving(true);
     const section = SECTIONS.find((s) => s.id === activeSection)!;
@@ -240,23 +228,23 @@ export default function CMSPage() {
           body: JSON.stringify({
             sectionId: activeSection,
             fieldId: field.id,
-            lang: "en",
+            lang: contentLang,
             value,
-            draft: false, // Publish immediately — simpler UX
+            draft: false,
           }),
         });
       }
 
-      // Update saved state
-      setSaved((prev) => ({ ...prev, [activeSection]: { ...(prev[activeSection] || {}), ...(edits[activeSection] || {}) } }));
+      setSaved((prev) => ({
+        ...prev,
+        [activeSection]: { ...(prev[activeSection] || {}), ...(edits[activeSection] || {}) },
+      }));
 
-      setSaveMsg("Saved & Published ✓");
+      setSaveMsg(t.savedMsg);
       setTimeout(() => setSaveMsg(null), 3000);
 
       // Refresh the preview iframe
-      if (iframeRef.current) {
-        iframeRef.current.src = iframeRef.current.src;
-      }
+      refreshPreview();
     } catch {
       setSaveMsg("Error saving. Try again.");
     }
@@ -265,23 +253,55 @@ export default function CMSPage() {
 
   const refreshPreview = () => {
     if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src;
+      // Reload iframe with the current language
+      iframeRef.current.src = `/?t=${Date.now()}`;
     }
   };
 
   const currentSection = SECTIONS.find((s) => s.id === activeSection)!;
+  const currentSectionMeta = t.sections[currentSection.key];
 
   return (
-    <div className="flex h-[calc(100vh-4.5rem)] -m-8 overflow-hidden">
+    <div className="flex h-[calc(100vh-5.5rem)] -m-8 overflow-hidden">
       {/* ─── LEFT PANEL: Section Nav + Fields ─── */}
-      <div className="w-[420px] shrink-0 flex flex-col border-r border-[var(--border)] bg-[var(--bg-card)]">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
-              <LayoutTemplate size={16} className="text-[var(--accent)]" /> Page Editor
+      <div className="w-[430px] shrink-0 flex flex-col border-r border-[var(--border)] bg-[var(--bg-card)]">
+        {/* Header & Language Selector */}
+        <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] shrink-0 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-[var(--text-primary)] flex items-center gap-2">
+              <LayoutTemplate size={16} className="text-[var(--accent)]" /> {t.title}
             </h2>
-            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">Select a section, edit, then save. Changes go live instantly.</p>
+          </div>
+
+          {/* Content Language Switcher */}
+          <div className="flex items-center justify-between bg-[var(--bg-base)] p-1 rounded-sm border border-[var(--border)]">
+            <span className="text-[11px] font-bold text-[var(--text-muted)] flex items-center gap-1 px-2">
+              <Languages size={13} className="text-[var(--accent)]" /> {t.contentLang}
+            </span>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setContentLang("en")}
+                className={`px-3 py-1 text-xs font-bold rounded-sm transition-all ${
+                  contentLang === "en"
+                    ? "bg-[var(--accent)] text-black shadow-sm"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                English 🇬🇧
+              </button>
+              <button
+                type="button"
+                onClick={() => setContentLang("ar")}
+                className={`px-3 py-1 text-xs font-bold rounded-sm transition-all ${
+                  contentLang === "ar"
+                    ? "bg-[var(--accent)] text-black shadow-sm"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                العربية 🇪🇬
+              </button>
+            </div>
           </div>
         </div>
 
@@ -291,6 +311,8 @@ export default function CMSPage() {
             {SECTIONS.map((s) => {
               const dirty = sectionHasDirty(s.id);
               const active = activeSection === s.id;
+              const label = t.sections[s.key]?.label || s.id;
+
               return (
                 <button
                   key={s.id}
@@ -302,7 +324,7 @@ export default function CMSPage() {
                   }`}
                 >
                   <span>{s.emoji}</span>
-                  <span>{s.label}</span>
+                  <span>{label}</span>
                   {dirty && !active && (
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 ml-0.5" />
                   )}
@@ -313,42 +335,49 @@ export default function CMSPage() {
         </div>
 
         {/* Section Description */}
-        <div className="px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-base)] shrink-0">
+        <div className="px-5 py-2.5 border-b border-[var(--border)] bg-[var(--bg-base)] shrink-0">
           <p className="text-xs text-[var(--text-muted)]">
-            <span className="font-semibold text-[var(--text-primary)]">{currentSection.emoji} {currentSection.label}</span>
-            {" — "}{currentSection.description}
+            <span className="font-bold text-[var(--text-primary)]">
+              {currentSection.emoji} {currentSectionMeta?.label}
+            </span>
+            {" — "}
+            {currentSectionMeta?.desc}
           </p>
         </div>
 
         {/* Field Editors */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {currentSection.fields.map((field) => {
             const val = getVal(activeSection, field.id);
             const dirty = isDirty(activeSection, field.id);
+            const fieldLabel = isAdminArabic ? field.labelAr : field.labelEn;
+            const fieldHint = contentLang === "ar" ? field.hintAr : field.hintEn;
+            const inputDir = contentLang === "ar" ? "rtl" : "ltr";
 
             return (
-              <div key={field.id}>
-                <div className="flex items-center justify-between mb-1.5">
+              <div key={field.id} className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
                     {field.type === "image" && <ImageIcon size={12} className="text-blue-400" />}
                     {field.type === "url" && <ExternalLink size={12} className="text-purple-400" />}
                     {field.type === "text" && <Type size={12} className="text-[var(--accent)]" />}
                     {field.type === "textarea" && <Type size={12} className="text-emerald-400" />}
-                    {field.label}
+                    {fieldLabel}
                   </label>
                   {dirty && (
                     <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full">
-                      Unsaved
+                      {t.unsavedBadge}
                     </span>
                   )}
                 </div>
 
                 {field.type === "textarea" ? (
                   <textarea
+                    dir={inputDir}
                     rows={3}
                     value={val}
                     onChange={(e) => setVal(activeSection, field.id, e.target.value)}
-                    placeholder={field.hint || `Enter ${field.label.toLowerCase()}...`}
+                    placeholder={fieldHint || fieldLabel}
                     className={`w-full bg-[var(--bg-elevated)] border rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none resize-y transition-colors ${
                       dirty ? "border-amber-500/50 focus:border-amber-400" : "border-[var(--border)] focus:border-[var(--border-accent)]"
                     }`}
@@ -356,9 +385,10 @@ export default function CMSPage() {
                 ) : field.type === "image" ? (
                   <div className="space-y-2">
                     <input
+                      dir="ltr"
                       value={val}
                       onChange={(e) => setVal(activeSection, field.id, e.target.value)}
-                      placeholder={field.hint || "Paste direct image URL..."}
+                      placeholder={fieldHint || "https://..."}
                       className={`w-full bg-[var(--bg-elevated)] border rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none font-mono transition-colors ${
                         dirty ? "border-amber-500/50 focus:border-amber-400" : "border-[var(--border)] focus:border-[var(--border-accent)]"
                       }`}
@@ -375,6 +405,7 @@ export default function CMSPage() {
                           }}
                         />
                         <button
+                          type="button"
                           onClick={() => setVal(activeSection, field.id, "")}
                           className="absolute top-2 right-2 p-1 bg-black/60 rounded text-white hover:bg-black/80 transition-colors"
                         >
@@ -383,15 +414,16 @@ export default function CMSPage() {
                       </div>
                     )}
                     <p className="text-[10px] text-[var(--text-muted)]">
-                      💡 Upload to <a href="https://app.supabase.com" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">Supabase Storage</a> and paste the public URL here.
+                      💡 {t.supabaseHint}
                     </p>
                   </div>
                 ) : (
                   <input
+                    dir={inputDir}
                     type={field.type === "url" ? "url" : "text"}
                     value={val}
                     onChange={(e) => setVal(activeSection, field.id, e.target.value)}
-                    placeholder={field.hint || `Enter ${field.label.toLowerCase()}...`}
+                    placeholder={fieldHint || fieldLabel}
                     className={`w-full bg-[var(--bg-elevated)] border rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none transition-colors ${
                       dirty ? "border-amber-500/50 focus:border-amber-400" : "border-[var(--border)] focus:border-[var(--border-accent)]"
                     }`}
@@ -416,14 +448,11 @@ export default function CMSPage() {
           <button
             onClick={saveSection}
             disabled={saving}
-            className="w-full py-2.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-md"
           >
             <Save size={14} />
-            {saving ? "Saving…" : `Save & Publish — ${currentSection.emoji} ${currentSection.label}`}
+            {saving ? t.saving : t.saveBtn(`${currentSection.emoji} ${currentSectionMeta?.label || activeSection}`)}
           </button>
-          <p className="text-[10px] text-[var(--text-muted)] text-center">
-            Changes go live immediately and refresh the preview →
-          </p>
         </div>
       </div>
 
@@ -433,32 +462,42 @@ export default function CMSPage() {
         <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] shrink-0">
           <div className="flex items-center gap-2">
             <Eye size={15} className="text-[var(--accent)]" />
-            <span className="text-sm font-bold text-[var(--text-primary)]">Live Site Preview</span>
+            <span className="text-sm font-bold text-[var(--text-primary)]">{t.livePreview}</span>
             <span className="text-[10px] text-[var(--text-muted)] ml-1 bg-[var(--bg-base)] border border-[var(--border)] px-2 py-0.5 rounded-full">
-              Reflects Published Content
+              {t.reflectsPublished}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPreviewWidth("full")}
-              className={`p-1.5 rounded-sm border transition-colors ${previewWidth === "full" ? "border-[var(--border-accent)] text-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
-              title="Desktop preview"
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-sm border text-xs font-semibold transition-colors ${
+                previewWidth === "full"
+                  ? "border-[var(--border-accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                  : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              }`}
+              title={t.desktopPreview}
             >
-              <Monitor size={14} />
+              <Monitor size={13} />
+              <span>{t.desktopPreview}</span>
             </button>
             <button
               onClick={() => setPreviewWidth("mobile")}
-              className={`p-1.5 rounded-sm border transition-colors ${previewWidth === "mobile" ? "border-[var(--border-accent)] text-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
-              title="Mobile preview"
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-sm border text-xs font-semibold transition-colors ${
+                previewWidth === "mobile"
+                  ? "border-[var(--border-accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                  : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              }`}
+              title={t.mobilePreview}
             >
-              <Smartphone size={14} />
+              <Smartphone size={13} />
+              <span>{t.mobilePreview}</span>
             </button>
             <div className="w-px h-5 bg-[var(--border)]" />
             <button
               onClick={refreshPreview}
-              className="p-1.5 rounded-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
-              title="Refresh preview"
+              className="p-1.5 rounded-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors cursor-pointer"
+              title={t.refresh}
             >
               <RefreshCw size={14} />
             </button>
@@ -466,7 +505,7 @@ export default function CMSPage() {
               href="/"
               target="_blank"
               className="p-1.5 rounded-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--border-accent)] transition-colors"
-              title="Open site in new tab"
+              title={t.openFullSite}
             >
               <ExternalLink size={14} />
             </a>
@@ -474,9 +513,11 @@ export default function CMSPage() {
         </div>
 
         {/* Preview Frame */}
-        <div className={`flex-1 flex justify-center bg-[#111] overflow-auto ${previewWidth === "mobile" ? "py-6" : ""}`}>
+        <div className={`flex-1 flex justify-center bg-[#07090e] overflow-auto ${previewWidth === "mobile" ? "py-6" : ""}`}>
           <div
-            className={`h-full bg-white transition-all ${previewWidth === "mobile" ? "w-[390px] rounded-xl shadow-2xl overflow-hidden" : "w-full"}`}
+            className={`h-full bg-white transition-all ${
+              previewWidth === "mobile" ? "w-[390px] rounded-2xl shadow-2xl overflow-hidden border border-slate-700/60" : "w-full"
+            }`}
           >
             <iframe
               ref={iframeRef}
@@ -490,14 +531,14 @@ export default function CMSPage() {
         {/* Preview Footer Hint */}
         <div className="px-5 py-2 border-t border-[var(--border)] bg-[var(--bg-elevated)] shrink-0 flex items-center justify-between">
           <p className="text-[10px] text-[var(--text-muted)]">
-            ℹ️ After saving, click <strong>Refresh</strong> (↻) if changes don&apos;t appear immediately.
+            ℹ️ {t.hintText}
           </p>
           <a
             href="/"
             target="_blank"
             className="text-[10px] text-[var(--accent)] hover:underline font-semibold flex items-center gap-1"
           >
-            Open full site <ExternalLink size={11} />
+            {t.openFullSite} <ExternalLink size={11} />
           </a>
         </div>
       </div>
