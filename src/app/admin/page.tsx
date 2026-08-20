@@ -7,17 +7,19 @@ import {
   Dumbbell,
   TrendingUp,
   Clock,
-  CheckCircle2,
   ArrowUpRight,
+  ArrowDownLeft,
   CreditCard,
   Plus,
-  AlertCircle,
   Sparkles,
   ExternalLink,
   ChevronRight,
+  ChevronLeft,
   FileText,
 } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/language-context";
+import { adminTranslations } from "@/lib/admin-translations";
 
 type RecentOrder = {
   id: string;
@@ -57,17 +59,20 @@ type Stats = {
   products: Product[];
 };
 
-const statusBadges: Record<string, { label: string; className: string }> = {
-  CONFIRMED: { label: "Confirmed", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-  AWAITING_CONFIRMATION: { label: "Pending Approval", className: "bg-amber-500/15 text-amber-400 border-amber-500/30 animate-pulse" },
-  PENDING: { label: "Initiated", className: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
-  FAILED: { label: "Failed", className: "bg-red-500/15 text-red-400 border-red-500/30" },
-  REFUNDED: { label: "Refunded", className: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30" },
-};
-
 export default function AdminOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { lang, isArabic } = useLanguage();
+  const t = adminTranslations[lang].overview;
+  const tOrders = adminTranslations[lang].orders;
+
+  const statusBadges: Record<string, { label: string; className: string }> = {
+    CONFIRMED: { label: tOrders.confirmed, className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+    AWAITING_CONFIRMATION: { label: tOrders.pendingReview, className: "bg-amber-500/15 text-amber-400 border-amber-500/30 animate-pulse" },
+    PENDING: { label: tOrders.initiated, className: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
+    FAILED: { label: tOrders.failed, className: "bg-red-500/15 text-red-400 border-red-500/30" },
+    REFUNDED: { label: tOrders.refunded, className: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30" },
+  };
 
   const loadData = () => {
     fetch("/api/admin/stats")
@@ -88,6 +93,9 @@ export default function AdminOverview() {
     (stats?.paymentMethods.paypal || 0) +
     (stats?.paymentMethods.telda || 0) || 1;
 
+  const ArrowIcon = isArabic ? ChevronLeft : ChevronRight;
+  const ArrowActionIcon = isArabic ? ArrowDownLeft : ArrowUpRight;
+
   return (
     <div className="space-y-8">
       {/* Pending Orders Banner */}
@@ -99,10 +107,10 @@ export default function AdminOverview() {
             </div>
             <div>
               <p className="text-sm font-bold text-amber-300">
-                {stats.pendingOrders} order{stats.pendingOrders > 1 ? "s" : ""} awaiting payment verification
+                {t.pendingBannerTitle(stats.pendingOrders)}
               </p>
               <p className="text-xs text-amber-400/80">
-                InstaPay & direct transfer payments requiring manual confirmation.
+                {t.pendingBannerDesc}
               </p>
             </div>
           </div>
@@ -110,7 +118,7 @@ export default function AdminOverview() {
             href="/admin/orders?status=AWAITING_CONFIRMATION"
             className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs rounded-sm transition-colors flex items-center gap-1.5"
           >
-            Review Now <ArrowUpRight size={14} />
+            {t.reviewNow} <ArrowActionIcon size={14} />
           </Link>
         </div>
       )}
@@ -126,7 +134,7 @@ export default function AdminOverview() {
             <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-[var(--accent)]/40 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                  Monthly Revenue
+                  {t.monthlyRevenue}
                 </span>
                 <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
                   <TrendingUp size={16} />
@@ -134,17 +142,17 @@ export default function AdminOverview() {
               </div>
               <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
                 {stats?.monthlyRevenue.toLocaleString()}{" "}
-                <span className="text-sm font-bold text-[var(--accent)]">EGP</span>
+                <span className="text-sm font-bold text-[var(--accent)]">{t.egp}</span>
               </p>
               <p className="text-xs text-[var(--text-muted)] mt-2 flex items-center gap-1">
-                <span className="text-emerald-400 font-semibold">{stats?.monthlyOrdersCount} sales</span> this month
+                <span className="text-emerald-400 font-semibold">{stats?.monthlyOrdersCount} {t.salesThisMonth}</span>
               </p>
             </div>
 
             <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                  Active Athletes
+                  {t.activeAthletes}
                 </span>
                 <div className="w-8 h-8 rounded-sm bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
                   <Dumbbell size={16} />
@@ -154,14 +162,14 @@ export default function AdminOverview() {
                 {stats?.activeEntitlements}
               </p>
               <p className="text-xs text-[var(--text-muted)] mt-2">
-                Enrolled in active training splits
+                {t.activeAthletesDesc}
               </p>
             </div>
 
             <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-blue-500/40 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                  Total Clients
+                  {t.totalClients}
                 </span>
                 <div className="w-8 h-8 rounded-sm bg-blue-500/10 text-blue-400 flex items-center justify-center">
                   <Users size={16} />
@@ -170,13 +178,13 @@ export default function AdminOverview() {
               <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
                 {stats?.totalCustomers}
               </p>
-              <p className="text-xs text-[var(--text-muted)] mt-2">Registered athlete accounts</p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">{t.totalClientsDesc}</p>
             </div>
 
             <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-purple-500/40 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                  All-Time Sales
+                  {t.allTimeSales}
                 </span>
                 <div className="w-8 h-8 rounded-sm bg-purple-500/10 text-purple-400 flex items-center justify-center">
                   <ShoppingBag size={16} />
@@ -184,10 +192,10 @@ export default function AdminOverview() {
               </div>
               <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
                 {stats?.totalRevenue.toLocaleString()}{" "}
-                <span className="text-sm font-bold text-purple-400">EGP</span>
+                <span className="text-sm font-bold text-purple-400">{t.egp}</span>
               </p>
               <p className="text-xs text-[var(--text-muted)] mt-2">
-                {stats?.totalOrdersCount} confirmed transactions
+                {stats?.totalOrdersCount} {t.confirmedTransactions}
               </p>
             </div>
           </>
@@ -200,55 +208,55 @@ export default function AdminOverview() {
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-6 flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-1 flex items-center gap-2">
-              <Sparkles size={15} className="text-[var(--accent)]" /> Quick Actions
+              <Sparkles size={15} className="text-[var(--accent)]" /> {t.quickActions}
             </h3>
             <p className="text-xs text-[var(--text-muted)] mb-5">
-              Direct shortcuts for daily operational tasks
+              {t.quickActionsDesc}
             </p>
 
             <div className="grid grid-cols-2 gap-3">
               <Link
                 href="/admin/orders"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
               >
                 <ShoppingBag size={16} className="text-[var(--accent)] mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">Manage Orders</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Approve & track</p>
+                <p className="text-xs font-bold text-[var(--text-primary)]">{t.manageOrders}</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.manageOrdersDesc}</p>
               </Link>
 
               <Link
                 href="/admin/customers"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
               >
                 <Users size={16} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">Athletes List</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Directory & access</p>
+                <p className="text-xs font-bold text-[var(--text-primary)]">{t.athletesList}</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.athletesListDesc}</p>
               </Link>
 
               <Link
                 href="/admin/cms"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
               >
                 <FileText size={16} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">Website CMS</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Edit copy & images</p>
+                <p className="text-xs font-bold text-[var(--text-primary)]">{t.websiteCms}</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.websiteCmsDesc}</p>
               </Link>
 
               <Link
                 href="/admin/settings"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
               >
                 <CreditCard size={16} className="text-amber-400 mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">Payment Config</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">InstaPay / PayPal</p>
+                <p className="text-xs font-bold text-[var(--text-primary)]">{t.paymentConfig}</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.paymentConfigDesc}</p>
               </Link>
             </div>
           </div>
 
           <div className="pt-4 border-t border-[var(--border)] mt-4 flex items-center justify-between text-xs">
-            <span className="text-[var(--text-muted)]">Live Customer App:</span>
+            <span className="text-[var(--text-muted)]">{t.liveCustomerApp}</span>
             <Link href="/app" target="_blank" className="text-[var(--accent)] hover:underline flex items-center gap-1 font-semibold">
-              Open Portal <ExternalLink size={12} />
+              {t.openPortal} <ExternalLink size={12} />
             </Link>
           </div>
         </div>
@@ -256,21 +264,23 @@ export default function AdminOverview() {
         {/* Payment Channels Breakdown */}
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-6">
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-1 flex items-center gap-2">
-            <CreditCard size={15} className="text-[var(--accent)]" /> Payment Channels
+            <CreditCard size={15} className="text-[var(--accent)]" /> {t.paymentChannels}
           </h3>
           <p className="text-xs text-[var(--text-muted)] mb-5">
-            Confirmed transactions by payment gateway
+            {t.paymentChannelsDesc}
           </p>
 
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-xs font-semibold mb-1">
                 <span className="text-[var(--text-primary)] flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> InstaPay Transfer
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> {t.instaPayTransfer}
                 </span>
                 <span className="text-[var(--text-muted)]">
-                  {stats?.paymentMethods.instapay || 0} orders (
-                  {Math.round(((stats?.paymentMethods.instapay || 0) / totalPaymentCount) * 100)}%)
+                  {t.ordersCount(
+                    stats?.paymentMethods.instapay || 0,
+                    Math.round(((stats?.paymentMethods.instapay || 0) / totalPaymentCount) * 100)
+                  )}
                 </span>
               </div>
               <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
@@ -286,11 +296,13 @@ export default function AdminOverview() {
             <div>
               <div className="flex justify-between text-xs font-semibold mb-1">
                 <span className="text-[var(--text-primary)] flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span> PayPal Gateway
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span> {t.payPalGateway}
                 </span>
                 <span className="text-[var(--text-muted)]">
-                  {stats?.paymentMethods.paypal || 0} orders (
-                  {Math.round(((stats?.paymentMethods.paypal || 0) / totalPaymentCount) * 100)}%)
+                  {t.ordersCount(
+                    stats?.paymentMethods.paypal || 0,
+                    Math.round(((stats?.paymentMethods.paypal || 0) / totalPaymentCount) * 100)
+                  )}
                 </span>
               </div>
               <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
@@ -306,11 +318,13 @@ export default function AdminOverview() {
             <div>
               <div className="flex justify-between text-xs font-semibold mb-1">
                 <span className="text-[var(--text-primary)] flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span> Telda Direct
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span> {t.teldaDirect}
                 </span>
                 <span className="text-[var(--text-muted)]">
-                  {stats?.paymentMethods.telda || 0} orders (
-                  {Math.round(((stats?.paymentMethods.telda || 0) / totalPaymentCount) * 100)}%)
+                  {t.ordersCount(
+                    stats?.paymentMethods.telda || 0,
+                    Math.round(((stats?.paymentMethods.telda || 0) / totalPaymentCount) * 100)
+                  )}
                 </span>
               </div>
               <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
@@ -326,7 +340,7 @@ export default function AdminOverview() {
 
           <div className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm mt-5">
             <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-              💡 <span className="text-[var(--text-primary)] font-semibold">Tip:</span> InstaPay transactions require manual confirmation once the customer completes their transfer.
+              💡 {t.instaPayTip}
             </p>
           </div>
         </div>
@@ -336,14 +350,14 @@ export default function AdminOverview() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                <ShoppingBag size={15} className="text-[var(--accent)]" /> Active Packages
+                <ShoppingBag size={15} className="text-[var(--accent)]" /> {t.activePackages}
               </h3>
               <Link href="/admin/products" className="text-xs text-[var(--accent)] hover:underline font-semibold">
-                Manage
+                {t.manage}
               </Link>
             </div>
             <p className="text-xs text-[var(--text-muted)] mb-4">
-              Published offerings on the checkout page
+              {t.activePackagesDesc}
             </p>
 
             <div className="space-y-3">
@@ -355,14 +369,14 @@ export default function AdminOverview() {
                   <div>
                     <p className="text-xs font-bold text-[var(--text-primary)]">{p.name}</p>
                     <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
-                      {p.type === "TRAINING_PLAN" ? "Training Split" : "Coaching Cohort"}
+                      {p.type === "TRAINING_PLAN" ? t.trainingSplit : t.coachingCohort}
                     </span>
                   </div>
-                  <div className="text-right">
+                  <div className="text-end">
                     <p className="text-xs font-black text-[var(--accent)]">
                       {(p.price / 100).toLocaleString()} {p.currency}
                     </p>
-                    <span className="text-[10px] text-emerald-400 font-semibold">● Active</span>
+                    <span className="text-[10px] text-emerald-400 font-semibold">{t.activeStatus}</span>
                   </div>
                 </div>
               ))}
@@ -373,7 +387,7 @@ export default function AdminOverview() {
             href="/admin/products"
             className="w-full mt-4 py-2 border border-dashed border-[var(--border)] hover:border-[var(--border-accent)] rounded-sm text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center gap-1.5 transition-colors"
           >
-            <Plus size={13} /> Add New Plan
+            <Plus size={13} /> {t.addNewPlan}
           </Link>
         </div>
       </div>
@@ -383,29 +397,29 @@ export default function AdminOverview() {
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between">
           <div>
             <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">
-              Recent Order Operations
+              {t.recentOrders}
             </h3>
-            <p className="text-xs text-[var(--text-muted)]">Live inbound transaction flow</p>
+            <p className="text-xs text-[var(--text-muted)]">{t.recentOrdersDesc}</p>
           </div>
           <Link
             href="/admin/orders"
             className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
           >
-            View All Orders <ChevronRight size={13} />
+            {t.viewAllOrders} <ArrowIcon size={13} />
           </Link>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-base)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">
               <tr>
-                <th className="px-6 py-3">Order Ref</th>
-                <th className="px-6 py-3">Athlete</th>
-                <th className="px-6 py-3">Package</th>
-                <th className="px-6 py-3">Payment</th>
-                <th className="px-6 py-3">Amount</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3 text-right">Date</th>
+                <th className="px-6 py-3">{t.colOrderRef}</th>
+                <th className="px-6 py-3">{t.colAthlete}</th>
+                <th className="px-6 py-3">{t.colPackage}</th>
+                <th className="px-6 py-3">{t.colPayment}</th>
+                <th className="px-6 py-3">{t.colAmount}</th>
+                <th className="px-6 py-3">{t.colStatus}</th>
+                <th className="px-6 py-3 text-end">{t.colDate}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
@@ -444,7 +458,7 @@ export default function AdminOverview() {
                         </span>
                       </td>
                       <td className="px-6 py-3.5 font-bold text-[var(--text-primary)]">
-                        {(order.amount / 100).toLocaleString()} EGP
+                        {(order.amount / 100).toLocaleString()} {t.egp}
                       </td>
                       <td className="px-6 py-3.5">
                         <span
@@ -453,8 +467,8 @@ export default function AdminOverview() {
                           {badge.label}
                         </span>
                       </td>
-                      <td className="px-6 py-3.5 text-right text-[var(--text-muted)]">
-                        {new Date(order.createdAt).toLocaleDateString("en-GB", {
+                      <td className="px-6 py-3.5 text-end text-[var(--text-muted)]">
+                        {new Date(order.createdAt).toLocaleDateString(isArabic ? "ar-EG" : "en-GB", {
                           day: "numeric",
                           month: "short",
                         })}
@@ -465,7 +479,7 @@ export default function AdminOverview() {
               ) : (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-[var(--text-muted)]">
-                    No orders recorded yet.
+                    {t.noOrders}
                   </td>
                 </tr>
               )}

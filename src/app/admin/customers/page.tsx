@@ -3,22 +3,16 @@
 import { useEffect, useState } from "react";
 import {
   Search,
-  ChevronRight,
-  CheckCircle2,
-  XCircle,
   Plus,
   MessageSquare,
-  User,
-  Mail,
-  Phone,
-  Calendar,
   Sparkles,
   Dumbbell,
   X,
   Copy,
   Check,
 } from "lucide-react";
-import Link from "next/link";
+import { useLanguage } from "@/lib/language-context";
+import { adminTranslations } from "@/lib/admin-translations";
 
 type Customer = {
   id: string;
@@ -65,6 +59,10 @@ export default function CustomersPage() {
   const [creating, setCreating] = useState(false);
   const [createdInfo, setCreatedInfo] = useState<{ email: string; pass: string } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const { lang, isArabic } = useLanguage();
+  const t = adminTranslations[lang].customers;
+  const tCommon = adminTranslations[lang].common;
 
   const fetchCustomers = () => {
     setLoading(true);
@@ -138,9 +136,9 @@ export default function CustomersPage() {
         {/* Filter Pills */}
         <div className="flex gap-2">
           {[
-            { key: "all", label: `All Athletes (${customers.length})` },
-            { key: "active", label: "Active Access" },
-            { key: "inactive", label: "No Active Plan" },
+            { key: "all", label: `${tCommon.all} (${customers.length})` },
+            { key: "active", label: tCommon.active },
+            { key: "inactive", label: tCommon.inactive },
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -156,273 +154,237 @@ export default function CustomersPage() {
           ))}
         </div>
 
-        {/* Search & Add Athlete */}
+        {/* Search & Add Athlete Button */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <Search size={14} className={`absolute ${isArabic ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 text-[var(--text-muted)]`} />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search athlete, email, phone..."
-              className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm pl-9 pr-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-accent)]"
+              placeholder={t.searchPlaceholder}
+              className={`w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm ${
+                isArabic ? "pr-9 pl-3" : "pl-9 pr-3"
+              } py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-accent)]`}
             />
           </div>
 
           <button
             onClick={() => {
-              setShowAddModal(true);
               setCreatedInfo(null);
+              setNewName("");
+              setNewEmail("");
+              setNewPhone("");
+              setSelectedProductId("");
+              setShowAddModal(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors"
+            className="px-3.5 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-sm transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-sm cursor-pointer"
           >
-            <Plus size={14} /> Add Athlete
+            <Plus size={14} /> {t.addAthleteBtn}
           </button>
         </div>
       </div>
 
-      {/* Athletes Directory Table */}
+      {/* Directory Table */}
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">
               <tr>
-                <th className="px-6 py-3.5">Athlete</th>
-                <th className="px-6 py-3.5">Active Program / Split</th>
-                <th className="px-6 py-3.5">Access Status</th>
-                <th className="px-6 py-3.5">Latest Order</th>
-                <th className="px-6 py-3.5">Joined Date</th>
-                <th className="px-6 py-3.5 text-right">Actions</th>
+                <th className="px-5 py-3.5">{t.colAthlete}</th>
+                <th className="px-5 py-3.5">{t.colContact}</th>
+                <th className="px-5 py-3.5">{t.colEnrolledPlans}</th>
+                <th className="px-5 py-3.5">{t.colJoinedDate}</th>
+                <th className="px-5 py-3.5 text-end">{t.colActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    <td colSpan={6} className="px-6 py-4">
+                    <td colSpan={5} className="px-5 py-4">
                       <div className="h-4 bg-[var(--bg-elevated)] rounded animate-pulse" />
                     </td>
                   </tr>
                 ))
               ) : filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-[var(--text-muted)]">
-                    <p className="text-sm font-semibold">No athletes found</p>
-                    <p className="text-xs mt-1">Try adjusting your search query or add a new athlete.</p>
+                  <td colSpan={5} className="px-5 py-12 text-center text-[var(--text-muted)]">
+                    <p className="text-sm font-semibold">{t.noAthletes}</p>
                   </td>
                 </tr>
               ) : (
-                filteredCustomers.map((c) => {
-                  const activeEnt = c.entitlements[0];
-                  const lastOrder = c.orders[0];
-
-                  return (
-                    <tr
-                      key={c.id}
-                      className="hover:bg-[var(--bg-elevated)] transition-colors group"
-                    >
-                      <td className="px-6 py-3.5">
-                        <Link
-                          href={`/admin/customers/${c.id}`}
-                          className="font-bold text-[var(--text-primary)] hover:text-[var(--accent)] flex items-center gap-2"
-                        >
-                          <div className="w-7 h-7 rounded-sm bg-[var(--accent)]/10 text-[var(--accent)] font-bold text-[11px] flex items-center justify-center">
-                            {c.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <span>{c.name}</span>
-                        </Link>
-                        <p className="text-[11px] text-[var(--text-muted)] pl-9">{c.email}</p>
-                        {c.phone && (
-                          <p className="text-[10px] text-[var(--text-muted)] font-mono pl-9">{c.phone}</p>
-                        )}
-                      </td>
-
-                      <td className="px-6 py-3.5">
-                        {activeEnt ? (
-                          <div>
-                            <span className="font-bold text-[var(--text-primary)]">
-                              {activeEnt.product.name}
-                            </span>
-                            <span className="block text-[10px] text-[var(--text-muted)]">
-                              {activeEnt.expiresAt
-                                ? `Expires ${new Date(activeEnt.expiresAt).toLocaleDateString()}`
-                                : "Lifetime Access"}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-[var(--text-muted)] italic">None assigned</span>
-                        )}
-                      </td>
-
-                      <td className="px-6 py-3.5">
-                        {activeEnt ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px]">
-                            <CheckCircle2 size={11} /> Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[var(--text-muted)] bg-zinc-500/10 border border-zinc-500/30 px-2 py-0.5 rounded-full text-[10px]">
-                            <XCircle size={11} /> No Access
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-6 py-3.5">
-                        {lastOrder ? (
-                          <div>
-                            <span className="font-medium text-[var(--text-primary)]">
-                              {lastOrder.product.name}
-                            </span>
-                            <span className="block font-mono text-[10px] text-[var(--text-muted)]">
-                              {lastOrder.orderRef}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-[var(--text-muted)]">—</span>
-                        )}
-                      </td>
-
-                      <td className="px-6 py-3.5 text-[var(--text-muted)]">
-                        {new Date(c.createdAt).toLocaleDateString()}
-                      </td>
-
-                      <td className="px-6 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {c.phone && (
-                            <button
-                              onClick={() => openWhatsApp(c.phone!, c.name)}
-                              className="p-1.5 rounded-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                              title="Chat on WhatsApp"
-                            >
-                              <MessageSquare size={15} />
-                            </button>
-                          )}
-
-                          <Link
-                            href={`/admin/customers/${c.id}`}
-                            className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-base)] transition-colors flex items-center gap-1 text-xs font-semibold"
-                          >
-                            <span>Profile</span>
-                            <ChevronRight size={14} />
-                          </Link>
+                filteredCustomers.map((cust) => (
+                  <tr key={cust.id} className="hover:bg-[var(--bg-elevated)] transition-colors group">
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs">
+                          {cust.name.slice(0, 2).toUpperCase()}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                        <div>
+                          <p className="font-bold text-[var(--text-primary)]">{cust.name}</p>
+                          <p className="text-[10px] text-[var(--text-muted)] font-mono">{cust.id.slice(0, 8)}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <p className="text-[var(--text-primary)] font-medium">{cust.email}</p>
+                      {cust.phone && <p className="text-[11px] text-[var(--text-muted)] font-mono">{cust.phone}</p>}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {cust.entitlements.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {cust.entitlements.map((e) => (
+                            <span
+                              key={e.id}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                            >
+                              <Dumbbell size={10} /> {e.product.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-[var(--text-muted)]">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-[var(--text-muted)]">
+                      {new Date(cust.createdAt).toLocaleDateString(isArabic ? "ar-EG" : "en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="px-5 py-3.5 text-end">
+                      <div className="flex items-center justify-end gap-2">
+                        {cust.phone && (
+                          <button
+                            onClick={() => openWhatsApp(cust.phone!, cust.name)}
+                            className="p-1.5 rounded-sm border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                            title="WhatsApp"
+                          >
+                            <MessageSquare size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Add Athlete Modal */}
+      {/* Onboard Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-accent)] rounded-sm shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-extrabold text-[var(--text-primary)]">Onboard New Athlete</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm w-full max-w-md shadow-2xl">
+            <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-elevated)]">
+              <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
+                <Sparkles size={15} className="text-[var(--accent)]" /> {t.modalTitle}
+              </h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
             {createdInfo ? (
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-sm space-y-3">
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                  <CheckCircle2 size={16} /> Athlete Onboarded Successfully!
+              <div className="p-6 space-y-4">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-sm space-y-2">
+                  <p className="text-xs font-bold text-emerald-400">Athlete account created successfully!</p>
+                  <p className="text-xs text-[var(--text-secondary)]">Provide the credentials below to the athlete:</p>
+                  <div className="p-2.5 bg-[var(--bg-base)] border border-[var(--border)] rounded font-mono text-xs space-y-1">
+                    <p className="text-[var(--text-primary)]">Email: <strong>{createdInfo.email}</strong></p>
+                    <p className="text-[var(--text-primary)]">Password: <strong>{createdInfo.pass}</strong></p>
+                  </div>
                 </div>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Provide these credentials to the client for login access:
-                </p>
-                <div className="p-3 bg-[var(--bg-base)] border border-[var(--border)] rounded-sm text-xs space-y-1 font-mono">
-                  <p>
-                    <span className="text-[var(--text-muted)]">Email:</span> {createdInfo.email}
-                  </p>
-                  <p>
-                    <span className="text-[var(--text-muted)]">Password:</span> {createdInfo.pass}
-                  </p>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`Email: ${createdInfo.email}\nPassword: ${createdInfo.pass}`);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="flex-1 py-2 bg-[var(--accent)] text-black font-bold text-xs rounded-sm flex items-center justify-center gap-1.5"
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied!" : "Copy Credentials"}
+                  </button>
+                  <button
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 border border-[var(--border)] text-xs font-bold rounded-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                  >
+                    {tCommon.cancel}
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      `Coach Amar Portal Login:\nEmail: ${createdInfo.email}\nPassword: ${createdInfo.pass}\nURL: https://coah-amar.vercel.app/login`
-                    );
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="w-full py-2 bg-emerald-500 text-black text-xs font-black rounded-sm flex items-center justify-center gap-1.5"
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  {copied ? "Copied to Clipboard!" : "Copy Login Credentials"}
-                </button>
               </div>
             ) : (
-              <form onSubmit={handleCreateCustomer} className="space-y-3 text-xs">
+              <form onSubmit={handleCreateCustomer} className="p-6 space-y-4">
                 <div>
-                  <label className="text-[var(--text-muted)] block mb-1 font-semibold">Full Name *</label>
+                  <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">{t.nameLabel}</label>
                   <input
                     required
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    placeholder="e.g. Mohamed Ali"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    placeholder="e.g. Mostafa Ali"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[var(--text-muted)] block mb-1 font-semibold">Email Address *</label>
+                  <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">{t.emailLabel}</label>
                   <input
-                    type="email"
                     required
+                    type="email"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="client@example.com"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    placeholder="athlete@example.com"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[var(--text-muted)] block mb-1 font-semibold">Phone / WhatsApp</label>
+                  <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">{t.phoneLabel}</label>
                   <input
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
                     placeholder="+20 100 000 0000"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[var(--text-muted)] block mb-1 font-semibold">Initial Program / Access</label>
+                  <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">{t.planLabel}</label>
                   <select
                     value={selectedProductId}
                     onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   >
-                    <option value="">No initial program (grant later)</option>
+                    <option value="">-- No plan assigned --</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} ({p.type === "TRAINING_PLAN" ? "Training Split" : "Coaching"})
+                        {p.name}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="flex gap-2 pt-3">
+                <div className="pt-2 flex gap-2">
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors disabled:opacity-50"
+                    className="flex-1 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-sm transition-colors disabled:opacity-50"
                   >
-                    {creating ? "Creating…" : "Create & Grant Access"}
+                    {creating ? "Creating…" : t.createBtn}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-sm"
+                    className="px-4 py-2 border border-[var(--border)] text-xs font-bold rounded-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                   >
-                    Cancel
+                    {t.cancelBtn}
                   </button>
                 </div>
               </form>

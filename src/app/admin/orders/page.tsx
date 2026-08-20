@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   CheckCircle2,
-  Clock,
   XCircle,
   RotateCcw,
-  ExternalLink,
   MessageSquare,
   Eye,
-  Filter,
   X,
   CreditCard,
   User,
   Sparkles,
-  ArrowUpDown,
 } from "lucide-react";
+import { useLanguage } from "@/lib/language-context";
+import { adminTranslations } from "@/lib/admin-translations";
 
 type Order = {
   id: string;
@@ -38,14 +36,6 @@ type Order = {
   user: { id: string; name: string; email: string } | null;
 };
 
-const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
-  CONFIRMED: { label: "Confirmed", bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30" },
-  AWAITING_CONFIRMATION: { label: "Awaiting Confirmation", bg: "bg-amber-500/15", text: "text-amber-400", border: "border-amber-500/40" },
-  PENDING: { label: "Pending Payment", bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/30" },
-  FAILED: { label: "Failed / Rejected", bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/30" },
-  REFUNDED: { label: "Refunded", bg: "bg-zinc-500/10", text: "text-zinc-400", border: "border-zinc-500/30" },
-};
-
 const methodConfig: Record<string, { label: string; color: string }> = {
   INSTAPAY: { label: "InstaPay", color: "text-emerald-400" },
   PAYPAL: { label: "PayPal", color: "text-blue-400" },
@@ -60,6 +50,18 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [acting, setActing] = useState<string | null>(null);
+
+  const { lang, isArabic } = useLanguage();
+  const t = adminTranslations[lang].orders;
+  const tCommon = adminTranslations[lang].common;
+
+  const statusConfig: Record<string, { label: string; bg: string; text: string; border: string }> = {
+    CONFIRMED: { label: t.confirmed, bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30" },
+    AWAITING_CONFIRMATION: { label: t.pendingReview, bg: "bg-amber-500/15", text: "text-amber-400", border: "border-amber-500/40" },
+    PENDING: { label: t.initiated, bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/30" },
+    FAILED: { label: t.failed, bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/30" },
+    REFUNDED: { label: t.refunded, bg: "bg-zinc-500/10", text: "text-zinc-400", border: "border-zinc-500/30" },
+  };
 
   const fetchOrders = () => {
     setLoading(true);
@@ -108,7 +110,7 @@ export default function OrdersPage() {
   const openWhatsApp = (order: Order) => {
     let cleanPhone = order.customerPhone.replace(/[^0-9+]/g, "");
     if (!cleanPhone.startsWith("+") && cleanPhone.startsWith("0")) {
-      cleanPhone = "+2" + cleanPhone; // Egypt default prefix if local
+      cleanPhone = "+2" + cleanPhone;
     }
     const msg = encodeURIComponent(
       `Hi ${order.customerName}! Coach Amar team here regarding your order ${order.orderRef} for ${order.product.name}.`
@@ -117,11 +119,11 @@ export default function OrdersPage() {
   };
 
   const tabs = [
-    { key: "all", label: "All Orders" },
-    { key: "AWAITING_CONFIRMATION", label: "Pending Approvals" },
-    { key: "CONFIRMED", label: "Confirmed" },
-    { key: "FAILED", label: "Failed" },
-    { key: "REFUNDED", label: "Refunded" },
+    { key: "all", label: t.filterAllStatus },
+    { key: "AWAITING_CONFIRMATION", label: t.pendingReview },
+    { key: "CONFIRMED", label: t.confirmed },
+    { key: "FAILED", label: t.failed },
+    { key: "REFUNDED", label: t.refunded },
   ];
 
   return (
@@ -148,12 +150,14 @@ export default function OrdersPage() {
         {/* Search & Method Filter */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <Search size={14} className={`absolute ${isArabic ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 text-[var(--text-muted)]`} />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search ref, name, email, phone..."
-              className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm pl-9 pr-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-accent)]"
+              placeholder={t.searchPlaceholder}
+              className={`w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm ${
+                isArabic ? "pr-9 pl-3" : "pl-9 pr-3"
+              } py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-accent)]`}
             />
           </div>
 
@@ -162,7 +166,7 @@ export default function OrdersPage() {
             onChange={(e) => setMethodFilter(e.target.value)}
             className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
           >
-            <option value="all">All Methods</option>
+            <option value="all">{t.filterAllMethods}</option>
             <option value="INSTAPAY">InstaPay</option>
             <option value="PAYPAL">PayPal</option>
             <option value="TELDA">Telda</option>
@@ -173,17 +177,17 @@ export default function OrdersPage() {
       {/* Orders Table Container */}
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">
               <tr>
-                <th className="px-5 py-3.5">Reference</th>
-                <th className="px-5 py-3.5">Athlete</th>
-                <th className="px-5 py-3.5">Package</th>
-                <th className="px-5 py-3.5">Method</th>
-                <th className="px-5 py-3.5">Amount</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">Date</th>
-                <th className="px-5 py-3.5 text-right">Actions</th>
+                <th className="px-5 py-3.5">{t.colOrderRef}</th>
+                <th className="px-5 py-3.5">{t.colCustomer}</th>
+                <th className="px-5 py-3.5">{t.colPlan}</th>
+                <th className="px-5 py-3.5">{t.colMethod}</th>
+                <th className="px-5 py-3.5">{t.colAmount}</th>
+                <th className="px-5 py-3.5">{t.colStatus}</th>
+                <th className="px-5 py-3.5">{t.colDate}</th>
+                <th className="px-5 py-3.5 text-end">{t.colActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
@@ -198,8 +202,7 @@ export default function OrdersPage() {
               ) : orders.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-5 py-12 text-center text-[var(--text-muted)]">
-                    <p className="text-sm font-semibold">No orders matching your filter criteria</p>
-                    <p className="text-xs mt-1">Try resetting your search query or filters.</p>
+                    <p className="text-sm font-semibold">{t.noOrdersFound}</p>
                   </td>
                 </tr>
               ) : (
@@ -223,7 +226,7 @@ export default function OrdersPage() {
                       <td className="px-5 py-3.5 font-mono font-bold text-[var(--text-primary)]">
                         <button
                           onClick={() => setSelectedOrder(order)}
-                          className="hover:text-[var(--accent)] hover:underline text-left"
+                          className="hover:text-[var(--accent)] hover:underline text-start"
                         >
                           {order.orderRef}
                         </button>
@@ -245,7 +248,7 @@ export default function OrdersPage() {
                         <span className={`font-bold ${meth.color}`}>{meth.label}</span>
                       </td>
                       <td className="px-5 py-3.5 font-bold text-[var(--text-primary)]">
-                        {(order.amount / 100).toLocaleString()} EGP
+                        {(order.amount / 100).toLocaleString()} {order.currency}
                       </td>
                       <td className="px-5 py-3.5">
                         <span
@@ -255,49 +258,40 @@ export default function OrdersPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-[var(--text-muted)]">
-                        {new Date(order.createdAt).toLocaleDateString("en-GB", {
+                        {new Date(order.createdAt).toLocaleDateString(isArabic ? "ar-EG" : "en-GB", {
                           day: "numeric",
                           month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
                         })}
                       </td>
-                      <td className="px-5 py-3.5 text-right">
+                      <td className="px-5 py-3.5 text-end">
                         <div className="flex items-center justify-end gap-1.5">
-                          {order.status === "AWAITING_CONFIRMATION" && (
-                            <>
-                              <button
-                                onClick={() => handleOrderAction(order.orderRef, "confirm")}
-                                disabled={acting === order.orderRef}
-                                className="px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25 font-bold text-[11px] rounded-sm transition-colors disabled:opacity-50"
-                              >
-                                {acting === order.orderRef ? "…" : "Confirm"}
-                              </button>
-                              <button
-                                onClick={() => handleOrderAction(order.orderRef, "reject")}
-                                disabled={acting === order.orderRef}
-                                className="px-2.5 py-1 bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/25 font-bold text-[11px] rounded-sm transition-colors disabled:opacity-50"
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
-
                           <button
                             onClick={() => setSelectedOrder(order)}
-                            className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-base)] transition-colors"
-                            title="View Full Details"
+                            className="p-1.5 rounded-sm border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
+                            title={t.viewDetails}
                           >
-                            <Eye size={15} />
+                            <Eye size={13} />
                           </button>
 
-                          <button
-                            onClick={() => openWhatsApp(order)}
-                            className="p-1.5 rounded-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                            title="WhatsApp Customer"
-                          >
-                            <MessageSquare size={15} />
-                          </button>
+                          {order.customerPhone && (
+                            <button
+                              onClick={() => openWhatsApp(order)}
+                              className="p-1.5 rounded-sm border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                              title="WhatsApp"
+                            >
+                              <MessageSquare size={13} />
+                            </button>
+                          )}
+
+                          {order.status === "AWAITING_CONFIRMATION" && (
+                            <button
+                              onClick={() => handleOrderAction(order.orderRef, "confirm")}
+                              disabled={acting === order.orderRef}
+                              className="px-2.5 py-1 bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] rounded-sm transition-colors disabled:opacity-50 flex items-center gap-1"
+                            >
+                              <CheckCircle2 size={12} /> {t.approveBtn}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -309,15 +303,14 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Order Details Drawer / Modal */}
+      {/* Order Detail Modal / Drawer */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border-accent)] rounded-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-elevated)]">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">
-                  Order Details
+                <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
+                  {t.orderDrawerTitle}
                 </span>
                 <h3 className="text-base font-black text-[var(--text-primary)] font-mono">
                   {selectedOrder.orderRef}
@@ -325,50 +318,40 @@ export default function OrdersPage() {
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-base)]"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-              {/* Customer Profile Card */}
+            <div className="p-6 space-y-6">
+              {/* Customer Info Card */}
               <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                    <User size={14} className="text-[var(--accent)]" /> Athlete Information
-                  </h4>
-                  <button
-                    onClick={() => openWhatsApp(selectedOrder)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-sm hover:bg-emerald-500/25 transition-colors"
-                  >
-                    <MessageSquare size={13} /> Chat on WhatsApp
-                  </button>
-                </div>
-
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
+                  <User size={14} className="text-[var(--accent)]" /> {t.customerInfo}
+                </h4>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">Name</span>
+                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">{tCommon.name}</span>
                     <span className="font-bold text-[var(--text-primary)]">{selectedOrder.customerName}</span>
                   </div>
                   <div>
-                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">Email</span>
+                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">{tCommon.email}</span>
                     <span className="font-medium text-[var(--text-primary)]">{selectedOrder.customerEmail}</span>
                   </div>
                   <div>
-                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">Phone / WA</span>
+                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">{tCommon.phone}</span>
                     <span className="font-mono text-[var(--text-primary)]">{selectedOrder.customerPhone || "—"}</span>
                   </div>
                   <div>
-                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">Experience Level</span>
+                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">Level</span>
                     <span className="text-[var(--text-primary)]">{selectedOrder.customerLevel || "Standard"}</span>
                   </div>
                 </div>
 
                 {selectedOrder.customerGoal && (
                   <div className="pt-2 border-t border-[var(--border)]">
-                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">Fitness Goal</span>
+                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">{t.notes}</span>
                     <p className="text-xs text-[var(--text-primary)] font-medium mt-0.5">
                       {selectedOrder.customerGoal}
                     </p>
@@ -380,28 +363,23 @@ export default function OrdersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm space-y-2">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                    <Sparkles size={14} className="text-[var(--accent)]" /> Package
+                    <Sparkles size={14} className="text-[var(--accent)]" /> {t.colPlan}
                   </h4>
                   <p className="text-sm font-bold text-[var(--text-primary)]">{selectedOrder.product.name}</p>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    {selectedOrder.product.type === "TRAINING_PLAN"
-                      ? "Lifetime access to workout split"
-                      : "Personal coaching cohort access"}
-                  </p>
                 </div>
 
                 <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm space-y-2">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                    <CreditCard size={14} className="text-[var(--accent)]" /> Payment
+                    <CreditCard size={14} className="text-[var(--accent)]" /> {t.paymentProof}
                   </h4>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--text-muted)]">Method:</span>
+                    <span className="text-xs text-[var(--text-muted)]">{t.colMethod}:</span>
                     <span className="text-xs font-bold text-[var(--text-primary)]">
                       {selectedOrder.paymentMethod}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--text-muted)]">Total:</span>
+                    <span className="text-xs text-[var(--text-muted)]">{t.colAmount}:</span>
                     <span className="text-sm font-black text-[var(--accent)]">
                       {(selectedOrder.amount / 100).toLocaleString()} {selectedOrder.currency}
                     </span>
@@ -412,7 +390,7 @@ export default function OrdersPage() {
               {/* Status Action Buttons */}
               <div className="p-4 bg-[var(--bg-base)] border border-[var(--border)] rounded-sm space-y-3">
                 <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
-                  Management Actions
+                  {t.colActions}
                 </span>
 
                 <div className="flex flex-wrap gap-2">
@@ -422,7 +400,7 @@ export default function OrdersPage() {
                       disabled={acting === selectedOrder.orderRef}
                       className="flex-1 py-2 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs rounded-sm transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
-                      <CheckCircle2 size={15} /> Confirm & Grant Access
+                      <CheckCircle2 size={15} /> {t.approveBtn}
                     </button>
                   )}
 
@@ -432,7 +410,7 @@ export default function OrdersPage() {
                       disabled={acting === selectedOrder.orderRef}
                       className="py-2 px-4 bg-red-500/15 border border-red-500/40 hover:bg-red-500/25 text-red-400 font-bold text-xs rounded-sm transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
-                      <XCircle size={15} /> Reject Order
+                      <XCircle size={15} /> {t.rejectBtn}
                     </button>
                   )}
 
@@ -442,7 +420,7 @@ export default function OrdersPage() {
                       disabled={acting === selectedOrder.orderRef}
                       className="py-2 px-4 bg-zinc-700/30 border border-zinc-600 hover:bg-zinc-700/50 text-zinc-300 font-bold text-xs rounded-sm transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
-                      <RotateCcw size={15} /> Mark Refunded
+                      <RotateCcw size={15} /> {t.refundBtn}
                     </button>
                   )}
                 </div>

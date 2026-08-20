@@ -6,14 +6,14 @@ import {
   Edit2,
   Eye,
   EyeOff,
-  Package,
   ShoppingBag,
-  Dumbbell,
   Sparkles,
   DollarSign,
   X,
   CheckCircle2,
 } from "lucide-react";
+import { useLanguage } from "@/lib/language-context";
+import { adminTranslations } from "@/lib/admin-translations";
 
 type Product = {
   id: string;
@@ -33,6 +33,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const { lang, isArabic } = useLanguage();
+  const t = adminTranslations[lang].products;
+  const tCommon = adminTranslations[lang].common;
 
   const [form, setForm] = useState({
     name: "",
@@ -69,7 +73,9 @@ export default function ProductsPage() {
       price: 399,
       currency: "EGP",
       description: "",
-      features: "Complete 12-Week Split Breakdown\nExercise Execution & Technique Guidance\nProgressive Overload Tracking\nLifetime Dashboard Access",
+      features: isArabic
+        ? "جدول تدريب كامل 12 أسبوع\nشرح تكنيك التمارين والبدائل\nنظام تتبع الأوزان والزيادة التدريجية\nدخول دائم للبوابة"
+        : "Complete 12-Week Split Breakdown\nExercise Execution & Technique Guidance\nProgressive Overload Tracking\nLifetime Dashboard Access",
     });
     setShowModal(true);
   };
@@ -135,234 +141,222 @@ export default function ProductsPage() {
       {/* Top Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-[var(--text-primary)]">Packages & Offerings</h2>
-          <p className="text-xs text-[var(--text-muted)]">Configure training plans, personal coaching tiers, and pricing</p>
+          <h2 className="text-xl font-extrabold text-[var(--text-primary)]">{t.title}</h2>
+          <p className="text-xs text-[var(--text-muted)]">{t.subtitle}</p>
         </div>
 
         <button
           onClick={openNewModal}
-          className="flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors cursor-pointer shadow-sm"
         >
-          <Plus size={14} /> New Product
+          <Plus size={14} /> {t.addBtn}
         </button>
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {loading ? (
-          Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-56 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm animate-pulse" />
-          ))
-        ) : products.length === 0 ? (
-          <div className="col-span-2 text-center py-12 text-[var(--text-muted)]">
-            <Package size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm font-semibold">No products found</p>
-          </div>
-        ) : (
-          products.map((p) => {
-            const isCoaching = p.type === "PERSONAL_COACHING";
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="h-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {products.map((p) => {
+            const features = Array.isArray(p.features) ? p.features : [];
 
             return (
               <div
                 key={p.id}
                 className={`bg-[var(--bg-card)] border rounded-sm p-6 flex flex-col justify-between transition-all ${
-                  p.isActive
-                    ? "border-[var(--border)] hover:border-[var(--border-accent)]"
-                    : "border-[var(--border)] opacity-60 bg-[var(--bg-base)]"
+                  p.isActive ? "border-[var(--border)] hover:border-[var(--border-accent)]" : "border-zinc-800 opacity-60"
                 }`}
               >
                 <div>
-                  {/* Plan Top Meta */}
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-extrabold text-[var(--text-primary)]">{p.name}</h3>
-                        <span
-                          className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-                            isCoaching
-                              ? "bg-purple-500/15 text-purple-400 border border-purple-500/30"
-                              : "bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30"
-                          }`}
-                        >
-                          {isCoaching ? "1-on-1 Coaching" : "Training Plan"}
-                        </span>
-                      </div>
-                      <span className="text-[11px] font-mono text-[var(--text-muted)]">slug: /{p.slug}</span>
-                    </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span
+                      className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-sm border ${
+                        p.type === "TRAINING_PLAN"
+                          ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                          : "bg-purple-500/10 text-purple-400 border-purple-500/30"
+                      }`}
+                    >
+                      {p.type === "TRAINING_PLAN" ? t.trainingPlanType : t.coachingType}
+                    </span>
 
-                    <div className="text-right">
-                      <p className="text-lg font-black text-[var(--accent)]">
-                        {(p.price / 100).toLocaleString()} {p.currency}
-                      </p>
-                      <span className="text-[10px] text-[var(--text-muted)]">
-                        {isCoaching ? "per 3 months" : "one-time"}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleActive(p.id, p.isActive)}
+                        className={`p-1.5 rounded-sm border transition-colors ${
+                          p.isActive
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
+                            : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700"
+                        }`}
+                        title={p.isActive ? "Deactivate Offer" : "Activate Offer"}
+                      >
+                        {p.isActive ? <Eye size={13} /> : <EyeOff size={13} />}
+                      </button>
+
+                      <button
+                        onClick={() => openEditModal(p)}
+                        className="p-1.5 rounded-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
+                        title={t.editBtn}
+                      >
+                        <Edit2 size={13} />
+                      </button>
                     </div>
                   </div>
 
-                  {p.description && (
-                    <p className="text-xs text-[var(--text-secondary)] mb-4 leading-relaxed line-clamp-2">
-                      {p.description}
-                    </p>
-                  )}
+                  <h3 className="text-lg font-black text-[var(--text-primary)] tracking-tight mb-1">
+                    {p.name}
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] mb-4">{p.description || "—"}</p>
 
-                  {/* Feature Highlights */}
-                  {Array.isArray(p.features) && p.features.length > 0 && (
-                    <div className="space-y-1.5 mb-6 pt-3 border-t border-[var(--border)]">
-                      {p.features.slice(0, 4).map((f, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                          <CheckCircle2 size={12} className="text-[var(--accent)] shrink-0" />
-                          <span className="truncate">{f}</span>
-                        </div>
-                      ))}
+                  <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm mb-4">
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">
+                      {t.priceLabel}
+                    </span>
+                    <p className="text-2xl font-black text-[var(--accent)] tracking-tight">
+                      {(p.price / 100).toLocaleString()}{" "}
+                      <span className="text-sm font-bold text-[var(--text-secondary)]">{p.currency}</span>
+                    </p>
+                  </div>
+
+                  {features.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block">
+                        {t.featuresTitle}
+                      </span>
+                      <ul className="space-y-1.5 text-xs text-[var(--text-secondary)]">
+                        {features.map((feat, idx) => (
+                          <li key={idx} className="flex items-center gap-2">
+                            <CheckCircle2 size={12} className="text-[var(--accent)] shrink-0" />
+                            <span>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>
 
-                {/* Footer Metrics & Actions */}
-                <div className="pt-4 border-t border-[var(--border)] flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-                    <span>
-                      <strong className="text-[var(--text-primary)]">{p._count.orders}</strong> Sales
-                    </span>
-                    <span>•</span>
-                    <span>
-                      <strong className="text-emerald-400">{p._count.entitlements}</strong> Active
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => toggleActive(p.id, p.isActive)}
-                      className={`p-2 rounded-sm border transition-colors ${
-                        p.isActive
-                          ? "border-[var(--border)] text-[var(--text-muted)] hover:text-amber-400 hover:border-amber-400/30"
-                          : "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-                      }`}
-                      title={p.isActive ? "Deactivate" : "Activate"}
-                    >
-                      {p.isActive ? <Eye size={14} /> : <EyeOff size={14} />}
-                    </button>
-
-                    <button
-                      onClick={() => openEditModal(p)}
-                      className="px-3 py-1.5 bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] rounded-sm flex items-center gap-1.5 transition-colors"
-                    >
-                      <Edit2 size={12} /> Edit
-                    </button>
-                  </div>
+                <div className="pt-5 border-t border-[var(--border)] mt-6 flex items-center justify-between text-xs text-[var(--text-muted)]">
+                  <span>
+                    <strong>{p._count?.orders || 0}</strong> {isArabic ? "طلب مؤكد" : "orders"}
+                  </span>
+                  <span>
+                    <strong>{p._count?.entitlements || 0}</strong> {isArabic ? "مشترك نشط" : "active athletes"}
+                  </span>
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
-      {/* Create / Edit Modal */}
+      {/* Add / Edit Product Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-[var(--bg-card)] border border-[var(--border-accent)] rounded-sm shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-extrabold text-[var(--text-primary)]">
-                {editingId ? "Edit Product" : "Create New Product"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm w-full max-w-lg shadow-2xl">
+            <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-elevated)]">
+              <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
+                <Sparkles size={15} className="text-[var(--accent)]" />{" "}
+                {editingId ? t.editBtn : t.addBtn}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[var(--text-muted)] block mb-1 font-semibold">Product Name *</label>
-                  <input
-                    required
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="e.g. THE AMMAR 'X SPLIT'"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[var(--text-muted)] block mb-1 font-semibold">URL Slug *</label>
-                  <input
-                    required
-                    value={form.slug}
-                    onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                    placeholder="e.g. x-split"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
-                  />
-                </div>
+            <form onSubmit={handleSaveProduct} className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">
+                  {isArabic ? "اسم الباقة / الخطة" : "Product / Plan Name"}
+                </label>
+                <input
+                  required
+                  value={form.name}
+                  onChange={(e) => {
+                    setForm((f) => ({
+                      ...f,
+                      name: e.target.value,
+                      slug: editingId ? f.slug : e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                    }));
+                  }}
+                  placeholder="e.g. Training Split"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[var(--text-muted)] block mb-1 font-semibold">Product Type</label>
+                  <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">
+                    {isArabic ? "نوع الباقة" : "Product Type"}
+                  </label>
                   <select
                     value={form.type}
                     onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as any }))}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   >
-                    <option value="TRAINING_PLAN">Training Plan (Lifetime)</option>
-                    <option value="PERSONAL_COACHING">Personal Coaching (3 Months)</option>
+                    <option value="TRAINING_PLAN">{t.trainingPlanType}</option>
+                    <option value="PERSONAL_COACHING">{t.coachingType}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-[var(--text-muted)] block mb-1 font-semibold">Price (EGP) *</label>
+                  <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">
+                    {t.priceLabel}
+                  </label>
                   <input
-                    type="number"
                     required
+                    type="number"
                     value={form.price}
-                    onChange={(e) => setForm((f) => ({ ...f, price: +e.target.value }))}
-                    placeholder="399"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none"
+                    onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] font-bold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[var(--text-muted)] block mb-1 font-semibold">Short Description</label>
-                <textarea
-                  rows={2}
+                <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">
+                  {isArabic ? "الوصف المختصر" : "Short Description"}
+                </label>
+                <input
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="Summary of what the client gets..."
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none resize-none"
+                  placeholder="Brief summary of the offer..."
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                 />
               </div>
 
               <div>
-                <label className="text-[var(--text-muted)] block mb-1 font-semibold">
-                  Features Bullets (One per line)
+                <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">
+                  {t.featuresTitle} {isArabic ? "(ميزة واحدة بكل سطر)" : "(One per line)"}
                 </label>
                 <textarea
                   rows={4}
                   value={form.features}
                   onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))}
-                  placeholder="Bullet feature 1&#10;Bullet feature 2&#10;Bullet feature 3"
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none resize-none"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] resize-y"
                 />
               </div>
 
-              <div className="flex gap-2 pt-3">
+              <div className="pt-2 flex gap-2">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-sm transition-colors disabled:opacity-50"
                 >
-                  {saving ? "Saving…" : editingId ? "Update Product" : "Create Product"}
+                  {saving ? "Saving…" : t.saveChanges}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-sm"
+                  className="px-4 py-2.5 border border-[var(--border)] text-xs font-bold rounded-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                 >
-                  Cancel
+                  {tCommon.cancel}
                 </button>
               </div>
             </form>
