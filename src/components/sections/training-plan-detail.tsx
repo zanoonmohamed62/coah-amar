@@ -74,14 +74,51 @@ export function TrainingPlanSection() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="relative"
           >
-            <div className="relative rounded-sm overflow-hidden border border-blue-500/30 bg-[#07090e] aspect-[4/3] shadow-2xl group">
-              <Image
-                src="/assets/training-plan-marketing.png"
-                alt="AMAR X SPLIT Official 12-Week Protocol"
-                fill
-                className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#07090e]/60 via-transparent to-transparent pointer-events-none" />
+            <div className="relative rounded-sm overflow-hidden border border-[var(--border-accent)] bg-[#07090e] aspect-[4/3] shadow-2xl group flex flex-col items-center justify-center card-hover">
+              {/* Abstract decorative elements */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1)_0%,transparent_60%)] pointer-events-none" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-50" />
+              
+              {/* Simulated PDF Header */}
+              <div className="absolute top-4 left-4 right-4 flex justify-between items-center opacity-40">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-500/80" />
+                  <div className="w-2 h-2 rounded-full bg-amber-500/80" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-500/80" />
+                </div>
+                <div className="text-[8px] sm:text-[10px] font-mono tracking-widest text-[var(--accent)]">AMARX_SPLIT.PDF</div>
+              </div>
+
+              {/* Main Typography */}
+              <div className="text-center z-10 relative mt-4 transform group-hover:scale-105 transition-transform duration-500">
+                <h3 className="text-6xl sm:text-7xl lg:text-8xl font-black text-white leading-none tracking-tighter" style={{ fontFamily: "var(--font-outfit)" }}>
+                  AMAR
+                </h3>
+                <div className="flex items-center justify-center gap-3 my-2">
+                  <div className="h-px bg-white/20 w-12 sm:w-16" />
+                  <span className="text-4xl sm:text-5xl font-black text-[var(--accent)] leading-none italic">X</span>
+                  <div className="h-px bg-white/20 w-12 sm:w-16" />
+                </div>
+                <h3 className="text-6xl sm:text-7xl lg:text-8xl font-black text-white leading-none tracking-tighter" style={{ fontFamily: "var(--font-outfit)" }}>
+                  SPLIT
+                </h3>
+              </div>
+
+              {/* Simulated Footer Grid */}
+              <div className="absolute bottom-6 w-[80%] grid grid-cols-3 gap-3 opacity-60">
+                <div className="h-12 border border-[var(--border)] rounded-sm bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-75">
+                  <div className="w-6 h-1 bg-[var(--accent)] mb-1.5 rounded-sm" />
+                  <div className="w-12 h-1 bg-white/20 rounded-sm" />
+                </div>
+                <div className="h-12 border border-[var(--border)] rounded-sm bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-100">
+                  <div className="w-8 h-1 bg-[var(--accent)] mb-1.5 rounded-sm" />
+                  <div className="w-14 h-1 bg-white/20 rounded-sm" />
+                </div>
+                <div className="h-12 border border-[var(--border)] rounded-sm bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-150">
+                  <div className="w-5 h-1 bg-[var(--accent)] mb-1.5 rounded-sm" />
+                  <div className="w-10 h-1 bg-white/20 rounded-sm" />
+                </div>
+              </div>
             </div>
 
             {/* Price tag overlay */}
