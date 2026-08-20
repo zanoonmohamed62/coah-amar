@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MessageCircle, Loader2, WifiOff, ShieldCheck } from "lucide-react";
+import { Maximize2, Minimize2, ChevronLeft, ChevronRight, MessageCircle, Loader2, WifiOff, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 
 const WA = process.env.NEXT_PUBLIC_COACH_WHATSAPP?.replace("+", "") || "34610354255";
@@ -46,6 +46,7 @@ async function saveToCache(buf: ArrayBuffer): Promise<void> {
 // ── PDF Canvas Page Renderer ─────────────────────────────────────────────────
 function PdfCanvasPage({ pdfDoc, pageNum, scale }: { pdfDoc: any; pageNum: number; scale: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [links, setLinks] = useState<Array<{ url: string; x: number; y: number; width: number; height: number }>>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,32 +56,67 @@ function PdfCanvasPage({ pdfDoc, pageNum, scale }: { pdfDoc: any; pageNum: numbe
       const ctx = canvas.getContext("2d")!;
       const dpr = window.devicePixelRatio || 1;
       const viewport = page.getViewport({ scale });
-      // Set physical pixel size (multiplied by DPR for crisp rendering)
       canvas.width = Math.floor(viewport.width * dpr);
       canvas.height = Math.floor(viewport.height * dpr);
-      // Set CSS display size to the logical viewport size (no stretching)
       canvas.style.width = viewport.width + "px";
       canvas.style.height = viewport.height + "px";
-      // Scale context so pdf.js draws at logical coords but renders at physical resolution
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       page.render({ canvasContext: ctx, viewport });
+
+      // Extract clickable links
+      page.getAnnotations().then((annData: any[]) => {
+        if (cancelled) return;
+        const linkNodes = annData
+          .filter((a) => a.subtype === "Link" && a.url)
+          .map((a) => {
+            const rect = viewport.convertToViewportRectangle(a.rect);
+            const [x1, y1, x2, y2] = rect;
+            return {
+              url: a.url,
+              x: Math.min(x1, x2),
+              y: Math.min(y1, y2),
+              width: Math.abs(x1 - x2),
+              height: Math.abs(y1 - y2),
+            };
+          });
+        setLinks(linkNodes);
+      });
     });
     return () => { cancelled = true; };
   }, [pdfDoc, pageNum, scale]);
 
   return (
-    <div className="relative select-none overflow-x-auto flex justify-center bg-white" style={{ userSelect: "none" }}>
+    <div className="relative select-none overflow-hidden flex justify-center bg-white" style={{ userSelect: "none" }}>
       <canvas
         ref={canvasRef}
         style={{ pointerEvents: "none", display: "block", maxWidth: "100%", height: "auto" }}
       />
-      {/* Anti-screenshot overlay — transparent, blocks context menu & drag */}
+      {/* Anti-screenshot overlay — blocks context menu & drag */}
       <div
-        className="absolute inset-0"
-        style={{ pointerEvents: "auto", userSelect: "none" }}
+        className="absolute inset-0 z-10"
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       />
+      {/* Invisible Link Overlays */}
+      <div className="absolute inset-0 z-20" style={{ pointerEvents: "none" }}>
+        {links.map((link, i) => (
+          <a
+            key={i}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute cursor-pointer hover:bg-blue-500/10 transition-colors"
+            style={{
+              left: `${link.x}px`,
+              top: `${link.y}px`,
+              width: `${link.width}px`,
+              height: `${link.height}px`,
+              pointerEvents: "auto",
+            }}
+            title={link.url}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -94,6 +130,26 @@ export default function MySplitPage() {
   const [numPages, setNumPages] = useState(0);
   const scale = 1.3; // Fixed scale for good readability on mobile/desktop
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   const loadPdf = useCallback(async () => {
     setStatus("loading");
@@ -170,19 +226,39 @@ export default function MySplitPage() {
       </div>
 
       {/* PDF Canvas Viewer Container */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-2xl h-[80vh] min-h-[600px] flex flex-col relative select-none">
+      <div 
+        ref={containerRef} 
+        className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-2xl flex flex-col relative select-none"
+        style={{ height: isFullscreen ? "100vh" : "80vh", minHeight: "600px" }}
+      >
         
         {/* Simple Viewer Header */}
         <div className="px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={15} className="text-emerald-400" />
-            <span className="text-xs font-black text-[var(--text-primary)] tracking-wide">
-              {isArabic ? "عرض آمن" : "Secure View"}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={15} className="text-emerald-400" />
+              <span className="text-xs font-black text-[var(--text-primary)] tracking-wide">
+                {isArabic ? "عرض آمن" : "Secure View"}
+              </span>
+            </div>
+            {numPages > 0 && (
+              <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-base)] border border-[var(--border)] px-2 py-0.5 rounded-full">
+                {numPages} {isArabic ? "صفحة" : "pages"}
+              </span>
+            )}
           </div>
-          <span className="text-[10px] text-[var(--text-muted)] opacity-60">
-            {isArabic ? "لا يمكن النسخ أو التحميل" : "Cannot copy or download"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-[var(--text-muted)] opacity-60 hidden sm:inline-block">
+              {isArabic ? "لا يمكن النسخ أو التحميل" : "Cannot copy or download"}
+            </span>
+            <button 
+              onClick={toggleFullscreen}
+              className="p-1.5 hover:bg-white/5 rounded-sm text-[var(--text-muted)] hover:text-white transition-colors flex items-center gap-1.5"
+              title={isFullscreen ? (isArabic ? "تصغير" : "Exit Fullscreen") : (isArabic ? "ملء الشاشة" : "Fullscreen")}
+            >
+              {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </button>
+          </div>
         </div>
 
         {/* Custom Canvas Container */}
