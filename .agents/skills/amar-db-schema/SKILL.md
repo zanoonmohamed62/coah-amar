@@ -8,7 +8,7 @@ description: Quick reference for Prisma schema, PostgreSQL models, and database 
 ## 1. Key Models Reference
 - `User`: Roles (`ADMIN`, `CLIENT`). Contains client profile and credentials.
 - `Order`: Represents training plan or coaching purchases, stores prices, currency (`LE`, `EUR`), status (`PENDING`, `CONFIRMED`, `CANCELLED`).
-- `Payment`: Transaction logs (Vodafone Cash, InstaPay, Card).
+- `Payment`: Transaction logs (InstaPay, PayPal, Telda).
 - `TrainingPlan` & `PlanDay` & `Exercise`: Push/Pull/Legs and customized training programs.
 - `CoachingEnrollment` & `CheckIn`: 3-month coaching follow-up and weekly progress photos/metrics.
 - `Setting`: Global platform settings, payment numbers, and CMS flags.

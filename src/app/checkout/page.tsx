@@ -16,6 +16,8 @@ import {
   MessageCircle,
   Clock,
   Sparkles,
+  Wallet,
+  Globe,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 
@@ -30,7 +32,7 @@ function CheckoutContent() {
     planParam === "training" ? "training" : "coaching"
   );
 
-  const [paymentMethod, setPaymentMethod] = useState<"vodafone" | "instapay" | "card">("vodafone");
+  const [paymentMethod, setPaymentMethod] = useState<"instapay" | "paypal" | "telda">("instapay");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -69,8 +71,8 @@ function CheckoutContent() {
 
   const whatsappMessage = encodeURIComponent(
     isArabic
-      ? `مرحباً كوتش عمار، أنا سجلت طلب اشتراك جديد رقم: ${orderNumber || "AMAR-ORDER"}\nالاسم: ${formData.name || "متدرب"}\nالباقة: ${selectedPlan === "training" ? "خطة التدريب (٣٩٩ ج.م)" : "التدريب الشخصي والمتابعة (١,٣٩٩ ج.م)"}\nطريقة الدفع: ${paymentMethod === "vodafone" ? "فودافون كاش" : paymentMethod === "instapay" ? "إنستاباي" : "بطاقة بنكية"}\nأرجو تأكيد الاشتراك وتفعيل الحساب.`
-      : `Hello Coach Amar, I just placed a new order ${orderNumber || "AMAR-ORDER"}\nName: ${formData.name || "Client"}\nPlan: ${selectedPlan === "training" ? "Training Plan (399 LE)" : "Personal Coaching (1,399 LE)"}\nPayment: ${paymentMethod}\nPlease confirm my registration.`
+      ? `مرحباً كوتش عمار، أنا سجلت طلب اشتراك جديد رقم: ${orderNumber || "AMAR-ORDER"}\nالاسم: ${formData.name || "متدرب"}\nالباقة: ${selectedPlan === "training" ? "خطة التدريب (٣٩٩ ج.م / 19 €)" : "التدريب الشخصي والمتابعة (١,٣٩٩ ج.م / 79 €)"}\nطريقة الدفع: ${paymentMethod === "instapay" ? "إنستاباي (InstaPay)" : paymentMethod === "paypal" ? "PayPal" : "تيلدا (Telda)"}\nأرجو تأكيد الاشتراك وتفعيل الحساب.`
+      : `Hello Coach Amar, I just placed a new order ${orderNumber || "AMAR-ORDER"}\nName: ${formData.name || "Client"}\nPlan: ${selectedPlan === "training" ? "Training Plan (399 LE / 19 €)" : "Personal Coaching (1,399 LE / 79 €)"}\nPayment: ${paymentMethod.toUpperCase()}\nPlease confirm my registration.`
   );
 
   return (
@@ -259,35 +261,12 @@ function CheckoutContent() {
                   </h2>
 
                   <div className="space-y-3">
-                    {/* Vodafone Cash */}
-                    <div
-                      onClick={() => setPaymentMethod("vodafone")}
-                      className={`cursor-pointer rounded-sm p-4 border transition-all flex items-start gap-3.5 ${
-                        paymentMethod === "vodafone"
-                          ? "border-[var(--accent)] bg-[var(--accent-glow)]"
-                          : "border-[var(--border)] glass"
-                      }`}
-                    >
-                      <Smartphone size={20} className="text-[var(--accent)] mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-[var(--text-primary)]">{t.checkout.vodafoneCash}</p>
-                        <p className="text-xs text-[var(--text-muted)] mt-1">{t.checkout.vodafoneInfo}</p>
-                      </div>
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 ${
-                          paymentMethod === "vodafone" ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--border)]"
-                        }`}
-                      >
-                        {paymentMethod === "vodafone" && <Check size={10} className="text-white" />}
-                      </div>
-                    </div>
-
                     {/* InstaPay */}
                     <div
                       onClick={() => setPaymentMethod("instapay")}
                       className={`cursor-pointer rounded-sm p-4 border transition-all flex items-start gap-3.5 ${
                         paymentMethod === "instapay"
-                          ? "border-[var(--accent)] bg-[var(--accent-glow)]"
+                          ? "border-[var(--accent)] bg-[var(--accent-glow)] shadow-md"
                           : "border-[var(--border)] glass"
                       }`}
                     >
@@ -305,26 +284,49 @@ function CheckoutContent() {
                       </div>
                     </div>
 
-                    {/* Credit Card */}
+                    {/* PayPal */}
                     <div
-                      onClick={() => setPaymentMethod("card")}
+                      onClick={() => setPaymentMethod("paypal")}
                       className={`cursor-pointer rounded-sm p-4 border transition-all flex items-start gap-3.5 ${
-                        paymentMethod === "card"
-                          ? "border-[var(--accent)] bg-[var(--accent-glow)]"
+                        paymentMethod === "paypal"
+                          ? "border-[var(--accent)] bg-[var(--accent-glow)] shadow-md"
                           : "border-[var(--border)] glass"
                       }`}
                     >
-                      <CreditCard size={20} className="text-[var(--accent)] mt-0.5 flex-shrink-0" />
+                      <Globe size={20} className="text-[var(--accent)] mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-[var(--text-primary)]">{t.checkout.creditCard}</p>
-                        <p className="text-xs text-[var(--text-muted)] mt-1">Visa / Mastercard / Meeza Online</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">{t.checkout.payPal}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">{t.checkout.payPalInfo}</p>
                       </div>
                       <div
                         className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 ${
-                          paymentMethod === "card" ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--border)]"
+                          paymentMethod === "paypal" ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--border)]"
                         }`}
                       >
-                        {paymentMethod === "card" && <Check size={10} className="text-white" />}
+                        {paymentMethod === "paypal" && <Check size={10} className="text-white" />}
+                      </div>
+                    </div>
+
+                    {/* Telda */}
+                    <div
+                      onClick={() => setPaymentMethod("telda")}
+                      className={`cursor-pointer rounded-sm p-4 border transition-all flex items-start gap-3.5 ${
+                        paymentMethod === "telda"
+                          ? "border-[var(--accent)] bg-[var(--accent-glow)] shadow-md"
+                          : "border-[var(--border)] glass"
+                      }`}
+                    >
+                      <Wallet size={20} className="text-[var(--accent)] mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-[var(--text-primary)]">{t.checkout.telda}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">{t.checkout.teldaInfo}</p>
+                      </div>
+                      <div
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center mt-0.5 ${
+                          paymentMethod === "telda" ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--border)]"
+                        }`}
+                      >
+                        {paymentMethod === "telda" && <Check size={10} className="text-white" />}
                       </div>
                     </div>
                   </div>

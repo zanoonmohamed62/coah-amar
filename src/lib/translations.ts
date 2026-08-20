@@ -204,11 +204,12 @@ export interface TranslationSchema {
     notesLabel: string;
     notesPlaceholder: string;
     paymentTitle: string;
-    vodafoneCash: string;
     instaPay: string;
-    creditCard: string;
-    vodafoneInfo: string;
+    payPal: string;
+    telda: string;
     instaPayInfo: string;
+    payPalInfo: string;
+    teldaInfo: string;
     summaryTitle: string;
     subtotal: string;
     taxes: string;
@@ -598,11 +599,12 @@ export const translations: Record<Language, TranslationSchema> = {
       notesLabel: "Injuries or Dietary Preferences (Optional)",
       notesPlaceholder: "e.g., knee issues, lactose intolerance, specific schedule...",
       paymentTitle: "Payment Method",
-      vodafoneCash: "Vodafone Cash / Mobile Wallets",
       instaPay: "InstaPay (IPN Transfer)",
-      creditCard: "Debit / Credit Card (Visa/Mastercard)",
-      vodafoneInfo: "Send transfer to: 01026048106 and send screenshot via WhatsApp.",
+      payPal: "PayPal (International & Fast)",
+      telda: "Telda (Instant Transfer)",
       instaPayInfo: "Transfer to InstaPay Username: amar.fitness@instapay",
+      payPalInfo: "Send payment via PayPal to: amar.fitness@paypal.me",
+      teldaInfo: "Send transfer to Telda username: @amar.fitness",
       summaryTitle: "Order Summary",
       subtotal: "Subtotal",
       taxes: "Taxes & Fees",
@@ -990,11 +992,12 @@ export const translations: Record<Language, TranslationSchema> = {
       notesLabel: "أي إصابات أو تفضيلات غذائية (اختياري)",
       notesPlaceholder: "مثال: حساسية ألبان، إصابة سابقة في الركبة، مواعيد خاصة...",
       paymentTitle: "طريقة الدفع",
-      vodafoneCash: "فودافون كاش / المحافظ الإلكترونية",
       instaPay: "إنستاباي (تحويل فوري IPN)",
-      creditCard: "بطاقة بنكية (فيزا / ماستركارد)",
-      vodafoneInfo: "حوّل المبلغ إلى رقم: 01026048106 ثم أرسل إشعار التحويل عبر واتساب.",
+      payPal: "باي بال (PayPal للدفع الدولي)",
+      telda: "تيلدا (Telda تحويل فوري)",
       instaPayInfo: "التحويل عبر إنستاباي إلى المعرّف: amar.fitness@instapay",
+      payPalInfo: "الدفع عبر PayPal على: amar.fitness@paypal.me",
+      teldaInfo: "التحويل عبر تطبيق تيلدا على المعرّف: amar.fitness@",
       summaryTitle: "ملخص الطلب",
       subtotal: "المجموع الفرعي",
       taxes: "الرسوم والضرائب",

@@ -52,10 +52,17 @@ This version of Next.js uses modern App Router conventions with React 19. All se
 ## 🗄️ Database Models (`prisma/schema.prisma`)
 - `User`: `id, email, password, name, phone, role (ADMIN | CLIENT), createdAt`
 - `Order`: `id, orderNumber, clientName, email, phone, planType, status, amount, currency, paymentMethod, notes`
-- `Payment`: `id, orderId, method, transactionRef, amount, status`
+- `Payment`: `id, orderId, method (INSTAPAY | PAYPAL | TELDA), transactionRef, amount, status`
 - `TrainingPlan`: `id, title, description, level, days`
 - `CoachingEnrollment`: `id, userId, startDate, endDate, status, renewalStatus`
 - `CheckIn`: `id, enrollmentId, weekNumber, weight, photos, notes, coachFeedback, status`
+
+---
+
+## 💳 Supported Payment Methods
+- **InstaPay**: `amar.fitness@instapay`
+- **PayPal**: `amar.fitness@paypal.me`
+- **Telda**: `@amar.fitness`
 
 ---
 

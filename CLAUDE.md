@@ -101,11 +101,12 @@ amar-site/
 
 ---
 
-## 📱 External Integrations
+## 📱 External Integrations & Payments
 - **WhatsApp**: `https://wa.me/34610354255`
 - **Instagram**: `https://www.instagram.com/amar.el.7ewety/`
 - **InstaPay**: `amar.fitness@instapay`
-- **Vodafone Cash**: `01026048106`
+- **PayPal**: `amar.fitness@paypal.me`
+- **Telda**: `@amar.fitness`
 
 ---
 
