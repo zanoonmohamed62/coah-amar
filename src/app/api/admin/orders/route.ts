@@ -11,13 +11,27 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
   const method = searchParams.get("method");
+  const q = searchParams.get("q")?.toLowerCase();
 
   const orders = await db.order.findMany({
     where: {
       ...(status ? { status: status as OrderStatus } : {}),
       ...(method ? { paymentMethod: method as "INSTAPAY" | "PAYPAL" | "TELDA" } : {}),
+      ...(q
+        ? {
+            OR: [
+              { orderRef: { contains: q, mode: "insensitive" } },
+              { customerName: { contains: q, mode: "insensitive" } },
+              { customerEmail: { contains: q, mode: "insensitive" } },
+              { customerPhone: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
     },
-    include: { product: { select: { name: true, type: true } }, user: { select: { name: true, email: true } } },
+    include: {
+      product: { select: { id: true, name: true, type: true, price: true } },
+      user: { select: { id: true, name: true, email: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -29,45 +43,103 @@ export async function PUT(req: NextRequest) {
   if (error) return error;
 
   const { orderRef, action } = await req.json();
-  if (!orderRef || !["confirm", "reject"].includes(action)) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  if (!orderRef || !["confirm", "reject", "refund"].includes(action)) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
 
-  const order = await db.order.findUnique({ where: { orderRef }, include: { product: true } });
+  const order = await db.order.findUnique({
+    where: { orderRef },
+    include: { product: true, entitlement: true },
+  });
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
   if (action === "reject") {
-    await db.order.update({ where: { orderRef }, data: { status: OrderStatus.FAILED } });
+    await db.order.update({
+      where: { orderRef },
+      data: { status: OrderStatus.FAILED },
+    });
     return NextResponse.json({ success: true });
   }
 
-  if (order.status === OrderStatus.CONFIRMED) return NextResponse.json({ success: true, note: "Already confirmed" });
+  if (action === "refund") {
+    await db.$transaction(async (tx: any) => {
+      await tx.order.update({
+        where: { orderRef },
+        data: { status: OrderStatus.REFUNDED },
+      });
+      if (order.entitlement) {
+        await tx.entitlement.update({
+          where: { id: order.entitlement.id },
+          data: { status: EntitlementStatus.REVOKED },
+        });
+      }
+    });
+    return NextResponse.json({ success: true });
+  }
+
+  if (order.status === OrderStatus.CONFIRMED) {
+    return NextResponse.json({ success: true, note: "Already confirmed" });
+  }
 
   let tempPassword: string | null = null;
 
   await db.$transaction(async (tx: any) => {
-    await tx.order.update({ where: { orderRef }, data: { status: OrderStatus.CONFIRMED, confirmedAt: new Date() } });
+    await tx.order.update({
+      where: { orderRef },
+      data: { status: OrderStatus.CONFIRMED, confirmedAt: new Date() },
+    });
 
     let user = await tx.user.findUnique({ where: { email: order.customerEmail } });
     if (!user) {
       tempPassword = Math.random().toString(36).slice(-8) + "!A1";
-      user = await tx.user.create({ data: { email: order.customerEmail, passwordHash: await bcrypt.hash(tempPassword, 12), name: order.customerName, phone: order.customerPhone, role: Role.CUSTOMER } });
+      user = await tx.user.create({
+        data: {
+          email: order.customerEmail,
+          passwordHash: await bcrypt.hash(tempPassword, 12),
+          name: order.customerName,
+          phone: order.customerPhone,
+          role: Role.CUSTOMER,
+        },
+      });
       await tx.order.update({ where: { orderRef }, data: { userId: user.id } });
     } else if (!user.passwordHash) {
       tempPassword = Math.random().toString(36).slice(-8) + "!A1";
-      await tx.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(tempPassword, 12) } });
+      await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash: await bcrypt.hash(tempPassword, 12) },
+      });
     }
 
     const isCoaching = order.product.type === ProductType.PERSONAL_COACHING;
     const expiresAt = isCoaching ? new Date(Date.now() + 90 * 86400000) : null;
-    const existing = await tx.entitlement.findFirst({ where: { userId: user.id, productId: order.productId } });
+    const existing = await tx.entitlement.findFirst({
+      where: { userId: user.id, productId: order.productId },
+    });
     if (!existing) {
-      await tx.entitlement.create({ data: { userId: user.id, productId: order.productId, orderId: order.id, status: EntitlementStatus.ACTIVE, startDate: new Date(), expiresAt } });
+      await tx.entitlement.create({
+        data: {
+          userId: user.id,
+          productId: order.productId,
+          orderId: order.id,
+          status: EntitlementStatus.ACTIVE,
+          startDate: new Date(),
+          expiresAt,
+        },
+      });
     }
   });
 
   if (tempPassword) {
     try {
       const { sendAccessGrantedEmail } = await import("@/lib/email");
-      await sendAccessGrantedEmail({ to: order.customerEmail, name: order.customerName, email: order.customerEmail, tempPassword, productName: order.product.name, isCoaching: order.product.type === ProductType.PERSONAL_COACHING });
+      await sendAccessGrantedEmail({
+        to: order.customerEmail,
+        name: order.customerName,
+        email: order.customerEmail,
+        tempPassword,
+        productName: order.product.name,
+        isCoaching: order.product.type === ProductType.PERSONAL_COACHING,
+      });
     } catch {}
   }
 

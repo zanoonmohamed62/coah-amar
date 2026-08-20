@@ -1,76 +1,475 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, ShoppingBag, Dumbbell, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
+import {
+  Users,
+  ShoppingBag,
+  Dumbbell,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  ArrowUpRight,
+  CreditCard,
+  Plus,
+  AlertCircle,
+  Sparkles,
+  ExternalLink,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 
-type Stats = { totalCustomers: number; activeEntitlements: number; pendingOrders: number; monthlyRevenue: number; recentOrders: { id: string; orderRef: string; status: string; customerName: string; confirmedAt: string | null; product: { name: string } }[]; products: { id: string; name: string; type: string; price: number }[] };
+type RecentOrder = {
+  id: string;
+  orderRef: string;
+  status: string;
+  customerName: string;
+  customerEmail: string;
+  paymentMethod: string;
+  amount: number;
+  confirmedAt: string | null;
+  createdAt: string;
+  product: { name: string; type: string };
+};
 
-const statusColors: Record<string, string> = { CONFIRMED: "text-emerald-400", PENDING: "text-yellow-400", AWAITING_CONFIRMATION: "text-yellow-400", FAILED: "text-red-400" };
+type Product = {
+  id: string;
+  name: string;
+  type: string;
+  price: number;
+  currency: string;
+};
+
+type Stats = {
+  totalCustomers: number;
+  activeEntitlements: number;
+  pendingOrders: number;
+  monthlyRevenue: number;
+  monthlyOrdersCount: number;
+  totalRevenue: number;
+  totalOrdersCount: number;
+  paymentMethods: {
+    instapay: number;
+    paypal: number;
+    telda: number;
+  };
+  recentOrders: RecentOrder[];
+  products: Product[];
+};
+
+const statusBadges: Record<string, { label: string; className: string }> = {
+  CONFIRMED: { label: "Confirmed", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  AWAITING_CONFIRMATION: { label: "Pending Approval", className: "bg-amber-500/15 text-amber-400 border-amber-500/30 animate-pulse" },
+  PENDING: { label: "Initiated", className: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
+  FAILED: { label: "Failed", className: "bg-red-500/15 text-red-400 border-red-500/30" },
+  REFUNDED: { label: "Refunded", className: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30" },
+};
 
 export default function AdminOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetch("/api/admin/stats").then(r => r.json()).then(setStats); }, []);
+  const loadData = () => {
+    fetch("/api/admin/stats")
+      .then((r) => r.json())
+      .then((d) => {
+        setStats(d);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  };
 
-  const cards = stats ? [
-    { label: "Total Customers", value: stats.totalCustomers, icon: Users, color: "text-blue-400" },
-    { label: "Active Entitlements", value: stats.activeEntitlements, icon: Dumbbell, color: "text-emerald-400" },
-    { label: "Pending Payments", value: stats.pendingOrders, icon: Clock, color: "text-yellow-400", href: "/admin/orders?status=AWAITING_CONFIRMATION" },
-    { label: "Revenue This Month", value: `${stats.monthlyRevenue.toLocaleString()} EGP`, icon: TrendingUp, color: "text-[var(--accent)]" },
-  ] : [];
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const totalPaymentCount =
+    (stats?.paymentMethods.instapay || 0) +
+    (stats?.paymentMethods.paypal || 0) +
+    (stats?.paymentMethods.telda || 0) || 1;
 
   return (
-    <div>
-      <h1 className="text-2xl font-extrabold text-[var(--text-primary)] mb-8">Overview</h1>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {!stats ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="glass border border-[var(--border)] rounded-sm h-24 animate-pulse" />) :
-          cards.map(({ label, value, icon: Icon, color, href }) => (
-            <div key={label} className={`glass border border-[var(--border)] rounded-sm p-5 ${href ? "hover:border-[var(--border-accent)] transition-colors cursor-pointer" : ""}`}
-              onClick={() => href && (window.location.href = href)}>
-              <Icon size={18} className={`${color} mb-3`} />
-              <p className="text-2xl font-extrabold text-[var(--text-primary)]">{value}</p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">{label}</p>
+    <div className="space-y-8">
+      {/* Pending Orders Banner */}
+      {stats && stats.pendingOrders > 0 && (
+        <div className="p-4 rounded-sm bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-sm bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <Clock size={18} />
             </div>
+            <div>
+              <p className="text-sm font-bold text-amber-300">
+                {stats.pendingOrders} order{stats.pendingOrders > 1 ? "s" : ""} awaiting payment verification
+              </p>
+              <p className="text-xs text-amber-400/80">
+                InstaPay & direct transfer payments requiring manual confirmation.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/admin/orders?status=AWAITING_CONFIRMATION"
+            className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs rounded-sm transition-colors flex items-center gap-1.5"
+          >
+            Review Now <ArrowUpRight size={14} />
+          </Link>
+        </div>
+      )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-32 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm animate-pulse" />
           ))
-        }
+        ) : (
+          <>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-[var(--accent)]/40 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Monthly Revenue
+                </span>
+                <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
+                  <TrendingUp size={16} />
+                </div>
+              </div>
+              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+                {stats?.monthlyRevenue.toLocaleString()}{" "}
+                <span className="text-sm font-bold text-[var(--accent)]">EGP</span>
+              </p>
+              <p className="text-xs text-[var(--text-muted)] mt-2 flex items-center gap-1">
+                <span className="text-emerald-400 font-semibold">{stats?.monthlyOrdersCount} sales</span> this month
+              </p>
+            </div>
+
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Active Athletes
+                </span>
+                <div className="w-8 h-8 rounded-sm bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                  <Dumbbell size={16} />
+                </div>
+              </div>
+              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+                {stats?.activeEntitlements}
+              </p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">
+                Enrolled in active training splits
+              </p>
+            </div>
+
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-blue-500/40 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Total Clients
+                </span>
+                <div className="w-8 h-8 rounded-sm bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                  <Users size={16} />
+                </div>
+              </div>
+              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+                {stats?.totalCustomers}
+              </p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">Registered athlete accounts</p>
+            </div>
+
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-purple-500/40 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  All-Time Sales
+                </span>
+                <div className="w-8 h-8 rounded-sm bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                  <ShoppingBag size={16} />
+                </div>
+              </div>
+              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+                {stats?.totalRevenue.toLocaleString()}{" "}
+                <span className="text-sm font-bold text-purple-400">EGP</span>
+              </p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">
+                {stats?.totalOrdersCount} confirmed transactions
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="grid grid-cols-5 gap-6">
-        {/* Recent Orders */}
-        <div className="col-span-3 glass border border-[var(--border)] rounded-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between">
-            <p className="text-sm font-bold text-[var(--text-primary)]">Recent Orders</p>
-            <Link href="/admin/orders" className="text-xs text-[var(--accent)] hover:underline">View all</Link>
+      {/* Mid Section: Quick Actions & Payment Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Action Station */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-6 flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-1 flex items-center gap-2">
+              <Sparkles size={15} className="text-[var(--accent)]" /> Quick Actions
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] mb-5">
+              Direct shortcuts for daily operational tasks
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href="/admin/orders"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
+              >
+                <ShoppingBag size={16} className="text-[var(--accent)] mb-2 group-hover:scale-110 transition-transform" />
+                <p className="text-xs font-bold text-[var(--text-primary)]">Manage Orders</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Approve & track</p>
+              </Link>
+
+              <Link
+                href="/admin/customers"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
+              >
+                <Users size={16} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
+                <p className="text-xs font-bold text-[var(--text-primary)]">Athletes List</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Directory & access</p>
+              </Link>
+
+              <Link
+                href="/admin/programs"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
+              >
+                <Dumbbell size={16} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
+                <p className="text-xs font-bold text-[var(--text-primary)]">Workout Builder</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Splits & exercises</p>
+              </Link>
+
+              <Link
+                href="/admin/settings"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-left group"
+              >
+                <CreditCard size={16} className="text-amber-400 mb-2 group-hover:scale-110 transition-transform" />
+                <p className="text-xs font-bold text-[var(--text-primary)]">Payment Config</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">InstaPay / PayPal</p>
+              </Link>
+            </div>
           </div>
-          {!stats ? <div className="p-5 animate-pulse h-40" /> :
-            stats.recentOrders.map(o => (
-              <div key={o.id} className="flex items-center gap-3 px-5 py-3 border-b border-[var(--border)] last:border-0 hover:bg-[var(--bg-elevated)] transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{o.customerName}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{o.product.name} · {o.orderRef}</p>
-                </div>
-                <span className={`text-xs font-bold ${statusColors[o.status] || "text-[var(--text-muted)]"}`}>{o.status.replace(/_/g, " ")}</span>
-              </div>
-            ))
-          }
+
+          <div className="pt-4 border-t border-[var(--border)] mt-4 flex items-center justify-between text-xs">
+            <span className="text-[var(--text-muted)]">Live Customer App:</span>
+            <Link href="/app" target="_blank" className="text-[var(--accent)] hover:underline flex items-center gap-1 font-semibold">
+              Open Portal <ExternalLink size={12} />
+            </Link>
+          </div>
         </div>
 
-        {/* Products */}
-        <div className="col-span-2 glass border border-[var(--border)] rounded-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between">
-            <p className="text-sm font-bold text-[var(--text-primary)]">Products</p>
-            <Link href="/admin/products" className="text-xs text-[var(--accent)] hover:underline">Manage</Link>
-          </div>
-          {!stats ? <div className="p-5 animate-pulse h-40" /> :
-            stats.products.map(p => (
-              <div key={p.id} className="px-5 py-3 border-b border-[var(--border)] last:border-0">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">{p.name}</p>
-                <p className="text-xs text-[var(--text-muted)]">{(p.price / 100).toFixed(0)} EGP</p>
+        {/* Payment Channels Breakdown */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-6">
+          <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-1 flex items-center gap-2">
+            <CreditCard size={15} className="text-[var(--accent)]" /> Payment Channels
+          </h3>
+          <p className="text-xs text-[var(--text-muted)] mb-5">
+            Confirmed transactions by payment gateway
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-xs font-semibold mb-1">
+                <span className="text-[var(--text-primary)] flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> InstaPay Transfer
+                </span>
+                <span className="text-[var(--text-muted)]">
+                  {stats?.paymentMethods.instapay || 0} orders (
+                  {Math.round(((stats?.paymentMethods.instapay || 0) / totalPaymentCount) * 100)}%)
+                </span>
               </div>
-            ))
-          }
+              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-emerald-400 h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${((stats?.paymentMethods.instapay || 0) / totalPaymentCount) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs font-semibold mb-1">
+                <span className="text-[var(--text-primary)] flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span> PayPal Gateway
+                </span>
+                <span className="text-[var(--text-muted)]">
+                  {stats?.paymentMethods.paypal || 0} orders (
+                  {Math.round(((stats?.paymentMethods.paypal || 0) / totalPaymentCount) * 100)}%)
+                </span>
+              </div>
+              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-blue-400 h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${((stats?.paymentMethods.paypal || 0) / totalPaymentCount) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs font-semibold mb-1">
+                <span className="text-[var(--text-primary)] flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span> Telda Direct
+                </span>
+                <span className="text-[var(--text-muted)]">
+                  {stats?.paymentMethods.telda || 0} orders (
+                  {Math.round(((stats?.paymentMethods.telda || 0) / totalPaymentCount) * 100)}%)
+                </span>
+              </div>
+              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-purple-400 h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${((stats?.paymentMethods.telda || 0) / totalPaymentCount) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm mt-5">
+            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+              💡 <span className="text-[var(--text-primary)] font-semibold">Tip:</span> InstaPay transactions require manual confirmation once the customer completes their transfer.
+            </p>
+          </div>
+        </div>
+
+        {/* Active Products */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
+                <ShoppingBag size={15} className="text-[var(--accent)]" /> Active Packages
+              </h3>
+              <Link href="/admin/products" className="text-xs text-[var(--accent)] hover:underline font-semibold">
+                Manage
+              </Link>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mb-4">
+              Published offerings on the checkout page
+            </p>
+
+            <div className="space-y-3">
+              {stats?.products.map((p) => (
+                <div
+                  key={p.id}
+                  className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm flex items-center justify-between hover:border-[var(--border-accent)] transition-colors"
+                >
+                  <div>
+                    <p className="text-xs font-bold text-[var(--text-primary)]">{p.name}</p>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                      {p.type === "TRAINING_PLAN" ? "Training Split" : "Coaching Cohort"}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-black text-[var(--accent)]">
+                      {(p.price / 100).toLocaleString()} {p.currency}
+                    </p>
+                    <span className="text-[10px] text-emerald-400 font-semibold">● Active</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Link
+            href="/admin/products"
+            className="w-full mt-4 py-2 border border-dashed border-[var(--border)] hover:border-[var(--border-accent)] rounded-sm text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <Plus size={13} /> Add New Plan
+          </Link>
+        </div>
+      </div>
+
+      {/* Recent Orders Table */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-sm">
+        <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">
+              Recent Order Operations
+            </h3>
+            <p className="text-xs text-[var(--text-muted)]">Live inbound transaction flow</p>
+          </div>
+          <Link
+            href="/admin/orders"
+            className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
+          >
+            View All Orders <ChevronRight size={13} />
+          </Link>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[var(--bg-base)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">
+              <tr>
+                <th className="px-6 py-3">Order Ref</th>
+                <th className="px-6 py-3">Athlete</th>
+                <th className="px-6 py-3">Package</th>
+                <th className="px-6 py-3">Payment</th>
+                <th className="px-6 py-3">Amount</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3 text-right">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i}>
+                    <td colSpan={7} className="px-6 py-4">
+                      <div className="h-4 bg-[var(--bg-elevated)] rounded animate-pulse" />
+                    </td>
+                  </tr>
+                ))
+              ) : stats?.recentOrders && stats.recentOrders.length > 0 ? (
+                stats.recentOrders.map((order) => {
+                  const badge = statusBadges[order.status] || {
+                    label: order.status,
+                    className: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+                  };
+                  return (
+                    <tr
+                      key={order.id}
+                      className="hover:bg-[var(--bg-elevated)] transition-colors group"
+                    >
+                      <td className="px-6 py-3.5 font-mono font-bold text-[var(--text-primary)]">
+                        {order.orderRef}
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <p className="font-bold text-[var(--text-primary)]">{order.customerName}</p>
+                        <p className="text-[11px] text-[var(--text-muted)]">{order.customerEmail}</p>
+                      </td>
+                      <td className="px-6 py-3.5 text-[var(--text-secondary)] font-medium">
+                        {order.product.name}
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span className="font-semibold text-[var(--text-primary)]">
+                          {order.paymentMethod}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 font-bold text-[var(--text-primary)]">
+                        {(order.amount / 100).toLocaleString()} EGP
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge.className}`}
+                        >
+                          {badge.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 text-right text-[var(--text-muted)]">
+                        {new Date(order.createdAt).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-[var(--text-muted)]">
+                    No orders recorded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

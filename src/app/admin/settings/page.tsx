@@ -1,36 +1,96 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Save, Phone, DollarSign, Palette, Globe, RefreshCw } from "lucide-react";
+import {
+  Save,
+  Phone,
+  DollarSign,
+  Palette,
+  Globe,
+  RefreshCw,
+  CreditCard,
+  MessageSquare,
+  CheckCircle2,
+  AlertCircle,
+  Share2,
+} from "lucide-react";
 
 type Setting = { key: string; value: string };
 
 const SETTING_SECTIONS = [
   {
-    label: "Contact & WhatsApp",
-    icon: Phone,
+    label: "Payment Gateways & Direct Transfer",
+    icon: CreditCard,
+    description: "Account details shown to customers during checkout",
     items: [
-      { key: "whatsapp_number", label: "WhatsApp Number", hint: "+34610354255" },
-      { key: "whatsapp_message_en", label: "WA Pre-fill Message (EN)", hint: "Hi Coach, I want to join..." },
-      { key: "whatsapp_message_ar", label: "WA Pre-fill Message (AR)", hint: "مرحباً كوتش..." },
+      {
+        key: "instapay_handle",
+        label: "InstaPay Handle / Address",
+        hint: "e.g. amar.fitness@instapay",
+        defaultValue: "amar.fitness@instapay",
+      },
+      {
+        key: "paypal_link",
+        label: "PayPal Payment Link",
+        hint: "e.g. https://paypal.me/amarfitness",
+        defaultValue: "https://paypal.me/amarfitness",
+      },
+      {
+        key: "telda_handle",
+        label: "Telda Username",
+        hint: "e.g. @amar.fitness",
+        defaultValue: "@amar.fitness",
+      },
     ],
   },
   {
-    label: "Pricing & Currency",
-    icon: DollarSign,
+    label: "WhatsApp & Customer Support",
+    icon: MessageSquare,
+    description: "Automated pre-filled messages and direct coaching contact",
     items: [
-      { key: "currency", label: "Currency Symbol", hint: "EGP / $" },
-      { key: "training_plan_price", label: "Training Plan Price (EGP)", hint: "399" },
-      { key: "coaching_price", label: "Personal Coaching Price (EGP)", hint: "1399" },
-      { key: "coaching_renewal_price", label: "Renewal Price (EGP)", hint: "999" },
+      {
+        key: "whatsapp_number",
+        label: "WhatsApp Phone Number",
+        hint: "e.g. +34610354255",
+        defaultValue: "+34610354255",
+      },
+      {
+        key: "whatsapp_message_en",
+        label: "WhatsApp Default Text (English)",
+        hint: "Hi Coach Amar, I want to inquire about...",
+        defaultValue: "Hi Coach Amar, I am interested in joining your program.",
+      },
+      {
+        key: "whatsapp_message_ar",
+        label: "WhatsApp Default Text (Arabic)",
+        hint: "مرحباً كوتش عمار، أود الاستفسار عن...",
+        defaultValue: "مرحباً كوتش عمار، أود الاستفسار عن برامج التدريب والمتابعة.",
+      },
+      {
+        key: "support_email",
+        label: "Support Email",
+        hint: "support@amarfitness.com",
+        defaultValue: "support@amarfitness.com",
+      },
     ],
   },
   {
-    label: "Platform Identity",
-    icon: Palette,
+    label: "Brand & Socials",
+    icon: Share2,
+    description: "Public identity and social media channels",
     items: [
-      { key: "site_name", label: "Brand Name", hint: "Coach Amar" },
-      { key: "support_email", label: "Support Email", hint: "support@coachair.com" },
+      {
+        key: "site_name",
+        label: "Brand / Coach Name",
+        hint: "THE AMMAR",
+        defaultValue: "THE AMMAR",
+      },
+      {
+        key: "instagram_url",
+        label: "Instagram Profile URL",
+        hint: "https://instagram.com/amar.fitness",
+        defaultValue: "https://instagram.com/amar.fitness",
+      },
     ],
   },
 ];
@@ -38,7 +98,7 @@ const SETTING_SECTIONS = [
 export default function AdminSettingsPage() {
   const [data, setData] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<string | null>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   const fetchSettings = useCallback(async () => {
@@ -55,74 +115,117 @@ export default function AdminSettingsPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchSettings(); }, [fetchSettings]);
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
-  const save = async (key: string, value: string) => {
-    setSaving(key);
-    const res = await fetch("/api/admin/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, value }),
-    });
-    setSaving(null);
-    setMsg({ text: res.ok ? "Saved ✓" : "Error saving", ok: res.ok });
-    setTimeout(() => setMsg(null), 2000);
+  const saveSetting = async (key: string, value: string) => {
+    setSavingKey(key);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value }),
+      });
+      setMsg({ text: res.ok ? "Saved successfully ✓" : "Failed to save", ok: res.ok });
+    } catch {
+      setMsg({ text: "Error saving setting", ok: false });
+    }
+    setSavingKey(null);
+    setTimeout(() => setMsg(null), 2500);
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-8 max-w-4xl">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">Settings</h1>
-          <p className="text-[var(--text-muted)] text-sm">Platform parameters, contact numbers, and pricing</p>
+          <h2 className="text-xl font-extrabold text-[var(--text-primary)]">Platform Parameters & Payment Config</h2>
+          <p className="text-xs text-[var(--text-muted)]">
+            Manage InstaPay, PayPal, Telda credentials, WhatsApp numbers, and platform defaults
+          </p>
         </div>
+
         <div className="flex items-center gap-3">
-          {msg && <span className={`text-sm font-semibold ${msg.ok ? "text-emerald-400" : "text-red-400"}`}>{msg.text}</span>}
-          <button onClick={fetchSettings} className="px-3 py-1.5 border border-[var(--border)] rounded-sm text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-1.5">
+          {msg && (
+            <span
+              className={`text-xs font-bold px-2.5 py-1 rounded-sm border ${
+                msg.ok
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : "bg-red-500/10 border-red-500/30 text-red-400"
+              }`}
+            >
+              {msg.text}
+            </span>
+          )}
+          <button
+            onClick={fetchSettings}
+            className="px-3 py-1.5 border border-[var(--border)] bg-[var(--bg-card)] rounded-sm text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-1.5 transition-colors"
+          >
             <RefreshCw size={13} /> Refresh
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => <div key={i} className="glass border border-[var(--border)] rounded-sm h-36 animate-pulse" />)}
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-44 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm animate-pulse" />
+          ))}
         </div>
       ) : (
         <div className="space-y-6">
-          {SETTING_SECTIONS.map(({ label, icon: Icon, items }) => (
-            <div key={label} className="glass border border-[var(--border)] rounded-sm overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)]">
-                <div className="w-7 h-7 bg-[var(--accent-glow)] border border-[var(--border-accent)] rounded-sm flex items-center justify-center">
-                  <Icon size={14} className="text-[var(--accent)]" />
+          {SETTING_SECTIONS.map(({ label, icon: Icon, description, items }) => (
+            <div
+              key={label}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden"
+            >
+              <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)]">
+                <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
+                  <Icon size={16} />
                 </div>
-                <h2 className="text-sm font-bold text-[var(--text-primary)]">{label}</h2>
+                <div>
+                  <h3 className="text-sm font-extrabold text-[var(--text-primary)]">{label}</h3>
+                  <p className="text-[11px] text-[var(--text-muted)]">{description}</p>
+                </div>
               </div>
 
-              <div className="p-5 space-y-4">
-                {items.map(({ key, label: itemLabel, hint }) => {
-                  const isSaving = saving === key;
-                  const val = data[key] ?? "";
+              <div className="p-6 space-y-4">
+                {items.map(({ key, label: fieldLabel, hint, defaultValue }) => {
+                  const currentValue = data[key] ?? defaultValue;
+                  const isSaving = savingKey === key;
 
                   return (
-                    <div key={key} className="flex items-end gap-3">
-                      <div className="flex-1">
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">{itemLabel}</label>
-                        <input
-                          type="text"
-                          value={val}
-                          onChange={(e) => setData((prev) => ({ ...prev, [key]: e.target.value }))}
-                          placeholder={hint}
-                          className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        />
+                    <div
+                      key={key}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 first:pt-0 border-t border-[var(--border)] first:border-0"
+                    >
+                      <div className="sm:w-1/3">
+                        <label className="text-xs font-bold text-[var(--text-primary)] block">
+                          {fieldLabel}
+                        </label>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono">{key}</span>
                       </div>
-                      <button
-                        onClick={() => save(key, data[key] ?? "")}
-                        disabled={isSaving}
-                        className="btn-primary py-2 px-4 text-xs flex items-center gap-1.5 flex-shrink-0 disabled:opacity-50"
-                      >
-                        <Save size={12} /> {isSaving ? "Saving…" : "Save"}
-                      </button>
+
+                      <div className="flex-1 flex items-center gap-2">
+                        <input
+                          value={currentValue}
+                          onChange={(e) =>
+                            setData((prev) => ({ ...prev, [key]: e.target.value }))
+                          }
+                          placeholder={hint}
+                          className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                        />
+
+                        <button
+                          onClick={() => saveSetting(key, currentValue)}
+                          disabled={isSaving}
+                          className="px-3.5 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-sm transition-colors flex items-center gap-1 shrink-0 disabled:opacity-50"
+                        >
+                          <Save size={13} />
+                          <span>{isSaving ? "Saving…" : "Save"}</span>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
