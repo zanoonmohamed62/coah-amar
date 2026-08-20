@@ -5,10 +5,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 export function CoachSection() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+  const get = useSiteContent();
 
   return (
     <section id="coach" className="section-padding px-6 border-t border-slate-800/80 bg-[#07090e] relative overflow-hidden">
@@ -23,12 +25,11 @@ export function CoachSection() {
         >
           {/* Main portrait */}
           <div className="relative aspect-[3/4] rounded-sm overflow-hidden border border-slate-800 shadow-2xl bg-[#0b0f19]">
-            <Image
-              src="/assets/coach-about-new.jpg"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={get("coach", "portraitImage", "/assets/coach-about-new.jpg")}
               alt="Coach Amar"
-              fill
-              className="object-cover object-center"
-              sizes="(max-width: 768px) 100vw, 550px"
+              className="object-cover object-center w-full h-full"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-60" />
           </div>
@@ -55,13 +56,13 @@ export function CoachSection() {
 
           <div className="space-y-1 my-4">
             <p className="text-xl font-bold text-white">
-              {t.coach.name}
+              {get("coach", "name", t.coach.name)}
             </p>
             <p className="text-xs text-slate-400 font-medium">
-              {t.coach.sub}
+              {get("coach", "sub", t.coach.sub)}
             </p>
             <a
-              href="https://www.instagram.com/amar.el.7ewety/"
+              href={get("coach", "igUrl", "https://www.instagram.com/amar.el.7ewety/")}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors mt-1 font-semibold"
@@ -74,11 +75,11 @@ export function CoachSection() {
           <div className="w-12 h-0.5 bg-blue-500/50 my-6" />
 
           <p className="text-slate-300 leading-relaxed mb-6 text-sm">
-            {t.coach.bio}
+            {get("coach", "bio", t.coach.bio)}
           </p>
 
           <ul className="space-y-3 mb-8">
-            {t.coach.points.map((pt, i) => (
+            {[get("coach", "point1", t.coach.points[0]), get("coach", "point2", t.coach.points[1]), get("coach", "point3", t.coach.points[2])].filter(Boolean).map((pt, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-slate-300">
                 <span className="text-blue-400 font-bold">•</span>
                 <span>{pt}</span>
@@ -88,11 +89,11 @@ export function CoachSection() {
 
           <div className="flex flex-wrap items-center gap-4">
             <Link href="/checkout?plan=coaching" className="btn-primary flex items-center gap-2 group py-3 px-6">
-              <span>{t.coach.btn}</span>
+              <span>{get("coach", "btn", t.coach.btn)}</span>
               <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
             <a
-              href="https://www.instagram.com/amar.el.7ewety/"
+              href={get("coach", "igUrl", "https://www.instagram.com/amar.el.7ewety/")}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary flex items-center gap-2 py-3 px-6"

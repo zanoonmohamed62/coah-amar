@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
   const [open, setOpen] = useState(false);
@@ -51,6 +52,16 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
 
 export function FAQSection() {
   const { t } = useLanguage();
+  const get = useSiteContent();
+
+  // Build FAQ items: use CMS first, fall back to translations array
+  const faqItems = [
+    { q: get("faq", "q1", t.faq.items[0]?.q || ""), a: get("faq", "a1", t.faq.items[0]?.a || "") },
+    { q: get("faq", "q2", t.faq.items[1]?.q || ""), a: get("faq", "a2", t.faq.items[1]?.a || "") },
+    { q: get("faq", "q3", t.faq.items[2]?.q || ""), a: get("faq", "a3", t.faq.items[2]?.a || "") },
+    { q: get("faq", "q4", t.faq.items[3]?.q || ""), a: get("faq", "a4", t.faq.items[3]?.a || "") },
+    { q: get("faq", "q5", t.faq.items[4]?.q || ""), a: get("faq", "a5", t.faq.items[4]?.a || "") },
+  ].filter((item) => item.q);
 
   return (
     <section id="faq" className="section-padding px-6 border-t border-[var(--border)]">
@@ -74,7 +85,7 @@ export function FAQSection() {
         </motion.div>
 
         <div>
-          {t.faq.items.map((faq, i) => (
+          {faqItems.map((faq, i) => (
             <FAQItem key={i} q={faq.q} a={faq.a} index={i} />
           ))}
         </div>
