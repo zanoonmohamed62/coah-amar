@@ -32,6 +32,7 @@ export function HeroSection() {
           >
             <span className="block">{t.hero.titleLine1}</span>
             <span className="text-blue-500 block">{t.hero.titleLine2}</span>
+            {t.hero.titleLine3 && <span className="block text-slate-200">{t.hero.titleLine3}</span>}
           </motion.h1>
 
           <motion.p
@@ -53,9 +54,14 @@ export function HeroSection() {
               <span>{t.hero.startBtn}</span>
               <ArrowIcon size={15} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
-            <Link href="#coach" className="btn-secondary flex items-center justify-center py-3.5 px-6">
+            <a
+              href="https://wa.me/34610354255"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary flex items-center justify-center py-3.5 px-6 hover:border-blue-500/40 transition-colors"
+            >
               {t.hero.meetBtn}
-            </Link>
+            </a>
           </motion.div>
 
           {/* Social proof strip */}
@@ -98,7 +104,7 @@ export function HeroSection() {
           >
             <div className="relative rounded-sm overflow-hidden border border-slate-800 bg-[#0d121c] aspect-[3/4] w-full shadow-2xl">
               <Image
-                src="/assets/coach-header.png"
+                src="/assets/coach-header-new.jpg"
                 alt="Coach Amar"
                 fill
                 priority

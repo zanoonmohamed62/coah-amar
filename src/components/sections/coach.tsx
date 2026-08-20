@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
@@ -20,19 +21,15 @@ export function CoachSection() {
           transition={{ duration: 0.8 }}
           className="relative"
         >
-          {/* Main portrait / video */}
+          {/* Main portrait */}
           <div className="relative aspect-[3/4] rounded-sm overflow-hidden border border-slate-800 shadow-2xl bg-[#0b0f19]">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              poster="/assets/coach-portrait.png"
-              className="absolute inset-0 w-full h-full object-cover transform-gpu"
-            >
-              <source src="/assets/coach-video-hero.mp4" type="video/mp4" />
-            </video>
+            <Image
+              src="/assets/coach-about-new.jpg"
+              alt="Coach Amar"
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 768px) 100vw, 550px"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-60" />
           </div>
 
