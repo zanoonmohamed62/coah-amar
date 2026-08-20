@@ -50,17 +50,29 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-12"
+            className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3.5 mb-12"
           >
             <Link href="#plans" className="btn-primary flex items-center justify-center gap-2 group py-3.5 px-6">
               <span>{get("hero", "startBtn", t.hero.startBtn)}</span>
               <ArrowIcon size={15} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
+
+            <Link
+              href="/app"
+              className="px-5 py-3.5 bg-blue-600/15 border border-blue-500/40 text-blue-300 hover:text-white hover:bg-blue-600/25 hover:border-blue-400 rounded-sm transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-lg shadow-blue-600/10 group"
+            >
+              <div className="w-5 h-5 rounded-md overflow-hidden flex-shrink-0 border border-blue-400/40 shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/icon-192.png" alt="X" className="w-full h-full object-cover" />
+              </div>
+              <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "تطبيق المتدربين X App" : "Customer X App"))}</span>
+            </Link>
+
             <a
               href="https://wa.me/34610354255"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-secondary flex items-center justify-center py-3.5 px-6 hover:border-blue-500/40 transition-colors"
+              className="btn-secondary flex items-center justify-center py-3.5 px-5 hover:border-blue-500/40 transition-colors text-sm"
             >
               {get("hero", "meetBtn", t.hero.meetBtn)}
             </a>

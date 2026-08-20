@@ -80,15 +80,15 @@ export function CoachingDetailSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="relative rounded-sm overflow-hidden border border-[var(--border-accent)] aspect-video shadow-2xl"
+            className="relative rounded-sm overflow-hidden border border-blue-500/30 bg-[#07090e] aspect-video shadow-2xl group"
           >
             <Image
-              src="/assets/coaching-dashboard.png"
-              alt="Coaching Dashboard"
+              src="/assets/coaching-plan-real.png"
+              alt="Coaching & Split Workflow"
               fill
-              className="object-cover"
+              className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-primary)] via-transparent to-transparent opacity-60" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07090e]/70 via-transparent to-transparent pointer-events-none" />
 
             {/* Stats overlay */}
             <div className={`absolute bottom-6 ${isArabic ? "right-6" : "left-6"} flex gap-4`}>

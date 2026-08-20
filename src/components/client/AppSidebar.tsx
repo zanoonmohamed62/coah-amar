@@ -90,14 +90,13 @@ export function AppSidebar() {
         })}
 
         <div className="pt-3 border-t border-[var(--border)] mt-3">
-          <a
-            href="/assets/AMARX-SPLIT.pdf"
-            download="AMARX-SPLIT.pdf"
+          <Link
+            href="/app/my-split"
             className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors border border-[var(--accent)]/20"
           >
-            <Download size={14} />
-            <span>{isArabic ? "تحميل ملف الجدول PDF" : "Download Split PDF"}</span>
-          </a>
+            <FileText size={14} />
+            <span>{isArabic ? "عرض وتصفح الجدول (PDF)" : "View Training Split"}</span>
+          </Link>
         </div>
       </nav>
 

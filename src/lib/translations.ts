@@ -20,6 +20,7 @@ export interface TranslationSchema {
     description: string;
     startBtn: string;
     meetBtn: string;
+    appBtn?: string;
     stat1Value: string;
     stat1Label: string;
     stat2Value: string;
@@ -246,6 +247,7 @@ export const translations: Record<Language, TranslationSchema> = {
       description: "Not a generic PDF. A personalized coaching system built around your body, schedule, and goals.",
       startBtn: "Start Your Transformation",
       meetBtn: "Let's Talk",
+      appBtn: "Open Customer App",
       stat1Value: "100+",
       stat1Label: "Clients Coached",
       stat2Value: "95%",
@@ -639,6 +641,7 @@ export const translations: Record<Language, TranslationSchema> = {
       description: "مش مجرد ملف PDF عادي. نظام تدريب وتغذية متكامل مصمم خصيصاً لجسمك، جدول يومك، وأهدافك الرياضية.",
       startBtn: "ابدأ رحلة تحولك الآن",
       meetBtn: "Let's Talk",
+      appBtn: "تطبيق المتدربين X App",
       stat1Value: "+100",
       stat1Label: "متدرب حققوا أهدافهم",
       stat2Value: "95%",

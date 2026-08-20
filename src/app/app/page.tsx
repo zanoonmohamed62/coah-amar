@@ -84,18 +84,17 @@ export default function AppHome() {
               className="py-3 px-5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg text-center"
             >
               <FileText size={16} />
-              <span>{isArabic ? "عرض الجدول التدريبي (PDF)" : "View Training Split"}</span>
+              <span>{isArabic ? "فتح وتصفح الجدول (PDF)" : "View Training Split"}</span>
               <ArrowIcon size={14} />
             </Link>
 
-            <a
-              href={PDF_PATH}
-              download="AMARX-SPLIT.pdf"
+            <Link
+              href="/app/my-split"
               className="py-2.5 px-4 bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--border-accent)] text-[var(--text-primary)] hover:text-[var(--accent)] font-bold text-xs rounded-sm transition-colors flex items-center justify-center gap-2 text-center"
             >
-              <Download size={14} />
-              <span>{isArabic ? "تحميل ملف الـ PDF" : "Download PDF File"}</span>
-            </a>
+              <Sparkles size={14} />
+              <span>{isArabic ? "تفعيل وضع الأوفلاين" : "Enable Offline Mode"}</span>
+            </Link>
           </div>
         </div>
       </div>

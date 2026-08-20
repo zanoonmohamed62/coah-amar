@@ -74,14 +74,14 @@ export function TrainingPlanSection() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="relative"
           >
-            <div className="relative rounded-sm overflow-hidden border border-[var(--border-accent)] aspect-square shadow-2xl">
+            <div className="relative rounded-sm overflow-hidden border border-blue-500/30 bg-[#07090e] aspect-[4/3] shadow-2xl group">
               <Image
-                src="/assets/training-dashboard.png"
-                alt="Training Plan Dashboard"
+                src="/assets/training-plan-real.png"
+                alt="AMAR X SPLIT Real Training Guide"
                 fill
-                className="object-cover"
+                className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] via-transparent to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#07090e]/70 via-transparent to-transparent pointer-events-none" />
             </div>
 
             {/* Price tag overlay */}
