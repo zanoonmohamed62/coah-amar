@@ -88,13 +88,7 @@ export default function AppHome() {
               <ArrowIcon size={14} />
             </Link>
 
-            <Link
-              href="/app/my-split"
-              className="py-2.5 px-4 bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--border-accent)] text-[var(--text-primary)] hover:text-[var(--accent)] font-bold text-xs rounded-sm transition-colors flex items-center justify-center gap-2 text-center"
-            >
-              <Sparkles size={14} />
-              <span>{isArabic ? "تفعيل وضع الأوفلاين" : "Enable Offline Mode"}</span>
-            </Link>
+
           </div>
         </div>
       </div>

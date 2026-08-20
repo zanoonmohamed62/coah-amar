@@ -56,19 +56,7 @@ export default function MySplitPage() {
 
       {/* Native PDF Embed */}
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-2xl h-[80vh] min-h-[600px] flex flex-col">
-        {/* Viewer header */}
-        <div className="px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <FileText size={15} className="text-[var(--accent)]" />
-            <span className="text-xs font-black text-[var(--text-primary)] tracking-wide">AMARX SPLIT</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full border font-semibold text-emerald-400 bg-emerald-500/10 border-emerald-500/20">
-              {isArabic ? "● مباشر" : "● Live"}
-            </span>
-          </div>
-          <span className="text-[10px] text-[var(--text-muted)]">
-            {isArabic ? "العرض الأصلي" : "Native Viewer"}
-          </span>
-        </div>
+
 
         {/* Embedded PDF */}
         <iframe
