@@ -83,12 +83,12 @@ export function CoachingDetailSection() {
             className="relative rounded-sm overflow-hidden border border-blue-500/30 bg-[#07090e] aspect-video shadow-2xl group"
           >
             <Image
-              src="/assets/coaching-plan-real.png"
-              alt="Coaching & Split Workflow"
+              src="/assets/coaching-system-marketing.png"
+              alt="Living Coaching Ecosystem"
               fill
               className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#07090e]/70 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07090e]/60 via-transparent to-transparent pointer-events-none" />
 
             {/* Stats overlay */}
             <div className={`absolute bottom-6 ${isArabic ? "right-6" : "left-6"} flex gap-4`}>
