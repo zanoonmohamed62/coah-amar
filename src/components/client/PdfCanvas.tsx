@@ -77,19 +77,31 @@ export default function PdfCanvas({ isArabic }: Props) {
     const handleMouseEnter = () => setIsBlurred(false);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Block PrintScreen, Ctrl+P, Ctrl+S, CMD+Shift+3, CMD+Shift+4, CMD+Shift+S
-      if (e.key === "PrintScreen" || 
-         (e.ctrlKey && (e.key === "p" || e.key === "s" || e.key === "c")) ||
-         (e.metaKey && e.shiftKey && (e.key === "3" || e.key === "4" || e.key === "5" || e.key === "s"))) {
+      // Block PrintScreen, F10, Ctrl+P, Ctrl+S, CMD+Shift+3, CMD+Shift+4, CMD+Shift+S
+      if (
+        e.key === "PrintScreen" ||
+        e.key === "F10" ||
+        (e.ctrlKey && (e.key === "p" || e.key === "s" || e.key === "c")) ||
+        (e.metaKey && e.shiftKey && (e.key === "3" || e.key === "4" || e.key === "5" || e.key === "s"))
+      ) {
         e.preventDefault();
+        
+        // Synchronous DOM Hiding (Faster than OS screen buffer capture)
+        if (viewerRef.current) {
+          viewerRef.current.style.opacity = "0";
+          viewerRef.current.style.visibility = "hidden";
+        }
+        
         setIsBlurred(true);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "PrintScreen") {
-        navigator.clipboard.writeText("").catch(() => {});
-        setTimeout(() => setIsBlurred(false), 2000);
+        
+        // Restore after 2 seconds
+        setTimeout(() => {
+          if (viewerRef.current) {
+            viewerRef.current.style.opacity = "1";
+            viewerRef.current.style.visibility = "visible";
+          }
+          setIsBlurred(false);
+        }, 2000);
       }
     };
 
@@ -99,7 +111,6 @@ export default function PdfCanvas({ isArabic }: Props) {
     document.addEventListener("mouseleave", handleMouseLeave);
     document.addEventListener("mouseenter", handleMouseEnter);
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
       window.removeEventListener("blur", handleBlur);
@@ -108,7 +119,6 @@ export default function PdfCanvas({ isArabic }: Props) {
       document.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("mouseenter", handleMouseEnter);
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
 
