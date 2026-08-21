@@ -11,7 +11,8 @@ const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 const SHELL_URLS = [
   "/app",
   "/app/my-split",
-  "/api/split"
+  "/api/split",
+  "/pdfjs/pdf.worker.min.js"
 ];
 
 // ── Install: pre-cache app shell ──────────────────────

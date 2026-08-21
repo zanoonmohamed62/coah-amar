@@ -35,7 +35,7 @@ export default function AppHome() {
         >
           <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:250%_250%,100%_100%] animate-[shimmer_3s_infinite] pointer-events-none" />
           <FileText size={32} className="drop-shadow-lg group-hover:scale-110 transition-transform duration-300" />
-          <span className="tracking-wide drop-shadow-md">{isArabic ? "فتح جدول التمرين (PDF)" : "Open My Split (PDF)"}</span>
+          <span className="tracking-wide drop-shadow-md">{isArabic ? "فتح جدول التمرين" : "Open My Split"}</span>
         </Link>
         
         {/* Premium WhatsApp Button */}
