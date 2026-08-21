@@ -15,7 +15,6 @@ function openIDB(): Promise<IDBDatabase> {
     req.onerror   = () => reject(req.error);
   });
 }
-
 async function getCached(): Promise<ArrayBuffer | null> {
   try {
     const db = await openIDB();
@@ -23,27 +22,19 @@ async function getCached(): Promise<ArrayBuffer | null> {
       const tx = db.transaction(IDB_STORE, "readonly");
       const r  = tx.objectStore(IDB_STORE).get(IDB_KEY);
       r.onsuccess = () => {
-        const result = r.result;
-        // validate buffer is not detached and has bytes
-        if (result instanceof ArrayBuffer && result.byteLength > 0) {
-          res(result);
-        } else {
-          res(null);
-        }
+        const v = r.result;
+        res(v instanceof ArrayBuffer && v.byteLength > 0 ? v : null);
       };
       r.onerror = () => rej(r.error);
     });
   } catch { return null; }
 }
-
 async function saveToCache(buf: ArrayBuffer): Promise<void> {
   try {
-    // Store a fresh copy so we keep our own reference
-    const copy = buf.slice(0);
     const db = await openIDB();
     await new Promise<void>((res, rej) => {
       const tx = db.transaction(IDB_STORE, "readwrite");
-      tx.objectStore(IDB_STORE).put(copy, IDB_KEY);
+      tx.objectStore(IDB_STORE).put(buf.slice(0), IDB_KEY);
       tx.oncomplete = () => res();
       tx.onerror    = () => rej(tx.error);
     });
@@ -58,12 +49,13 @@ export default function PdfCanvas({ isArabic }: Props) {
   const pdfRef     = useRef<any>(null);
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const [status,   setStatus]   = useState<"loading" | "ready" | "error">("loading");
+  const [errMsg,   setErrMsg]   = useState("");
   const [numPages, setNumPages] = useState(0);
 
   const renderAll = useCallback(async () => {
     const pdf = pdfRef.current;
     if (!pdf || !viewerRef.current) return;
-    const containerW = viewerRef.current.clientWidth - 32;
+    const containerW = Math.max(viewerRef.current.clientWidth - 32, 300);
     const dpr = window.devicePixelRatio || 2;
     for (let i = 0; i < pdf.numPages; i++) {
       const canvas = canvasRefs.current[i];
@@ -83,6 +75,7 @@ export default function PdfCanvas({ isArabic }: Props) {
 
   const loadAndRender = useCallback(async () => {
     setStatus("loading");
+    setErrMsg("");
     try {
       const pdfjsLib = await import("pdfjs-dist");
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
@@ -91,30 +84,35 @@ export default function PdfCanvas({ isArabic }: Props) {
 
       if (!buf) {
         const res = await fetch("/api/split", { cache: "no-store" });
-        if (!res.ok) throw new Error(`API ${res.status}`);
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
         buf = await res.arrayBuffer();
-        // Save BEFORE passing to pdfjs (pdfjs may transfer the buffer)
         await saveToCache(buf);
       }
 
-      // Always pass a copy so our cached version stays intact
       const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
       pdfRef.current = pdf;
       setNumPages(pdf.numPages);
       setStatus("ready");
     } catch (err) {
-      console.error("[PdfCanvas]", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[PdfCanvas]", msg);
+      setErrMsg(msg);
       setStatus("error");
     }
   }, []);
 
   useEffect(() => { loadAndRender(); }, [loadAndRender]);
-  useEffect(() => { if (status === "ready") setTimeout(renderAll, 60); }, [status, numPages, renderAll]);
   useEffect(() => {
-    const ro = new ResizeObserver(() => renderAll());
+    if (status === "ready" && numPages > 0) {
+      // Wait two frames to ensure canvas elements are mounted
+      requestAnimationFrame(() => requestAnimationFrame(() => renderAll()));
+    }
+  }, [status, numPages, renderAll]);
+  useEffect(() => {
+    const ro = new ResizeObserver(() => { if (status === "ready") renderAll(); });
     if (viewerRef.current) ro.observe(viewerRef.current);
     return () => ro.disconnect();
-  }, [renderAll]);
+  }, [renderAll, status]);
 
   return (
     <div
@@ -132,15 +130,15 @@ export default function PdfCanvas({ isArabic }: Props) {
         </div>
       )}
       {status === "error" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0d121c] z-10">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0d121c] z-10 px-6">
           <WifiOff size={36} className="text-red-400" />
           <div className="text-center">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               {isArabic ? "\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062c\u062f\u0648\u0644" : "Failed to load"}
             </p>
-            <p className="text-xs opacity-60 mt-1">
-              {isArabic ? "\u062a\u0623\u0643\u062f \u0645\u0646 \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0648\u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629" : "Check connection and retry"}
-            </p>
+            {errMsg && (
+              <p className="text-[10px] font-mono mt-2 text-red-400 break-all max-w-xs">{errMsg}</p>
+            )}
           </div>
           <button onClick={loadAndRender} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm">
             {isArabic ? "\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629" : "Retry"}
