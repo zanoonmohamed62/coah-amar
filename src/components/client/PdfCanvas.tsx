@@ -71,24 +71,27 @@ export default function PdfCanvas({ isArabic }: Props) {
 
   const loadAndRender = useCallback(async () => {
     setStatus("loading");
-    const pdfjsLib = await import("pdfjs-dist");
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-    let buf = await getCached();
-    if (!buf) {
-      try {
+    try {
+      const pdfjsLib = await import("pdfjs-dist");
+      // Use the worker file served from /public (same origin, no CORS issues)
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+
+      let buf = await getCached();
+      if (!buf) {
         const res = await fetch("/api/split", { cache: "no-store" });
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
         buf = await res.arrayBuffer();
         await saveToCache(buf);
-      } catch { setStatus("error"); return; }
-    }
-    try {
+      }
+
       const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
       pdfRef.current = pdf;
       setNumPages(pdf.numPages);
       setStatus("ready");
-    } catch { setStatus("error"); }
+    } catch (err) {
+      console.error("[PdfCanvas] load failed:", err);
+      setStatus("error");
+    }
   }, []);
 
   useEffect(() => { loadAndRender(); }, [loadAndRender]);
