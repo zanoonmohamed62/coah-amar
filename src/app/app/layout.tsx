@@ -1,28 +1,28 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { AppSidebar } from "@/components/client/AppSidebar";
 import { useLanguage } from "@/lib/language-context";
 import { PWAProvider } from "@/components/PWAProvider";
+import { Menu, X } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { isArabic, dir } = useLanguage();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // ── Anti-screenshot / anti-share hardening ──────────────────────────────
   useEffect(() => {
-    // Block keyboard shortcuts used for screenshots & saving
     const blockKeys = (e: KeyboardEvent) => {
       const key = e.key?.toLowerCase();
-      // Block: PrtSc, Ctrl+P (print), Ctrl+S (save), Win+Shift+S, Ctrl+Shift+S
       if (
         key === "printscreen" ||
         (e.ctrlKey && key === "p") ||
         (e.ctrlKey && key === "s") ||
         (e.metaKey && key === "s") ||
         (e.ctrlKey && e.shiftKey && key === "s") ||
-        (e.metaKey && e.shiftKey && key === "3") || // Mac CMD+Shift+3
-        (e.metaKey && e.shiftKey && key === "4") || // Mac CMD+Shift+4
-        (e.metaKey && e.shiftKey && key === "5")    // Mac CMD+Shift+5
+        (e.metaKey && e.shiftKey && key === "3") ||
+        (e.metaKey && e.shiftKey && key === "4") ||
+        (e.metaKey && e.shiftKey && key === "5")
       ) {
         e.preventDefault();
         e.stopPropagation();
@@ -30,7 +30,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       }
     };
 
-    // Block right-click context menu (prevents "Save image as")
     const blockContextMenu = (e: MouseEvent) => {
       e.preventDefault();
       return false;
@@ -47,15 +46,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {/* PWA: SW registration, install prompt, update notifications */}
       <PWAProvider />
 
-      {/*
-        Anti-screenshot CSS layer:
-        - user-select: none → prevents text selection & copy
-        - -webkit-touch-callout: none → disables iOS long-press share sheet
-        - pointer-events on the overlay prevent drag-to-save images
-      */}
       <style>{`
         .app-shell * {
           -webkit-touch-callout: none !important;
@@ -77,10 +69,32 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       <div
         dir={dir}
-        className={`app-shell min-h-screen flex bg-[var(--bg-base)] text-[var(--text-primary)] ${isArabic ? "font-cairo" : ""}`}
+        className={`app-shell min-h-screen flex flex-col md:flex-row bg-[var(--bg-base)] text-[var(--text-primary)] ${isArabic ? "font-cairo" : ""}`}
       >
-        <AppSidebar />
-        <main className={`flex-1 ${isArabic ? "mr-64" : "ml-64"} p-6 sm:p-8 max-w-5xl transition-all`}>
+        {/* Mobile Header */}
+        <header className="md:hidden flex items-center justify-between p-4 bg-[var(--bg-card)] border-b border-[var(--border)] z-50">
+          <div className="font-extrabold tracking-tight text-[var(--text-primary)]">
+            COACH <span className="text-[var(--accent)]">AMAR</span>
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 bg-[var(--bg-elevated)] rounded-sm text-[var(--text-primary)]"
+          >
+            {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </header>
+
+        {/* Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        <AppSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+        
+        <main className={`flex-1 p-4 md:p-8 w-full max-w-full md:max-w-[calc(100%-16rem)] ${isArabic ? "md:mr-64" : "md:ml-64"} transition-all mt-0`}>
           {children}
         </main>
       </div>

@@ -3,7 +3,7 @@
 //  Strategy: App shell cache-first, PDF network-first
 // ═══════════════════════════════════════════════════════
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const SHELL_CACHE = `amar-shell-${CACHE_VERSION}`;
 const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 
@@ -11,6 +11,7 @@ const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 const SHELL_URLS = [
   "/app",
   "/app/my-split",
+  "/api/split"
 ];
 
 // ── Install: pre-cache app shell ──────────────────────
@@ -40,7 +41,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   // App shell pages & static PDF — Cache-first with network fallback
-  if (url.pathname.startsWith("/app")) {
+  if (url.pathname.startsWith("/app") || url.pathname === "/api/split") {
     event.respondWith(handleShellFetch(event.request));
     return;
   }

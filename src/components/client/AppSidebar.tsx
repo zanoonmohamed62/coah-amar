@@ -12,14 +12,21 @@ import {
   ChevronRight,
   ChevronLeft,
   Globe,
-  Download,
+  RefreshCw,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useState } from "react";
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+export function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
   const pathname = usePathname();
-  const { lang, isArabic, toggleLang } = useLanguage();
+  const { isArabic, toggleLang } = useLanguage();
   const ArrowIcon = isArabic ? ChevronLeft : ChevronRight;
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const links = [
     {
@@ -42,11 +49,43 @@ export function AppSidebar() {
 
   const WA = process.env.NEXT_PUBLIC_COACH_WHATSAPP?.replace("+", "") || "34610354255";
 
+  const handleUpdate = async () => {
+    setIsUpdating(true);
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.update();
+      }
+    }
+    // Clear caches to force fresh fetch
+    if ("caches" in window) {
+      const cacheKeys = await caches.keys();
+      for (const key of cacheKeys) {
+        await caches.delete(key);
+      }
+    }
+    
+    // Clear IndexedDB for PDF
+    try {
+      const req = indexedDB.deleteDatabase("amar-split-cache");
+      await new Promise((resolve, reject) => {
+        req.onsuccess = resolve;
+        req.onerror = reject;
+      });
+    } catch {}
+
+    window.location.reload();
+  };
+
   return (
     <aside
-      className={`fixed top-0 ${
-        isArabic ? "right-0 border-l" : "left-0 border-r"
-      } h-full w-64 flex flex-col bg-[var(--bg-card)] border-[var(--border)] z-40 py-6`}
+      className={`fixed top-0 ${isArabic ? "right-0" : "left-0"} h-full w-64 flex flex-col bg-[var(--bg-card)] border-[var(--border)] z-50 py-6 transition-transform duration-300 md:translate-x-0 ${
+        isOpen
+          ? "translate-x-0"
+          : isArabic
+          ? "translate-x-full"
+          : "-translate-x-full"
+      } ${isArabic ? "border-l" : "border-r"}`}
     >
       {/* Brand */}
       <div className="px-5 mb-6 flex items-center justify-between">
@@ -69,13 +108,14 @@ export function AppSidebar() {
       </div>
 
       {/* Nav links */}
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
         {links.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
+              onClick={() => setIsOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all ${
                 active
                   ? "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 font-semibold"
@@ -92,6 +132,7 @@ export function AppSidebar() {
         <div className="pt-3 border-t border-[var(--border)] mt-3">
           <Link
             href="/app/my-split"
+            onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors border border-[var(--accent)]/20"
           >
             <FileText size={14} />
@@ -102,6 +143,15 @@ export function AppSidebar() {
 
       {/* Bottom WhatsApp & Sign out */}
       <div className="px-3 pt-4 border-t border-[var(--border)] space-y-1">
+        <button
+          onClick={handleUpdate}
+          disabled={isUpdating}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          <RefreshCw size={15} className={isUpdating ? "animate-spin" : ""} /> 
+          {isArabic ? (isUpdating ? "جاري التحديث..." : "تحديث التطبيق") : (isUpdating ? "Updating..." : "Check for Updates")}
+        </button>
+
         <a
           href={`https://wa.me/${WA}?text=${encodeURIComponent(
             isArabic ? "مرحباً كوتش عمار، لدي استفسار بخصوص جدول التمرين" : "Hi Coach Amar, I have a question about my training split"
