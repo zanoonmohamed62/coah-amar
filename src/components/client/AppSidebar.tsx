@@ -102,8 +102,11 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           </div>
         )}
         {isCollapsed && (
-          <div className="hidden md:flex font-extrabold text-sm text-[var(--text-primary)]">
-            <span className="text-[var(--accent)]">A</span>X
+          <div className="hidden md:flex flex-col items-center justify-center leading-none">
+            <div className="font-extrabold text-base text-[var(--text-primary)] leading-none">
+              <span className="text-[var(--accent)]">A</span>X
+            </div>
+            <span className="text-[7px] font-black tracking-widest text-white mt-1">SPLIT</span>
           </div>
         )}
 
