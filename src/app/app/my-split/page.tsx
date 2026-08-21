@@ -1,145 +1,32 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Maximize2, Minimize2, ChevronLeft, ChevronRight,
-  MessageCircle, Loader2, WifiOff, ShieldCheck,
+  MessageCircle, ShieldCheck, Loader2,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 
 const WA = process.env.NEXT_PUBLIC_COACH_WHATSAPP?.replace("+", "") || "34610354255";
 
-// ── IndexedDB helpers ─────────────────────────────────────────────────────────
-const IDB_DB    = "amar-split-cache";
-const IDB_STORE = "pdf-blobs";
-const IDB_KEY   = "amarx-split";
-
-function openIDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror   = () => reject(req.error);
-  });
-}
-async function getCached(): Promise<ArrayBuffer | null> {
-  try {
-    const db = await openIDB();
-    return new Promise((res, rej) => {
-      const tx = db.transaction(IDB_STORE, "readonly");
-      const r  = tx.objectStore(IDB_STORE).get(IDB_KEY);
-      r.onsuccess = () => res(r.result ?? null);
-      r.onerror   = () => rej(r.error);
-    });
-  } catch { return null; }
-}
-async function saveToCache(buf: ArrayBuffer): Promise<void> {
-  try {
-    const db = await openIDB();
-    await new Promise<void>((res, rej) => {
-      const tx = db.transaction(IDB_STORE, "readwrite");
-      tx.objectStore(IDB_STORE).put(buf, IDB_KEY);
-      tx.oncomplete = () => res();
-      tx.onerror    = () => rej(tx.error);
-    });
-  } catch { /* silent */ }
-}
-
-// ── Canvas renderer for one page ──────────────────────────────────────────────
-function renderPage(
-  pdf: import("pdfjs-dist").PDFDocumentProxy,
-  pageNum: number,
-  canvas: HTMLCanvasElement,
-  containerWidth: number,
-): Promise<void> {
-  return pdf.getPage(pageNum).then((page) => {
-    const dpr      = typeof window !== "undefined" ? (window.devicePixelRatio || 2) : 2;
-    const viewport = page.getViewport({ scale: 1 });
-    const scale    = containerWidth / viewport.width;
-    const scaled   = page.getViewport({ scale });
-
-    canvas.style.width  = `${scaled.width}px`;
-    canvas.style.height = `${scaled.height}px`;
-    canvas.width        = Math.floor(scaled.width  * dpr);
-    canvas.height       = Math.floor(scaled.height * dpr);
-
-    const ctx = canvas.getContext("2d")!;
-    ctx.scale(dpr, dpr);
-
-    return page.render({ canvasContext: ctx, viewport: scaled }).promise;
-  });
-}
+// Load the heavy pdfjs canvas viewer only on the client � never on the server
+const PdfCanvas = dynamic(() => import("@/components/client/PdfCanvas"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center bg-[#0d121c]">
+      <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
+    </div>
+  ),
+});
 
 export default function MySplitPage() {
-  const { isArabic }  = useLanguage();
-  const ArrowIcon     = isArabic ? ChevronRight : ChevronLeft;
+  const { isArabic }   = useLanguage();
+  const ArrowIcon      = isArabic ? ChevronRight : ChevronLeft;
+  const containerRef   = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const containerRef  = useRef<HTMLDivElement>(null);
-  const viewerRef     = useRef<HTMLDivElement>(null);
-  const [status,       setStatus]      = useState<"loading" | "ready" | "error">("loading");
-  const [numPages,     setNumPages]    = useState(0);
-  const [isFullscreen, setIsFullscreen]= useState(false);
-  const pdfRef        = useRef<import("pdfjs-dist").PDFDocumentProxy | null>(null);
-  const canvasRefs    = useRef<(HTMLCanvasElement | null)[]>([]);
-
-  // ── Load & render PDF ──────────────────────────────────────────────────────
-  const loadAndRender = useCallback(async () => {
-    setStatus("loading");
-
-    // Dynamically import pdfjs-dist (avoids SSR issues)
-    const pdfjs = (await import("pdfjs-dist")).default ?? (await import("pdfjs-dist"));
-    pdfjs.GlobalWorkerOptions.workerSrc =
-      `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
-    let buf = await getCached();
-    if (!buf) {
-      try {
-        const res = await fetch("/api/split", { cache: "no-store" });
-        if (!res.ok) throw new Error();
-        buf = await res.arrayBuffer();
-        await saveToCache(buf);
-      } catch {
-        setStatus("error");
-        return;
-      }
-    }
-
-    try {
-      const pdf = await pdfjs.getDocument({ data: buf }).promise;
-      pdfRef.current = pdf;
-      setNumPages(pdf.numPages);
-      setStatus("ready");
-    } catch {
-      setStatus("error");
-    }
-  }, []);
-
-  // ── Render canvases when pages mount ──────────────────────────────────────
-  const renderAll = useCallback(() => {
-    const pdf = pdfRef.current;
-    if (!pdf || !viewerRef.current) return;
-    const containerW = viewerRef.current.clientWidth - 32;
-    canvasRefs.current.forEach((canvas, i) => {
-      if (canvas) renderPage(pdf, i + 1, canvas, containerW);
-    });
-  }, []);
-
-  useEffect(() => { loadAndRender(); }, [loadAndRender]);
-
-  // Re-render on resize
-  useEffect(() => {
-    const observer = new ResizeObserver(() => renderAll());
-    if (viewerRef.current) observer.observe(viewerRef.current);
-    return () => observer.disconnect();
-  }, [renderAll]);
-
-  // Render after pages state is set
-  useEffect(() => {
-    if (status === "ready") setTimeout(renderAll, 50);
-  }, [status, numPages, renderAll]);
-
-  // ── Fullscreen ─────────────────────────────────────────────────────────────
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen().catch(() => {});
@@ -147,16 +34,13 @@ export default function MySplitPage() {
       document.exitFullscreen();
     }
   };
+
   useEffect(() => {
-    const handler = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-      setTimeout(renderAll, 100);
-    };
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
-  }, [renderAll]);
+  }, []);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 h-full flex flex-col">
       {/* Header */}
@@ -167,7 +51,7 @@ export default function MySplitPage() {
             className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-2 transition-colors"
           >
             <ArrowIcon size={14} />
-            <span>{isArabic ? "العودة للرئيسية" : "Back to Dashboard"}</span>
+            <span>{isArabic ? "?????? ????????" : "Back to Dashboard"}</span>
           </Link>
           <h1 className="text-2xl font-black text-[var(--text-primary)] flex items-center gap-2.5">
             <span className="text-[var(--accent)]">THE AMMAR</span> &ldquo;X SPLIT&rdquo;
@@ -176,14 +60,14 @@ export default function MySplitPage() {
 
         <a
           href={`https://wa.me/${WA}?text=${encodeURIComponent(
-            isArabic ? "مرحباً كوتش عمار، لدي استفسار" : "Hi Coach Amar, I have a question about the X Split"
+            isArabic ? "?????? ???? ????? ??? ???????" : "Hi Coach Amar, I have a question about the X Split"
           )}`}
           target="_blank"
           rel="noopener noreferrer"
           className="px-3.5 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 text-xs font-bold rounded-sm transition-colors flex items-center gap-1.5"
         >
           <MessageCircle size={13} />
-          <span>{isArabic ? "واتساب الكوتش" : "Ask Coach"}</span>
+          <span>{isArabic ? "?????? ??????" : "Ask Coach"}</span>
         </a>
       </div>
 
@@ -198,7 +82,7 @@ export default function MySplitPage() {
           <div className="flex items-center gap-2">
             <ShieldCheck size={15} className="text-blue-400" />
             <span className="text-xs font-black text-[var(--text-primary)] tracking-wide">
-              {isArabic ? "الجدول الرسمي" : "Official Split"}
+              {isArabic ? "?????? ??????" : "Official Split"}
             </span>
           </div>
           <button
@@ -207,64 +91,16 @@ export default function MySplitPage() {
           >
             <span className="text-xs font-bold">
               {isFullscreen
-                ? (isArabic ? "تصغير"       : "Exit Fullscreen")
-                : (isArabic ? "تكبير الشاشة" : "Fullscreen")}
+                ? (isArabic ? "?????"       : "Exit Fullscreen")
+                : (isArabic ? "????? ??????" : "Fullscreen")}
             </span>
             {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
         </div>
 
-        {/* Canvas area */}
-        <div
-          ref={viewerRef}
-          className="flex-1 w-full overflow-y-auto bg-[#0d121c] flex flex-col items-center gap-4 py-4 relative select-none"
-          onContextMenu={(e) => e.preventDefault()}
-          style={{ minHeight: 0 }}
-        >
-          {status === "loading" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0d121c] z-10">
-              <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
-              <p className="text-sm font-semibold text-[var(--text-muted)]">
-                {isArabic ? "جار التحميل..." : "Loading..."}
-              </p>
-            </div>
-          )}
-
-          {status === "error" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0d121c] z-10">
-              <WifiOff size={36} className="text-red-400" />
-              <div className="text-center">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  {isArabic ? "تعذر تحميل الجدول" : "Failed to load"}
-                </p>
-                <p className="text-xs opacity-60 mt-1">
-                  {isArabic ? "تأكد من الاتصال وأعد المحاولة" : "Check connection and retry"}
-                </p>
-              </div>
-              <button
-                onClick={loadAndRender}
-                className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm"
-              >
-                {isArabic ? "إعادة المحاولة" : "Retry"}
-              </button>
-            </div>
-          )}
-
-          {status === "ready" &&
-            Array.from({ length: numPages }, (_, i) => (
-              <div
-                key={i}
-                className="rounded-sm overflow-hidden shadow-2xl max-w-full"
-              >
-                <canvas
-                  ref={(el) => { canvasRefs.current[i] = el; }}
-                  style={{ display: "block", maxWidth: "100%" }}
-                />
-              </div>
-            ))}
-        </div>
+        {/* Canvas rendered only on the browser */}
+        <PdfCanvas isArabic={isArabic} />
       </div>
     </div>
   );
 }
-
