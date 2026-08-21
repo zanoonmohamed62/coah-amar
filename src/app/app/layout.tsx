@@ -9,6 +9,7 @@ import { Menu, X } from "lucide-react";
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { isArabic, dir } = useLanguage();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
 
   // ── Anti-screenshot / anti-share hardening ──────────────────────────────
   useEffect(() => {
@@ -92,9 +93,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           />
         )}
 
-        <AppSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+        <AppSidebar 
+          isOpen={isSidebarOpen} 
+          setIsOpen={setIsSidebarOpen} 
+          isCollapsed={isDesktopCollapsed}
+          setIsCollapsed={setIsDesktopCollapsed}
+        />
         
-        <main className={`flex-1 p-4 md:p-8 w-full max-w-full md:max-w-[calc(100%-16rem)] ${isArabic ? "md:mr-64" : "md:ml-64"} transition-all mt-0`}>
+        <main 
+          className={`flex-1 p-4 md:p-8 w-full max-w-full transition-all duration-300 mt-0
+          ${isDesktopCollapsed ? (isArabic ? 'md:mr-20 md:max-w-[calc(100%-5rem)]' : 'md:ml-20 md:max-w-[calc(100%-5rem)]') 
+                             : (isArabic ? 'md:mr-64 md:max-w-[calc(100%-16rem)]' : 'md:ml-64 md:max-w-[calc(100%-16rem)]')}`}
+        >
           {children}
         </main>
       </div>

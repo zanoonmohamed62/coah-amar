@@ -4,53 +4,46 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Maximize2, Minimize2, ChevronLeft, ChevronRight, MessageCircle, Loader2, WifiOff, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+// Set up worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const WA = process.env.NEXT_PUBLIC_COACH_WHATSAPP?.replace("+", "") || "34610354255";
-
-// ── IndexedDB helpers ────────────────────────────────────────────────────────
-const IDB_DB = "amar-split-cache";
-const IDB_STORE = "pdf-blobs";
-const IDB_KEY = "amarx-split";
-
-function openIDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function getCached(): Promise<ArrayBuffer | null> {
-  try {
-    const db = await openIDB();
-    return new Promise((res, rej) => {
-      const tx = db.transaction(IDB_STORE, "readonly");
-      const r = tx.objectStore(IDB_STORE).get(IDB_KEY);
-      r.onsuccess = () => res(r.result ?? null);
-      r.onerror = () => rej(r.error);
-    });
-  } catch { return null; }
-}
-async function saveToCache(buf: ArrayBuffer): Promise<void> {
-  try {
-    const db = await openIDB();
-    await new Promise<void>((res, rej) => {
-      const tx = db.transaction(IDB_STORE, "readwrite");
-      tx.objectStore(IDB_STORE).put(buf, IDB_KEY);
-      tx.oncomplete = () => res();
-      tx.onerror = () => rej(tx.error);
-    });
-  } catch { /* silent */ }
-}
 
 export default function MySplitPage() {
   const { isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ChevronRight : ChevronLeft;
 
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState<number>();
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [devicePixelRatio, setDevicePixelRatio] = useState(2); // Default high-res
+
+  useEffect(() => {
+    setDevicePixelRatio(window.devicePixelRatio || 2);
+    
+    // Auto scale based on container width
+    const updateScale = () => {
+      if (viewerRef.current) {
+        // PDF default width is around 600-800 usually. We want to fit it to the container.
+        const width = viewerRef.current.clientWidth;
+        // Assume PDF width ~800px for scaling factor calculation, adjust to fit width
+        setScale((width - 32) / 800); 
+      }
+    };
+    
+    window.addEventListener('resize', updateScale);
+    updateScale();
+    // delay a bit to let layout settle
+    setTimeout(updateScale, 100);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -65,44 +58,21 @@ export default function MySplitPage() {
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
+      // Let scale update after layout changes
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  const loadPdf = useCallback(async () => {
-    setStatus("loading");
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
+    setNumPages(numPages);
+    setStatus("ready");
+  }
 
-    let buf = await getCached();
-
-    if (!buf) {
-      try {
-        const res = await fetch("/api/split", { cache: "no-store" });
-        if (!res.ok) throw new Error();
-        buf = await res.arrayBuffer();
-        await saveToCache(buf);
-      } catch {
-        setStatus("error");
-        return;
-      }
-    }
-
-    try {
-      const blob = new Blob([buf], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-      setStatus("ready");
-    } catch {
-      setStatus("error");
-    }
-  }, []);
-
-  useEffect(() => { 
-    loadPdf(); 
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
-  }, [loadPdf]);
+  function onDocumentLoadError() {
+    setStatus("error");
+  }
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -156,10 +126,14 @@ export default function MySplitPage() {
           </div>
         </div>
 
-        {/* Native iframe Container */}
-        <div className="flex-1 w-full h-full bg-[#0d121c] relative">
+        {/* Secure PDF Container */}
+        <div 
+          ref={viewerRef}
+          className="flex-1 w-full h-full bg-[#0d121c] relative overflow-y-auto custom-scrollbar flex flex-col items-center py-4 select-none"
+          onContextMenu={(e) => e.preventDefault()}
+        >
           {status === "loading" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)] z-10">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)] z-10 bg-[#0d121c]">
               <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
               <div className="text-center">
                 <p className="text-sm font-semibold">{isArabic ? "جار التحميل..." : "Loading..."}</p>
@@ -168,25 +142,41 @@ export default function MySplitPage() {
           )}
 
           {status === "error" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)] z-10">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)] z-10 bg-[#0d121c]">
               <WifiOff size={36} className="text-red-400" />
               <div className="text-center">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">{isArabic ? "لا يوجد اتصال" : "No connection"}</p>
-                <p className="text-xs opacity-60 mt-1">{isArabic ? "تأكد من اتصالك بالانترنت أول مرة" : "Connect to the internet first time"}</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{isArabic ? "تعذر تحميل الجدول" : "Failed to load"}</p>
+                <p className="text-xs opacity-60 mt-1">{isArabic ? "يرجى التحقق من اتصالك وإعادة المحاولة" : "Please check your connection and try again"}</p>
               </div>
-              <button onClick={() => loadPdf()} className="px-4 py-2 bg-[var(--accent)] text-black text-xs font-black rounded-sm">
+              <button onClick={() => window.location.reload()} className="px-4 py-2 bg-[var(--accent)] text-black text-xs font-black rounded-sm">
                 {isArabic ? "إعادة المحاولة" : "Retry"}
               </button>
             </div>
           )}
 
-          {status === "ready" && pdfUrl && (
-            <iframe 
-              src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-              className="w-full h-full border-none"
-              title="Training Split"
-            />
-          )}
+          <Document
+            file="/api/split"
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
+            loading={null} // Handled custom loading above
+            error={null}
+            className="flex flex-col gap-4 max-w-full"
+          >
+            {Array.from(new Array(numPages), (el, index) => (
+              <div key={`page_${index + 1}`} className="shadow-2xl mx-auto rounded-sm overflow-hidden bg-white max-w-full">
+                <Page
+                  pageNumber={index + 1}
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                  devicePixelRatio={Math.max(2, devicePixelRatio)}
+                  width={viewerRef.current ? Math.min(viewerRef.current.clientWidth - 32, 1200) : 800}
+                  loading={
+                    <div className="w-[800px] max-w-full aspect-[1/1.414] bg-white/5 animate-pulse flex items-center justify-center" />
+                  }
+                />
+              </div>
+            ))}
+          </Document>
         </div>
       </div>
     </div>
