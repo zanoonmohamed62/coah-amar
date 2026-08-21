@@ -23,18 +23,18 @@
   <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
   <rect width="504" height="504" x="4" y="4" rx="96" fill="none" stroke="#1e293b" stroke-width="6"/>
 
-  <!-- Group to shift X up -->
+  <!-- Group to shift A up -->
   <g transform="translate(0, -40)">
-    <!-- Subtle glow behind the X -->
+    <!-- Subtle glow behind the A -->
     <g filter="url(#neonGlow)" opacity="0.6">
-      <path d="M120 120 L220 256 L120 392 H190 L256 300 L322 392 H392 L292 256 L392 120 H322 L256 212 L190 120 Z" fill="url(#glowGrad)"/>
+      <path d="M 256 120 L 370 380 H 290 L 270 310 H 242 L 222 380 H 142 Z M 256 230 L 280 290 H 232 Z" fill="url(#glowGrad)"/>
     </g>
 
-    <!-- Main Athletic Bold "X" -->
-    <path d="M125 125 L225 256 L125 387 H195 L256 298 L317 387 H387 L287 256 L387 125 H317 L256 214 L195 125 Z" fill="url(#blueGrad)"/>
+    <!-- Main Athletic Bold "A" -->
+    <path d="M 256 120 L 370 380 H 290 L 270 310 H 242 L 222 380 H 142 Z M 256 230 L 280 290 H 232 Z" fill="url(#blueGrad)"/>
 
     <!-- Sharp Inner Accent Highlight -->
-    <path d="M150 140 L240 256 L150 372 H175 L256 268 L337 372 H362 L272 256 L362 140 H337 L256 244 L175 140 Z" fill="#93c5fd" opacity="0.4"/>
+    <path d="M 256 140 L 340 360 H 310 L 290 310 H 222 L 202 360 H 172 Z M 256 250 L 270 290 H 242 Z" fill="#93c5fd" opacity="0.4"/>
   </g>
 
   <!-- SPLIT Text -->
