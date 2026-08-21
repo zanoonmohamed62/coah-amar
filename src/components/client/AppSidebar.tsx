@@ -129,16 +129,6 @@ export function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
           );
         })}
 
-        <div className="pt-3 border-t border-[var(--border)] mt-3">
-          <Link
-            href="/app/my-split"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors border border-[var(--accent)]/20"
-          >
-            <FileText size={14} />
-            <span>{isArabic ? "عرض وتصفح الجدول (PDF)" : "View Training Split"}</span>
-          </Link>
-        </div>
       </nav>
 
       {/* Bottom WhatsApp & Sign out */}
@@ -158,7 +148,7 @@ export function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
           )}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-bold text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors"
         >
           <MessageCircle size={15} /> {isArabic ? "واتساب الكوتش" : "WhatsApp Coach"}
         </a>
