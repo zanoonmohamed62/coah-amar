@@ -99,7 +99,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       canvas.width        = Math.floor(viewport.width * dpr);
       canvas.height       = Math.floor(viewport.height * dpr);
 
-      const ctx = canvas.getContext("2d", { alpha: false });
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -159,6 +159,7 @@ export default function PdfCanvas({ isArabic }: Props) {
         standardFontDataUrl: "/pdfjs/standard_fonts/",
         enableXfa: true,
         disableFontFace: false,
+        fontExtraProperties: true,
       });
 
       const pdf = await loadingTask.promise;
@@ -195,12 +196,20 @@ export default function PdfCanvas({ isArabic }: Props) {
   // Debounced resize observer to eliminate blinking
   useEffect(() => {
     if (!viewerRef.current) return;
+    let lastWidth = viewerRef.current.clientWidth;
+    
     const ro = new ResizeObserver(() => {
-      if (status !== "ready") return;
+      if (status !== "ready" || !viewerRef.current) return;
+      const newWidth = viewerRef.current.clientWidth;
+      
+      // Ignore tiny changes to prevent infinite resize loops (e.g. scrollbar toggle)
+      if (Math.abs(newWidth - lastWidth) < 10) return;
+      lastWidth = newWidth;
+      
       if (resizeTimer.current) clearTimeout(resizeTimer.current);
       resizeTimer.current = setTimeout(() => {
         renderAll();
-      }, 150);
+      }, 250);
     });
 
     ro.observe(viewerRef.current);
