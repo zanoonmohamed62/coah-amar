@@ -56,6 +56,7 @@ export default function PdfCanvas({ isArabic }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfRef      = useRef<any>(null);
   const canvasRefs  = useRef<(HTMLCanvasElement | null)[]>([]);
+  const overlayRefs = useRef<(HTMLDivElement | null)[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderTasks = useRef<{ [key: number]: any }>({});
   const resizeTimer = useRef<NodeJS.Timeout | null>(null);
@@ -65,23 +66,66 @@ export default function PdfCanvas({ isArabic }: Props) {
   const [numPages, setNumPages] = useState(0);
   const [isOfflineCached, setIsOfflineCached] = useState(false);
   const [scaleMultiplier, setScaleMultiplier] = useState(1);
+  
+  // Anti-screenshot state
+  const [isBlurred, setIsBlurred] = useState(false);
 
-  // Render a single page safely
+  // 1. Anti-Screenshot & Copy Protection logic
+  useEffect(() => {
+    const handleBlur = () => setIsBlurred(true);
+    const handleFocus = () => setIsBlurred(false);
+    const handleVisibility = () => {
+      if (document.hidden) setIsBlurred(true);
+      else setIsBlurred(false);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Block PrintScreen, Ctrl+P, Ctrl+S, CMD+Shift+3, CMD+Shift+4
+      if (e.key === "PrintScreen" || 
+         (e.ctrlKey && (e.key === "p" || e.key === "s" || e.key === "c")) ||
+         (e.metaKey && e.shiftKey && (e.key === "3" || e.key === "4" || e.key === "5" || e.key === "s"))) {
+        e.preventDefault();
+        setIsBlurred(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "PrintScreen") {
+        navigator.clipboard.writeText(""); // Clear clipboard to ruin print screen
+        setTimeout(() => setIsBlurred(false), 2000); // Keep it blurred a bit
+      }
+    };
+
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  // 2. Render a single page safely, with annotation layer (links)
   const renderPage = useCallback(async (pageNum: number, containerWidth: number, zoom: number) => {
     const pdf = pdfRef.current;
     if (!pdf) return;
 
     const pageIndex = pageNum - 1;
     const canvas = canvasRefs.current[pageIndex];
-    if (!canvas) return;
+    const overlay = overlayRefs.current[pageIndex];
+    if (!canvas || !overlay) return;
 
     // Cancel existing render task on this canvas if any
     if (renderTasks.current[pageIndex]) {
       try {
         renderTasks.current[pageIndex].cancel();
-      } catch {
-        // Ignore cancel errors
-      }
+      } catch { /* Ignore */ }
       renderTasks.current[pageIndex] = null;
     }
 
@@ -94,10 +138,16 @@ export default function PdfCanvas({ isArabic }: Props) {
       const viewport = page.getViewport({ scale: computedScale });
       const dpr = Math.min(window.devicePixelRatio || 2, 2.5);
 
-      canvas.style.width  = `${Math.floor(viewport.width)}px`;
+      // Canvas dimensions (high res)
+      canvas.width = Math.floor(viewport.width * dpr);
+      canvas.height = Math.floor(viewport.height * dpr);
+      canvas.style.width = `${Math.floor(viewport.width)}px`;
       canvas.style.height = `${Math.floor(viewport.height)}px`;
-      canvas.width        = Math.floor(viewport.width * dpr);
-      canvas.height       = Math.floor(viewport.height * dpr);
+
+      // Overlay dimensions (CSS pixels to match layout)
+      overlay.style.width = `${Math.floor(viewport.width)}px`;
+      overlay.style.height = `${Math.floor(viewport.height)}px`;
+      overlay.innerHTML = ""; // Clear old links
 
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
@@ -113,9 +163,56 @@ export default function PdfCanvas({ isArabic }: Props) {
       renderTasks.current[pageIndex] = task;
       await task.promise;
       renderTasks.current[pageIndex] = null;
+
+      // Extract and render Annotations (Links)
+      const annotations = await page.getAnnotations();
+      annotations.forEach((anno: any) => {
+        if (anno.subtype !== "Link" || !anno.rect) return;
+
+        const rect = viewport.convertToViewportRectangle(anno.rect);
+        // rect is [x1, y1, x2, y2]
+        const x = Math.min(rect[0], rect[2]);
+        const y = Math.min(rect[1], rect[3]);
+        const w = Math.abs(rect[2] - rect[0]);
+        const h = Math.abs(rect[3] - rect[1]);
+
+        const a = document.createElement("a");
+        a.className = "absolute cursor-pointer transition-colors hover:bg-blue-500/10";
+        a.style.left = `${x}px`;
+        a.style.top = `${y}px`;
+        a.style.width = `${w}px`;
+        a.style.height = `${h}px`;
+
+        if (anno.url) {
+          a.href = anno.url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+        } else if (anno.dest) {
+          a.href = "#";
+          a.onclick = async (e) => {
+            e.preventDefault();
+            try {
+              let dest = anno.dest;
+              if (typeof dest === "string") {
+                dest = await pdfRef.current.getDestination(dest);
+              }
+              if (dest) {
+                const targetPageIndex = await pdfRef.current.getPageIndex(dest[0]);
+                const targetPageDiv = document.getElementById(`pdf-page-${targetPageIndex + 1}`);
+                if (targetPageDiv) {
+                  targetPageDiv.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }
+            } catch (err) {
+              console.warn("Could not jump to destination", err);
+            }
+          };
+        }
+        overlay.appendChild(a);
+      });
+
     } catch (err: unknown) {
       if (err && typeof err === "object" && "name" in err && err.name === "RenderingCancelledException") {
-        // Normal cancellation, do nothing
         return;
       }
       console.warn(`[PdfCanvas] Page ${pageNum} render issue:`, err);
@@ -151,7 +248,7 @@ export default function PdfCanvas({ isArabic }: Props) {
         setIsOfflineCached(true);
       }
 
-      // Configure PDF.js with local offline CMaps and standard fonts for crisp Arabic text
+      // Configure PDF.js with local offline CMaps and standard fonts for crisp text
       const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(buf.slice(0)),
         cMapUrl: "/pdfjs/cmaps/",
@@ -202,7 +299,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       if (status !== "ready" || !viewerRef.current) return;
       const newWidth = viewerRef.current.clientWidth;
       
-      // Ignore tiny changes to prevent infinite resize loops (e.g. scrollbar toggle)
+      // Ignore tiny changes to prevent infinite resize loops
       if (Math.abs(newWidth - lastWidth) < 10) return;
       lastWidth = newWidth;
       
@@ -223,14 +320,10 @@ export default function PdfCanvas({ isArabic }: Props) {
     setScaleMultiplier((prev) => Math.min(Math.max(Number((prev + delta).toFixed(2)), 0.7), 2.0));
   };
 
-  const handleResetZoom = () => {
-    setScaleMultiplier(1);
-  };
-
   return (
-    <div className="flex flex-col flex-1 h-full min-h-0 relative select-none">
+    <div className="flex flex-col flex-1 h-full min-h-0 relative">
       {/* Top Toolbar: Offline indicator & Zoom controls */}
-      <div className="px-4 py-2 border-b border-[var(--border)] bg-[#0b0f17] flex items-center justify-between text-xs shrink-0 z-20">
+      <div className="px-4 py-2 border-b border-[var(--border)] bg-[#0b0f17] flex items-center justify-between text-xs shrink-0 z-20 select-none">
         <div className="flex items-center gap-2">
           {isOfflineCached && (
             <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
@@ -244,7 +337,6 @@ export default function PdfCanvas({ isArabic }: Props) {
           <button
             onClick={() => handleZoom(-0.15)}
             className="p-1 hover:bg-white/10 rounded-sm text-[var(--text-muted)] hover:text-white transition-colors"
-            title={isArabic ? "تصغير" : "Zoom Out"}
           >
             <ZoomOut size={14} />
           </button>
@@ -254,15 +346,13 @@ export default function PdfCanvas({ isArabic }: Props) {
           <button
             onClick={() => handleZoom(0.15)}
             className="p-1 hover:bg-white/10 rounded-sm text-[var(--text-muted)] hover:text-white transition-colors"
-            title={isArabic ? "تكبير" : "Zoom In"}
           >
             <ZoomIn size={14} />
           </button>
           {scaleMultiplier !== 1 && (
             <button
-              onClick={handleResetZoom}
+              onClick={() => setScaleMultiplier(1)}
               className="p-1 hover:bg-white/10 rounded-sm text-blue-400 transition-colors ml-1"
-              title={isArabic ? "إعادة الضبط" : "Reset Zoom"}
             >
               <RotateCcw size={13} />
             </button>
@@ -271,16 +361,29 @@ export default function PdfCanvas({ isArabic }: Props) {
       </div>
 
       {/* Viewer Area */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          .no-print-pdf { display: none !important; }
+        }
+      `}} />
       <div
         ref={viewerRef}
-        className="flex-1 w-full overflow-y-auto bg-[#070a0f] flex flex-col items-center gap-5 p-4 relative"
+        className="no-print-pdf flex-1 w-full overflow-y-auto bg-[#070a0f] flex flex-col items-center gap-5 p-4 relative"
         onContextMenu={(e) => e.preventDefault()}
+        onCopy={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
+        style={{
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          filter: isBlurred ? "blur(15px) grayscale(100%)" : "none",
+          transition: "filter 0.2s ease-out"
+        }}
       >
         {status === "loading" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070a0f] z-10">
             <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
             <p className="text-sm font-semibold text-[var(--text-muted)]">
-              {isArabic ? "جاري تحميل الجدول بأعلى دقة..." : "Loading split with high quality..."}
+              {isArabic ? "جاري تحميل الجدول..." : "Loading split..."}
             </p>
           </div>
         )}
@@ -292,13 +395,10 @@ export default function PdfCanvas({ isArabic }: Props) {
               <p className="text-sm font-semibold text-[var(--text-primary)]">
                 {isArabic ? "تعذر تحميل الجدول" : "Failed to load"}
               </p>
-              {errMsg && (
-                <p className="text-[11px] font-mono mt-2 text-red-400/80 break-all max-w-xs">{errMsg}</p>
-              )}
             </div>
             <button
               onClick={loadDocument}
-              className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm hover:opacity-90 transition-opacity"
+              className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm"
             >
               {isArabic ? "إعادة المحاولة" : "Retry"}
             </button>
@@ -308,11 +408,19 @@ export default function PdfCanvas({ isArabic }: Props) {
         {status === "ready" && Array.from({ length: numPages }, (_, i) => (
           <div
             key={i}
-            className="rounded-sm overflow-hidden shadow-2xl bg-white max-w-full transition-shadow duration-200 border border-white/5"
+            id={`pdf-page-${i + 1}`}
+            className="relative rounded-sm overflow-hidden shadow-2xl bg-white max-w-full border border-white/5"
           >
+            {/* Base Canvas */}
             <canvas
               ref={(el) => { canvasRefs.current[i] = el; }}
               style={{ display: "block", maxWidth: "100%" }}
+            />
+            
+            {/* Interactive Links Overlay */}
+            <div 
+              ref={(el) => { overlayRefs.current[i] = el; }}
+              className="absolute inset-0 z-10 pointer-events-auto"
             />
           </div>
         ))}
