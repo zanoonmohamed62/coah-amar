@@ -8,12 +8,12 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["framer-motion", "lucide-react"],
   },
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // pdfjs-dist tries to require('canvas') in Node — we don't need it (browser canvas only)
-      config.externals = [...(config.externals ?? []), { canvas: "canvas" }];
-    }
-    return config;
+  // Turbopack (Next.js 16 default) — stub the native `canvas` module that
+  // pdfjs-dist tries to require in Node context. We only use the browser canvas.
+  turbopack: {
+    resolveAlias: {
+      canvas: "./src/lib/empty-module.js",
+    },
   },
 };
 
