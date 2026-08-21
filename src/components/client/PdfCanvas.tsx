@@ -15,23 +15,35 @@ function openIDB(): Promise<IDBDatabase> {
     req.onerror   = () => reject(req.error);
   });
 }
+
 async function getCached(): Promise<ArrayBuffer | null> {
   try {
     const db = await openIDB();
     return new Promise((res, rej) => {
       const tx = db.transaction(IDB_STORE, "readonly");
       const r  = tx.objectStore(IDB_STORE).get(IDB_KEY);
-      r.onsuccess = () => res(r.result ?? null);
-      r.onerror   = () => rej(r.error);
+      r.onsuccess = () => {
+        const result = r.result;
+        // validate buffer is not detached and has bytes
+        if (result instanceof ArrayBuffer && result.byteLength > 0) {
+          res(result);
+        } else {
+          res(null);
+        }
+      };
+      r.onerror = () => rej(r.error);
     });
   } catch { return null; }
 }
+
 async function saveToCache(buf: ArrayBuffer): Promise<void> {
   try {
+    // Store a fresh copy so we keep our own reference
+    const copy = buf.slice(0);
     const db = await openIDB();
     await new Promise<void>((res, rej) => {
       const tx = db.transaction(IDB_STORE, "readwrite");
-      tx.objectStore(IDB_STORE).put(buf, IDB_KEY);
+      tx.objectStore(IDB_STORE).put(copy, IDB_KEY);
       tx.oncomplete = () => res();
       tx.onerror    = () => rej(tx.error);
     });
@@ -73,23 +85,25 @@ export default function PdfCanvas({ isArabic }: Props) {
     setStatus("loading");
     try {
       const pdfjsLib = await import("pdfjs-dist");
-      // Use the worker file served from /public (same origin, no CORS issues)
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
       let buf = await getCached();
+
       if (!buf) {
         const res = await fetch("/api/split", { cache: "no-store" });
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        if (!res.ok) throw new Error(`API ${res.status}`);
         buf = await res.arrayBuffer();
+        // Save BEFORE passing to pdfjs (pdfjs may transfer the buffer)
         await saveToCache(buf);
       }
 
-      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+      // Always pass a copy so our cached version stays intact
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
       pdfRef.current = pdf;
       setNumPages(pdf.numPages);
       setStatus("ready");
     } catch (err) {
-      console.error("[PdfCanvas] load failed:", err);
+      console.error("[PdfCanvas]", err);
       setStatus("error");
     }
   }, []);
