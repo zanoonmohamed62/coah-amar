@@ -110,7 +110,7 @@ export default function PdfCanvas({ isArabic }: Props) {
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0d121c] z-10">
           <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
           <p className="text-sm font-semibold text-[var(--text-muted)]">
-            {isArabic ? "??? ???????..." : "Loading..."}
+            {isArabic ? "\u062c\u0627\u0631 \u0627\u0644\u062a\u062d\u0645\u064a\u0644..." : "Loading..."}
           </p>
         </div>
       )}
@@ -119,14 +119,14 @@ export default function PdfCanvas({ isArabic }: Props) {
           <WifiOff size={36} className="text-red-400" />
           <div className="text-center">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
-              {isArabic ? "???? ????? ??????" : "Failed to load"}
+              {isArabic ? "\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062c\u062f\u0648\u0644" : "Failed to load"}
             </p>
             <p className="text-xs opacity-60 mt-1">
-              {isArabic ? "???? ?? ??????? ???? ????????" : "Check connection and retry"}
+              {isArabic ? "\u062a\u0623\u0643\u062f \u0645\u0646 \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0648\u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629" : "Check connection and retry"}
             </p>
           </div>
           <button onClick={loadAndRender} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm">
-            {isArabic ? "????? ????????" : "Retry"}
+            {isArabic ? "\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629" : "Retry"}
           </button>
         </div>
       )}
