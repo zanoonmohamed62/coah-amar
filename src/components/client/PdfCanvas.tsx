@@ -66,6 +66,51 @@ export default function PdfCanvas({ isArabic }: Props) {
   const [numPages, setNumPages] = useState(0);
   const [isOfflineCached, setIsOfflineCached] = useState(false);
   const [scaleMultiplier, setScaleMultiplier] = useState(1);
+  const [isBlurred, setIsBlurred] = useState(false);
+
+  // 1. Aggressive Anti-Screenshot & DRM
+  useEffect(() => {
+    const handleBlur = () => setIsBlurred(true);
+    const handleFocus = () => setIsBlurred(false);
+    const handleVisibility = () => setIsBlurred(document.hidden);
+    const handleMouseLeave = () => setIsBlurred(true);
+    const handleMouseEnter = () => setIsBlurred(false);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Block PrintScreen, Ctrl+P, Ctrl+S, CMD+Shift+3, CMD+Shift+4, CMD+Shift+S
+      if (e.key === "PrintScreen" || 
+         (e.ctrlKey && (e.key === "p" || e.key === "s" || e.key === "c")) ||
+         (e.metaKey && e.shiftKey && (e.key === "3" || e.key === "4" || e.key === "5" || e.key === "s"))) {
+        e.preventDefault();
+        setIsBlurred(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "PrintScreen") {
+        navigator.clipboard.writeText("").catch(() => {});
+        setTimeout(() => setIsBlurred(false), 2000);
+      }
+    };
+
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("mouseleave", handleMouseLeave);
+    document.addEventListener("mouseenter", handleMouseEnter);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("mouseleave", handleMouseLeave);
+      document.removeEventListener("mouseenter", handleMouseEnter);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
 
   // Render a single page with annotation links
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -273,41 +318,63 @@ export default function PdfCanvas({ isArabic }: Props) {
       {/* Print block */}
       <style dangerouslySetInnerHTML={{ __html: `@media print { .no-print-pdf { display: none !important; } }` }} />
 
-      {/* Viewer */}
+      {/* Viewer Area */}
+      <style dangerouslySetInnerHTML={{ __html: `@media print { .no-print-pdf { display: none !important; } }` }} />
       <div
         ref={viewerRef}
         className="no-print-pdf flex-1 w-full overflow-y-auto bg-[#070a0f] flex flex-col items-center gap-5 p-4 relative"
         onContextMenu={(e) => e.preventDefault()}
         onCopy={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
         style={{ userSelect: "none", WebkitUserSelect: "none" }}
       >
-        {status === "loading" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070a0f] z-10">
-            <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
-            <p className="text-sm font-semibold text-[var(--text-muted)]">
-              {isArabic ? "جاري تحميل الجدول..." : "Loading split..."}
-            </p>
+        {isBlurred && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl">
+            <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-2xl flex flex-col items-center max-w-sm text-center">
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
+                <span className="text-3xl">🚫</span>
+              </div>
+              <h2 className="text-xl font-black text-red-500 mb-2">
+                {isArabic ? "تصوير الشاشة محظور" : "Screenshots Disabled"}
+              </h2>
+              <p className="text-sm text-red-400/80 font-medium">
+                {isArabic 
+                  ? "لأسباب تتعلق بحقوق الملكية الفكرية، لا يُسمح بتصوير أو نسخ محتوى الجدول."
+                  : "For copyright reasons, taking screenshots or copying this material is strictly prohibited."}
+              </p>
+            </div>
           </div>
         )}
 
-        {status === "error" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6">
-            <WifiOff size={36} className="text-red-400" />
-            <p className="text-sm font-semibold text-[var(--text-primary)]">
-              {isArabic ? "تعذر تحميل الجدول" : "Failed to load"}
-            </p>
-            <button onClick={loadDocument} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm">
-              {isArabic ? "إعادة المحاولة" : "Retry"}
-            </button>
-          </div>
-        )}
+        <div className={`flex flex-col items-center gap-5 w-full transition-all duration-300 ${isBlurred ? 'opacity-0 scale-95 pointer-events-none blur-xl' : 'opacity-100 scale-100'}`}>
+          {status === "loading" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070a0f] z-10">
+              <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
+              <p className="text-sm font-semibold text-[var(--text-muted)]">
+                {isArabic ? "جاري تحميل الجدول..." : "Loading split..."}
+              </p>
+            </div>
+          )}
 
-        {status === "ready" && Array.from({ length: numPages }, (_, i) => (
-          <div key={i} id={`pdf-page-${i + 1}`} className="relative rounded-sm overflow-hidden shadow-2xl bg-white max-w-full border border-white/5">
-            <canvas ref={(el) => { canvasRefs.current[i] = el; }} style={{ display: "block", maxWidth: "100%" }} />
-            <div ref={(el) => { overlayRefs.current[i] = el; }} className="absolute inset-0 z-10" />
-          </div>
-        ))}
+          {status === "error" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6">
+              <WifiOff size={36} className="text-red-400" />
+              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                {isArabic ? "تعذر تحميل الجدول" : "Failed to load"}
+              </p>
+              <button onClick={loadDocument} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm">
+                {isArabic ? "إعادة المحاولة" : "Retry"}
+              </button>
+            </div>
+          )}
+
+          {status === "ready" && Array.from({ length: numPages }, (_, i) => (
+            <div key={i} id={`pdf-page-${i + 1}`} className="relative rounded-sm overflow-hidden shadow-2xl bg-white max-w-full border border-white/5">
+              <canvas ref={(el) => { canvasRefs.current[i] = el; }} style={{ display: "block", maxWidth: "100%" }} />
+              <div ref={(el) => { overlayRefs.current[i] = el; }} className="absolute inset-0 z-10" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
