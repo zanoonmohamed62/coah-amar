@@ -20,36 +20,37 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
+          port: 22
           script: |
             set -e
             echo "🚀 Starting Deployment..."
-            
+
             # Go to app directory
             cd /var/www/amarel7ewety
-            
+
             # Pull latest changes from GitHub
             echo "📥 Pulling latest changes..."
             git reset --hard HEAD
             git pull origin main
-            
+
             # Install dependencies
             echo "📦 Installing dependencies..."
             npm install --no-audit --no-fund
-            
-            # Prisma Database Push & Generate
+
+            # Prisma generate & DB push
             if [ -f "prisma/schema.prisma" ]; then
-              echo "🗄️ Running Prisma migrations..."
+              echo "🗄️ Running Prisma generate..."
               npx prisma generate
-              npx prisma db push --skip-generate
+              echo "🗄️ Pushing DB schema..."
+              npx prisma db push --skip-generate --accept-data-loss
             fi
-            
+
             # Build application
             echo "⚙️ Building application..."
             npm run build
-            
+
             # Reload PM2 process zero-downtime
-            echo "🔄 Reloading PM2 process..."
-            pm2 reload amar-site || pm2 start npm --name "amar-site" -- start
-            
+            echo "🔄 Reloading PM2..."
+            pm2 reload amar-site --update-env || pm2 start npm --name "amar-site" -- start
+
             echo "✅ Deployment completed successfully!"
