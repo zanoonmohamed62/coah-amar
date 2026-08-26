@@ -46,12 +46,12 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-sm overflow-hidden border border-[var(--accent)] shadow-md shadow-blue-500/20">
+            <div className="w-10 h-10 rounded-sm overflow-hidden border border-[var(--accent)] shadow-md shadow-blue-500/20 flex-shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/assets/app-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+              <img src="/assets/app-logo.jpg" alt="Amar X Split App" className="w-full h-full object-cover" />
             </div>
             <span
-              className="font-bold tracking-wider uppercase text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors"
+              className="font-bold tracking-wider uppercase text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors hidden sm:inline"
               style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}
             >
               {t.nav.brand}
