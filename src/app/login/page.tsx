@@ -40,8 +40,8 @@ function LoginForm() {
     const session = await sessionRes.json();
     const role = session?.user?.role;
 
-    if (role === "COACH") router.push("/admin");
-    else router.push(callbackUrl);
+    if (role === "ADMIN") router.push("/admin");
+    else router.push("/app");
   };
 
   return (
