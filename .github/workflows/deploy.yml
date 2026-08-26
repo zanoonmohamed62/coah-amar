@@ -42,7 +42,7 @@ jobs:
               echo "🗄️ Running Prisma generate..."
               npx prisma generate
               echo "🗄️ Pushing DB schema..."
-              npx prisma db push --skip-generate --accept-data-loss
+              npx prisma db push --accept-data-loss
             fi
 
             # Build application
