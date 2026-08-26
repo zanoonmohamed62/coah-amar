@@ -35,7 +35,7 @@ jobs:
             
             # Install dependencies
             echo "📦 Installing dependencies..."
-            npm ci --production=false
+            npm install --no-audit --no-fund
             
             # Prisma Database Push & Generate
             if [ -f "prisma/schema.prisma" ]; then
