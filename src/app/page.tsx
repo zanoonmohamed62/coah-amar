@@ -6,7 +6,6 @@ import { TrainingPlanSection } from "@/components/sections/training-plan-detail"
 import { CoachingDetailSection } from "@/components/sections/coaching-detail";
 import { HowItWorksSection } from "@/components/sections/how-it-works";
 import { CoachSection } from "@/components/sections/coach";
-import { TestimonialsSection } from "@/components/sections/testimonials";
 import { FAQSection } from "@/components/sections/faq";
 import { FinalCTASection } from "@/components/sections/final-cta";
 
@@ -21,7 +20,6 @@ export default function HomePage() {
       <CoachingDetailSection />
       <HowItWorksSection />
       <CoachSection />
-      <TestimonialsSection />
       <FAQSection />
       <FinalCTASection />
     </>

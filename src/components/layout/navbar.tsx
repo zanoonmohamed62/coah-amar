@@ -46,10 +46,9 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 border border-[var(--accent)] flex items-center justify-center rounded-sm bg-[var(--accent-glow)]">
-              <span className="text-[var(--accent)] font-bold text-sm" style={{ fontFamily: "var(--font-outfit)" }}>
-                A
-              </span>
+            <div className="w-8 h-8 rounded-sm overflow-hidden border border-[var(--accent)] shadow-md shadow-blue-500/20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/app-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
             </div>
             <span
               className="font-bold tracking-wider uppercase text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors"
@@ -84,16 +83,16 @@ export function Navbar() {
               <span>{t.nav.langSwitch}</span>
             </button>
 
-            {/* Dev quick-access buttons */}
+            {/* Admin & Dashboard links */}
             <Link
-              href="/api/dev-login?role=ADMIN"
+              href="/admin"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-purple-500/40 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:border-purple-400 text-xs font-semibold transition-all"
             >
               <LayoutDashboard size={13} />
               Admin
             </Link>
             <Link
-              href="/api/dev-login?role=CUSTOMER"
+              href="/app"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-400 text-xs font-semibold transition-all"
             >
               <Users size={13} />
@@ -171,7 +170,7 @@ export function Navbar() {
               </button>
 
               <Link
-                href="/api/dev-login?role=ADMIN"
+                href="/admin"
                 onClick={() => setMobileOpen(false)}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-purple-500/40 bg-purple-500/10 text-purple-400 text-sm font-semibold"
               >
@@ -179,7 +178,7 @@ export function Navbar() {
                 Admin Panel
               </Link>
               <Link
-                href="/api/dev-login?role=CUSTOMER"
+                href="/app"
                 onClick={() => setMobileOpen(false)}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-sm font-semibold"
               >

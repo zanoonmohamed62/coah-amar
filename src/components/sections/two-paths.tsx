@@ -2,12 +2,48 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Flame, Users } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+
+// Counters: how many spots taken out of 100
+const SPLIT_TAKEN = 56;
+const COACHING_TAKEN = 16;
+const TOTAL_SPOTS = 100;
+
+function SpotCounter({ taken, total, accentColor }: { taken: number; total: number; accentColor: string }) {
+  const remaining = total - taken;
+  const pct = Math.round((taken / total) * 100);
+  return (
+    <div className="mt-4 space-y-1.5">
+      <div className="flex items-center justify-between text-xs">
+        <span className="flex items-center gap-1.5 text-orange-400 font-bold">
+          <Flame size={12} />
+          {remaining} spots left at this price
+        </span>
+        <span className="text-slate-500">{taken}/{total} claimed</span>
+      </div>
+      <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          whileInView={{ width: `${pct}%` }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          className={`h-full rounded-full ${accentColor}`}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function TwoPathsSection() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+
+  // Discounted prices (40% off)
+  const splitOriginalEGP = Math.round(497 / 0.6);
+  const splitOriginalEUR = Math.round(19 / 0.6);
+  const coachingOriginalEGP = Math.round(2497 / 0.6);
+  const coachingOriginalEUR = Math.round(119 / 0.6);
 
   return (
     <section id="plans" className="section-padding px-6">
@@ -30,7 +66,7 @@ export function TwoPathsSection() {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-          {/* OFFER 01 — Training Plan */}
+          {/* OFFER 01 — Ammar X Split */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -50,15 +86,25 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1">{t.twoPaths.offer1.sub}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-extrabold text-white">
-                    {t.twoPaths.offer1.price}
-                    <span className="text-sm font-normal text-slate-400 mx-1">{t.twoPaths.offer1.currency}</span>
+                  {/* Crossed-out original price */}
+                  <p className="text-sm text-slate-500 line-through mb-0.5">
+                    {splitOriginalEGP} EGP / {splitOriginalEUR} €
                   </p>
+                  <div className="flex items-center gap-2 justify-end">
+                    <span className="bg-orange-500/20 text-orange-400 text-[0.65rem] font-extrabold px-2 py-0.5 rounded-sm">-40%</span>
+                    <p className="text-3xl font-extrabold text-white">
+                      {t.twoPaths.offer1.price}
+                      <span className="text-sm font-normal text-slate-400 mx-1">{t.twoPaths.offer1.currency}</span>
+                    </p>
+                  </div>
                   <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-slate-400 border border-slate-700/80 px-2 py-0.5 rounded-sm inline-block mt-1">
                     {t.twoPaths.offer1.type}
                   </span>
                 </div>
               </div>
+
+              {/* Spot counter */}
+              <SpotCounter taken={SPLIT_TAKEN} total={TOTAL_SPOTS} accentColor="bg-gradient-to-r from-orange-500 to-orange-400" />
 
               <div className="h-px bg-slate-800 my-6" />
 
@@ -74,7 +120,7 @@ export function TwoPathsSection() {
 
             <div className="mt-4 pt-4 border-t border-slate-800/60">
               <Link
-                href="/checkout?plan=training"
+                href="/checkout/split"
                 className="btn-secondary w-full flex items-center justify-center gap-2 text-center group py-3"
               >
                 <span>{t.twoPaths.offer1.btn}</span>
@@ -111,15 +157,25 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1">{t.twoPaths.offer2.sub}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-extrabold text-blue-400">
-                    {t.twoPaths.offer2.price}
-                    <span className="text-sm font-normal text-slate-400 mx-1">{t.twoPaths.offer2.currency}</span>
+                  {/* Crossed-out original price */}
+                  <p className="text-sm text-slate-500 line-through mb-0.5">
+                    {coachingOriginalEGP} EGP / {coachingOriginalEUR} €
                   </p>
+                  <div className="flex items-center gap-2 justify-end">
+                    <span className="bg-orange-500/20 text-orange-400 text-[0.65rem] font-extrabold px-2 py-0.5 rounded-sm">-40%</span>
+                    <p className="text-3xl font-extrabold text-blue-400">
+                      {t.twoPaths.offer2.price}
+                      <span className="text-sm font-normal text-slate-400 mx-1">{t.twoPaths.offer2.currency}</span>
+                    </p>
+                  </div>
                   <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-sm inline-block mt-1">
                     {t.twoPaths.offer2.type}
                   </span>
                 </div>
               </div>
+
+              {/* Spot counter */}
+              <SpotCounter taken={COACHING_TAKEN} total={TOTAL_SPOTS} accentColor="bg-gradient-to-r from-blue-600 to-blue-400" />
 
               <div className="h-px bg-slate-800 my-6" />
 
