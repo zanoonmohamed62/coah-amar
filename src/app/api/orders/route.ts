@@ -3,8 +3,14 @@ import { db } from "@/lib/db";
 import { createOrderSchema } from "@/lib/validations";
 import { OrderStatus, PaymentMethod, EntitlementStatus, Role, ProductType } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 5 orders per minute per IP
+  const ip = getClientIp(req);
+  const { allowed, remaining, reset } = await rateLimit(`orders:${ip}`, 5, 60);
+  if (!allowed) return rateLimitResponse(reset);
+
   const parsed = createOrderSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
@@ -49,7 +55,6 @@ export async function POST(req: NextRequest) {
 
     // Auto-activate for PayPal / Telda — create account + entitlement immediately
     if (!isInstapay) {
-      // Declare non-null type so TS knows it's always set by the end of the if/else
       let activeUserId: string;
 
       if (!existingUser) {
@@ -93,12 +98,17 @@ export async function POST(req: NextRequest) {
     return newOrder;
   });
 
+  // Invalidate admin stats cache since a new order was placed
+  try {
+    const { redis } = await import("@/lib/redis");
+    await redis.del("admin:stats");
+  } catch {}
+
   // Send emails
   try {
     const { sendOrderConfirmationEmail, sendAccessGrantedEmail } = await import("@/lib/email");
 
     if (isInstapay) {
-      // Order confirmation only — remind them to send screenshot
       await sendOrderConfirmationEmail({
         to: email, name, orderRef,
         productName: product.name,
@@ -106,14 +116,12 @@ export async function POST(req: NextRequest) {
         paymentMethod,
       });
     } else if (tempPassword) {
-      // Access granted — new account created
       await sendAccessGrantedEmail({
         to: email, name, email: email, tempPassword,
         productName: product.name,
         isCoaching: product.type === ProductType.PERSONAL_COACHING,
       });
     } else {
-      // Existing user, just send order confirmation
       await sendOrderConfirmationEmail({
         to: email, name, orderRef,
         productName: product.name,
@@ -123,6 +131,11 @@ export async function POST(req: NextRequest) {
     }
   } catch {}
 
-  return NextResponse.json({ order, product }, { status: 201 });
+  return NextResponse.json(
+    { order, product },
+    {
+      status: 201,
+      headers: { "X-RateLimit-Remaining": String(remaining) },
+    }
+  );
 }
-

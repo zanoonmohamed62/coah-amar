@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guard";
 import { OrderStatus, EntitlementStatus, Role, ProductType } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { redis } from "@/lib/redis";
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -142,6 +143,16 @@ export async function PUT(req: NextRequest) {
       });
     } catch {}
   }
+
+  // Invalidate admin stats cache + affected customer entitlements cache
+  try {
+    await redis.del("admin:stats");
+    // Find user by email and invalidate their entitlements cache
+    const affectedUser = await db.user.findUnique({ where: { email: order.customerEmail }, select: { id: true } });
+    if (affectedUser) {
+      await redis.del(`customer:entitlements:${affectedUser.id}`);
+    }
+  } catch {}
 
   return NextResponse.json({ success: true });
 }
