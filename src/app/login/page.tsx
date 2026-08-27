@@ -12,6 +12,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "";
+  const reason = searchParams.get("reason") || "";
   const { isArabic } = useLanguage();
 
   const [email, setEmail] = useState("");
@@ -89,6 +90,21 @@ function LoginForm() {
 
         {/* Form Container */}
         <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 sm:p-8 space-y-6 shadow-2xl">
+          {reason === "unauthorized" && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-sm px-4 py-3 text-xs sm:text-sm text-amber-400 flex items-start gap-2">
+              <ShieldCheck size={15} className="mt-0.5 shrink-0" />
+              <div>
+                <p className="font-bold mb-0.5">
+                  {isArabic ? "صفحة مخصصة للأدمن فقط" : "Admin Access Required"}
+                </p>
+                <p className="opacity-80">
+                  {isArabic
+                    ? "هذه الصفحة للمديرين فقط. استخدم بيانات Coach Admin للدخول."
+                    : "This page is for admins only. Please sign in with your Coach Admin credentials."}
+                </p>
+              </div>
+            </div>
+          )}
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-sm px-4 py-3 text-xs sm:text-sm text-red-400">
               {error}

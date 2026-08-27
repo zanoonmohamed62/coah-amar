@@ -22,7 +22,10 @@ export const authConfig = {
           return Response.redirect(redirectUrl);
         }
         if (role !== "ADMIN") {
-          return Response.redirect(new URL("/app", nextUrl.origin));
+          const loginUrl = new URL("/login", nextUrl.origin);
+          loginUrl.searchParams.set("callbackUrl", "/admin");
+          loginUrl.searchParams.set("reason", "unauthorized");
+          return Response.redirect(loginUrl);
         }
         return true;
       }

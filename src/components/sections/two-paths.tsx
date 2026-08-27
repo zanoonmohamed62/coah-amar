@@ -2,35 +2,93 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check, Flame, Users } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 
-// Counters: how many spots taken out of 100
+// Counters: how many spots taken out of total
 const SPLIT_TAKEN = 56;
+const SPLIT_TOTAL = 100;
 const COACHING_TAKEN = 16;
-const TOTAL_SPOTS = 100;
+const COACHING_TOTAL = 30;
 
-function SpotCounter({ taken, total, accentColor }: { taken: number; total: number; accentColor: string }) {
+function SpotCounter({
+  taken,
+  total,
+  variant = "blue",
+}: {
+  taken: number;
+  total: number;
+  variant?: "blue" | "slate";
+}) {
   const remaining = total - taken;
   const pct = Math.round((taken / total) * 100);
+  const segCount = 20;
+  const filledSegs = Math.round((pct / 100) * segCount);
+
   return (
-    <div className="mt-4 space-y-1.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="flex items-center gap-1.5 text-orange-400 font-bold">
-          <Flame size={12} />
-          {remaining} spots left at this price
-        </span>
-        <span className="text-slate-500">{taken}/{total} claimed</span>
+    <div className="mt-5 space-y-3">
+      {/* Top row: remaining count + claimed text */}
+      <div className="flex items-end justify-between">
+        <div className="flex items-baseline gap-1.5">
+          <span
+            className={`text-3xl font-black tabular-nums ${
+              variant === "blue" ? "text-blue-400" : "text-slate-200"
+            }`}
+          >
+            {remaining}
+          </span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            spots left
+          </span>
+        </div>
+        <div className="text-right">
+          <span
+            className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm border ${
+              variant === "blue"
+                ? "text-blue-400 border-blue-500/30 bg-blue-500/8"
+                : "text-slate-400 border-slate-700 bg-slate-800/60"
+            }`}
+          >
+            {taken}/{total} claimed
+          </span>
+        </div>
       </div>
-      <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          whileInView={{ width: `${pct}%` }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-          className={`h-full rounded-full ${accentColor}`}
-        />
+
+      {/* Segmented bar */}
+      <div className="flex gap-[3px]">
+        {Array.from({ length: segCount }).map((_, i) => {
+          const filled = i < filledSegs;
+          return (
+            <div
+              key={i}
+              className={`flex-1 h-[5px] rounded-full transition-all ${
+                filled
+                  ? variant === "blue"
+                    ? "bg-blue-500"
+                    : "bg-slate-400"
+                  : "bg-slate-800"
+              }`}
+            />
+          );
+        })}
       </div>
+
+      {/* Urgency line */}
+      <p
+        className={`text-[10px] font-semibold uppercase tracking-wider ${
+          remaining <= 10
+            ? "text-red-400"
+            : variant === "blue"
+            ? "text-blue-500"
+            : "text-slate-500"
+        }`}
+      >
+        {remaining <= 5
+          ? "⚡ Almost full — act now"
+          : remaining <= 15
+          ? "🔥 Filling up fast"
+          : "Limited availability at this price"}
+      </p>
     </div>
   );
 }
@@ -39,11 +97,11 @@ export function TwoPathsSection() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
-  // Discounted prices (40% off)
-  const splitOriginalEGP = Math.round(497 / 0.6);
-  const splitOriginalEUR = Math.round(19 / 0.6);
-  const coachingOriginalEGP = Math.round(2497 / 0.6);
-  const coachingOriginalEUR = Math.round(119 / 0.6);
+  // Discounted prices (40% off from real base prices)
+  const splitOriginalEGP = Math.round(499 / 0.6);   // = 832
+  const splitOriginalEUR = Math.round(19 / 0.6);    // = 32
+  const coachingOriginalEGP = Math.round(2499 / 0.6); // = 4165
+  const coachingOriginalEUR = Math.round(119 / 0.6); // = 198
 
   return (
     <section id="plans" className="section-padding px-6">
@@ -104,7 +162,7 @@ export function TwoPathsSection() {
               </div>
 
               {/* Spot counter */}
-              <SpotCounter taken={SPLIT_TAKEN} total={TOTAL_SPOTS} accentColor="bg-gradient-to-r from-orange-500 to-orange-400" />
+              <SpotCounter taken={SPLIT_TAKEN} total={SPLIT_TOTAL} variant="slate" />
 
               <div className="h-px bg-slate-800 my-6" />
 
@@ -175,7 +233,7 @@ export function TwoPathsSection() {
               </div>
 
               {/* Spot counter */}
-              <SpotCounter taken={COACHING_TAKEN} total={TOTAL_SPOTS} accentColor="bg-gradient-to-r from-blue-600 to-blue-400" />
+              <SpotCounter taken={COACHING_TAKEN} total={COACHING_TOTAL} variant="blue" />
 
               <div className="h-px bg-slate-800 my-6" />
 

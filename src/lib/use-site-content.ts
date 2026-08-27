@@ -18,7 +18,7 @@ async function fetchSiteContent(lang: string): Promise<ContentMap> {
 
   const promise = (async () => {
     try {
-      const res = await fetch(`/api/site-content?lang=${encodeURIComponent(lang)}`);
+      const res = await fetch(`/api/site-content?lang=${encodeURIComponent(lang)}&t=${Date.now()}`);
       const data = await res.json();
       const result: ContentMap = data.content || {};
       cacheByLang.set(lang, result);
@@ -31,6 +31,17 @@ async function fetchSiteContent(lang: string): Promise<ContentMap> {
 
   promisesByLang.set(lang, promise);
   return promise;
+}
+
+/** Call this after saving CMS content to invalidate the module-level cache */
+export function clearSiteContentCache(lang?: string) {
+  if (lang) {
+    cacheByLang.delete(lang);
+    promisesByLang.delete(lang);
+  } else {
+    cacheByLang.clear();
+    promisesByLang.clear();
+  }
 }
 
 /**

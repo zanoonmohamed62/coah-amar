@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
+import { clearSiteContentCache } from "@/lib/use-site-content";
 
 // ─────────────────────────────────────────────────────────────
 // Section & Field Definitions
@@ -241,6 +242,9 @@ export default function CMSPage() {
         ...prev,
         [activeSection]: { ...(prev[activeSection] || {}), ...(edits[activeSection] || {}) },
       }));
+
+      // Bust the module-level cache so live site picks up new content
+      clearSiteContentCache(contentLang);
 
       setSaveMsg(t.savedMsg);
       setTimeout(() => setSaveMsg(null), 3000);
