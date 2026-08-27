@@ -39,18 +39,18 @@ function LoginForm() {
         return;
       }
 
-      // Fetch active session to check role
-      const session = await getSession();
-      const role = (session?.user as any)?.role;
+      // Fetch active session from server explicitly to bypass cache
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+      const role = session?.user?.role;
 
       if (callbackUrl) {
-        router.push(callbackUrl);
+        window.location.href = callbackUrl;
       } else if (role === "ADMIN") {
-        router.push("/admin");
+        window.location.href = "/admin";
       } else {
-        router.push("/app");
+        window.location.href = "/app";
       }
-      router.refresh();
     } catch {
       setLoading(false);
       setError(isArabic ? "تعذر تسجيل الدخول، يرجى المحاولة لاحقاً" : "Failed to sign in. Please try again.");

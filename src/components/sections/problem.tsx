@@ -18,10 +18,10 @@ export function ProblemSection() {
   const { t, isArabic } = useLanguage();
   const get = useSiteContent();
 
-  const genericPointsStr = get("problem", "genericPoints", t.problem.genericPoints.join("\n"));
+  const genericPointsStr = get("problem", "leftPoints", t.problem.genericPoints.join("\n"));
   const genericPoints = genericPointsStr.split("\n").map(s => s.trim()).filter(Boolean);
 
-  const coachingPointsStr = get("problem", "coachingPoints", t.problem.coachingPoints.join("\n"));
+  const coachingPointsStr = get("problem", "rightPoints", t.problem.coachingPoints.join("\n"));
   const coachingPoints = coachingPointsStr.split("\n").map(s => s.trim()).filter(Boolean);
 
   return (
@@ -37,7 +37,9 @@ export function ProblemSection() {
         >
           <span className="label-badge mb-4 inline-block">{get("problem", "badge", t.problem.badge)}</span>
           <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight whitespace-pre-wrap">
-            {get("problem", "title", t.problem.title)}
+            <span className="text-slate-400">{get("problem", "titleLine1", t.problem.title.split('\n')[0] || '')}</span>
+            <br />
+            {get("problem", "titleLine2", t.problem.title.split('\n')[1] || '')}
           </h2>
           <p className="text-slate-400 mt-4 max-w-2xl mx-auto leading-relaxed text-sm md:text-base whitespace-pre-wrap">
             {get("problem", "subtitle", t.problem.subtitle)}
@@ -61,10 +63,10 @@ export function ProblemSection() {
                 </div>
                 <div>
                   <p className="text-[11px] text-slate-400 font-bold tracking-widest uppercase mb-0.5">
-                    {get("problem", "genericTitleBadge", t.problem.genericTitleBadge)}
+                    {get("problem", "leftTitle", t.problem.genericTitleBadge)}
                   </p>
                   <p className="text-lg font-bold text-slate-200">
-                    {get("problem", "genericHeading", t.problem.genericHeading)}
+                    {t.problem.genericHeading}
                   </p>
                 </div>
               </div>
@@ -108,10 +110,10 @@ export function ProblemSection() {
                 </div>
                 <div>
                   <p className="text-[11px] text-blue-400 font-bold tracking-widest uppercase mb-0.5">
-                    {get("problem", "coachingTitleBadge", t.problem.coachingTitleBadge)}
+                    {get("problem", "rightTitle", t.problem.coachingTitleBadge)}
                   </p>
                   <p className="text-lg font-bold text-white">
-                    {get("problem", "coachingHeading", t.problem.coachingHeading)}
+                    {t.problem.coachingHeading}
                   </p>
                 </div>
               </div>

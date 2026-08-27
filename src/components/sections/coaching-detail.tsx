@@ -16,20 +16,20 @@ export function CoachingDetailSection() {
 
   const pillars = [
     {
-      title: get("coachingDetail", "pillar1_title", t.coachingDetail.pillars[0]?.title),
-      items: get("coachingDetail", "pillar1_items", t.coachingDetail.pillars[0]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
+      title: get("coachingDetail", "p1_title", t.coachingDetail.pillars[0]?.title),
+      items: get("coachingDetail", "p1_desc", t.coachingDetail.pillars[0]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
     },
     {
-      title: get("coachingDetail", "pillar2_title", t.coachingDetail.pillars[1]?.title),
-      items: get("coachingDetail", "pillar2_items", t.coachingDetail.pillars[1]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
+      title: get("coachingDetail", "p2_title", t.coachingDetail.pillars[1]?.title),
+      items: get("coachingDetail", "p2_desc", t.coachingDetail.pillars[1]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
     },
     {
-      title: get("coachingDetail", "pillar3_title", t.coachingDetail.pillars[2]?.title),
-      items: get("coachingDetail", "pillar3_items", t.coachingDetail.pillars[2]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
+      title: get("coachingDetail", "p3_title", t.coachingDetail.pillars[2]?.title),
+      items: get("coachingDetail", "p3_desc", t.coachingDetail.pillars[2]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
     },
     {
-      title: get("coachingDetail", "pillar4_title", t.coachingDetail.pillars[3]?.title),
-      items: get("coachingDetail", "pillar4_items", t.coachingDetail.pillars[3]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
+      title: get("coachingDetail", "p4_title", t.coachingDetail.pillars[3]?.title),
+      items: get("coachingDetail", "p4_desc", t.coachingDetail.pillars[3]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
     },
   ];
 
