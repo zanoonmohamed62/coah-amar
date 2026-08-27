@@ -6,6 +6,8 @@ import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  trustHost: true,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "development-secret-key-coach-amar-2025-super-secure-production-ready",
   providers: [
     Credentials({
       name: "credentials",

@@ -3,9 +3,11 @@ import type { NextAuthConfig } from "next-auth";
 export const authConfig = {
   pages: {
     signIn: "/login",
+    error: "/login",
   },
+  trustHost: true,
   session: { strategy: "jwt" },
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "development-secret-key-coach-amar-2025-super-secure",
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "development-secret-key-coach-amar-2025-super-secure-production-ready",
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
