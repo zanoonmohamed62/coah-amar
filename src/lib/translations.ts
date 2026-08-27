@@ -117,6 +117,7 @@ export interface TranslationSchema {
     points: string[];
     btn: string;
     igBtn: string;
+    ytBtn?: string;
     card1: string;
     card2: string;
     card3: string;
@@ -423,6 +424,7 @@ export const translations: Record<Language, TranslationSchema> = {
       ],
       btn: "Start Coaching With Amar",
       igBtn: "Follow on Instagram",
+      ytBtn: "YouTube Channel",
       card1: "Personal Coaching",
       card2: "Training Science",
       card3: "Results Focus",
@@ -515,7 +517,7 @@ export const translations: Record<Language, TranslationSchema> = {
       items: [
         {
           q: "Is the training plan personalized to me?",
-          a: "The Training Plan (399 LE / 19 €) is a structured, science-based system built using proven methodology. It is not customized to your individual measurements. For fully personalized programming, Personal Coaching (1,399 LE / 79 €) is the right choice.",
+          a: "The Training Plan (499 LE / 19 €) is a structured, science-based system built using proven methodology. It is not customized to your individual measurements. For fully personalized programming, Personal Coaching (2,499 LE / 119 €) is the right choice.",
         },
         {
           q: "How do I receive the training plan after payment?",
@@ -531,11 +533,11 @@ export const translations: Record<Language, TranslationSchema> = {
         },
         {
           q: "What happens after the 3 months end?",
-          a: "When your coaching period ends, a renewal option appears in your dashboard. You can continue for another 3 months at 999 LE / 69 €. Coach Amar will have your full history and can build on your progress seamlessly.",
+          a: "When your coaching period ends, a renewal option appears in your dashboard. You can continue for another 3 months at 1,999 LE / 99 €. Coach Amar will have your full history and can build on your progress seamlessly.",
         },
         {
           q: "Can I renew coaching after the 3 months?",
-          a: "Yes. Renewal is 999 LE / 69 € for an additional 3 months and is only available to existing coaching clients. It is not a separate public offer — it appears in your dashboard as your period approaches expiration.",
+          a: "Yes. Renewal is 1,999 LE / 99 € for an additional 3 months and is only available to existing coaching clients. It is not a separate public offer — it appears in your dashboard as your period approaches expiration.",
         },
         {
           q: "Can beginners join? Do I need gym experience?",
@@ -818,6 +820,7 @@ export const translations: Record<Language, TranslationSchema> = {
       ],
       btn: "اشترك الآن مع كوتش عمار",
       igBtn: "تابعني على إنستجرام",
+      ytBtn: "قناة اليوتيوب",
       card1: "تدريب شخصي 1-على-1",
       card2: "علوم التدريب الحديثة",
       card3: "تركيز على النتيجة (12 أسبوع)",

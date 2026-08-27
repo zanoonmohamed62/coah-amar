@@ -2,7 +2,6 @@ import { HeroSection } from "@/components/sections/hero";
 import { TrustStrip } from "@/components/sections/trust-strip";
 import { ProblemSection } from "@/components/sections/problem";
 import { TwoPathsSection } from "@/components/sections/two-paths";
-import { CoachingDetailSection } from "@/components/sections/coaching-detail";
 import { HowItWorksSection } from "@/components/sections/how-it-works";
 import { CoachSection } from "@/components/sections/coach";
 import { FAQSection } from "@/components/sections/faq";
@@ -15,7 +14,6 @@ export default function HomePage() {
       <TrustStrip />
       <ProblemSection />
       <TwoPathsSection />
-      <CoachingDetailSection />
       <HowItWorksSection />
       <CoachSection />
       <FAQSection />

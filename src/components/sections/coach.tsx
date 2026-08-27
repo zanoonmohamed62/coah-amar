@@ -61,15 +61,26 @@ export function CoachSection() {
             <p className="text-xs text-slate-400 font-medium">
               {get("coach", "sub", t.coach.sub)}
             </p>
-            <a
-              href={get("coach", "igUrl", "https://www.instagram.com/amar.el.7ewety/")}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors mt-1 font-semibold"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-              amar.el.7ewety@
-            </a>
+            <div className="flex flex-wrap items-center gap-4 mt-2">
+              <a
+                href={get("coach", "igUrl", "https://www.instagram.com/amar.el.7ewety/")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-semibold"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                amar.el.7ewety@
+              </a>
+              <a
+                href={get("coach", "ytUrl", "https://youtube.com/@amar.el.7ewety?si=crwo5B3iAO_C1ufW")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors font-semibold"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                amar.el.7ewety@
+              </a>
+            </div>
           </div>
 
           <div className="w-12 h-0.5 bg-blue-500/50 my-6" />
@@ -87,8 +98,8 @@ export function CoachSection() {
             ))}
           </ul>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <Link href="/checkout?plan=coaching" className="btn-primary flex items-center gap-2 group py-3 px-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/checkout/coaching" className="btn-primary flex items-center gap-2 group py-3 px-6">
               <span>{get("coach", "btn", t.coach.btn)}</span>
               <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
@@ -96,9 +107,19 @@ export function CoachSection() {
               href={get("coach", "igUrl", "https://www.instagram.com/amar.el.7ewety/")}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-secondary flex items-center gap-2 py-3 px-6"
+              className="btn-secondary flex items-center gap-2 py-3 px-5"
             >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
               <span>{t.coach.igBtn}</span>
+            </a>
+            <a
+              href={get("coach", "ytUrl", "https://youtube.com/@amar.el.7ewety?si=crwo5B3iAO_C1ufW")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary flex items-center gap-2 py-3 px-5 hover:border-red-500/40 hover:text-red-400 transition-colors"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              <span>{get("coach", "ytBtn", t.coach.ytBtn || (isArabic ? "قناة اليوتيوب" : "YouTube"))}</span>
             </a>
           </div>
         </motion.div>

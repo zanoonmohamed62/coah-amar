@@ -69,7 +69,7 @@ function CheckoutContent() {
     }
   }, [planParam]);
 
-  const price = selectedPlan === "training" ? "399" : "1,399";
+  const price = selectedPlan === "training" ? "499" : "2,499";
   const currency = isArabic ? "ج.م" : "LE";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,8 +121,8 @@ function CheckoutContent() {
 
   const whatsappMessage = encodeURIComponent(
     isArabic
-      ? `مرحباً كوتش عمار، أنا سجلت طلب اشتراك جديد رقم: ${orderNumber || "AMAR-ORDER"}\nالاسم: ${formData.name || "متدرب"}\nالباقة: ${selectedPlan === "training" ? "خطة التدريب (٣٩٩ ج.م / 19 €)" : "التدريب الشخصي والمتابعة (١,٣٩٩ ج.م / 79 €)"}\nطريقة الدفع: ${paymentMethod === "instapay" ? "إنستاباي (InstaPay)" : paymentMethod === "paypal" ? "PayPal" : "تيلدا (Telda)"}\nأرجو تأكيد الاشتراك وتفعيل الحساب.`
-      : `Hello Coach Amar, I just placed a new order ${orderNumber || "AMAR-ORDER"}\nName: ${formData.name || "Client"}\nPlan: ${selectedPlan === "training" ? "Training Plan (399 LE / 19 €)" : "Personal Coaching (1,399 LE / 79 €)"}\nPayment: ${paymentMethod.toUpperCase()}\nPlease confirm my registration.`
+      ? `مرحباً كوتش عمار، أنا سجلت طلب اشتراك جديد رقم: ${orderNumber || "AMAR-ORDER"}\nالاسم: ${formData.name || "متدرب"}\nالباقة: ${selectedPlan === "training" ? "خطة التدريب (٤٩٩ ج.م / 19 €)" : "التدريب الشخصي والمتابعة (٢,٤٩٩ ج.م / 119 €)"}\nطريقة الدفع: ${paymentMethod === "instapay" ? "إنستاباي (InstaPay)" : paymentMethod === "paypal" ? "PayPal" : "تيلدا (Telda)"}\nأرجو تأكيد الاشتراك وتفعيل الحساب.`
+      : `Hello Coach Amar, I just placed a new order ${orderNumber || "AMAR-ORDER"}\nName: ${formData.name || "Client"}\nPlan: ${selectedPlan === "training" ? "Training Plan (499 LE / 19 €)" : "Personal Coaching (2,499 LE / 119 €)"}\nPayment: ${paymentMethod.toUpperCase()}\nPlease confirm my registration.`
   );
 
   return (

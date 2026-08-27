@@ -191,7 +191,7 @@ export function TwoPathsSection() {
 
             <div className="mt-4 pt-4 border-t border-slate-800/60">
               <Link
-                href="/checkout?plan=coaching"
+                href="/checkout/coaching"
                 className="btn-primary w-full flex items-center justify-center gap-2 group py-3"
               >
                 <span>{t.twoPaths.offer2.btn}</span>

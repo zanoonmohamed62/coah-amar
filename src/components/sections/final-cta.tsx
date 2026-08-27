@@ -46,10 +46,10 @@ export function FinalCTASection() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/checkout?plan=training" className="btn-secondary flex items-center justify-center gap-2">
+            <Link href="/checkout/split" className="btn-secondary flex items-center justify-center gap-2">
               {t.finalCta.planBtn}
             </Link>
-            <Link href="/checkout?plan=coaching" className="btn-primary flex items-center justify-center gap-2 group">
+            <Link href="/checkout/coaching" className="btn-primary flex items-center justify-center gap-2 group">
               <span>{t.finalCta.coachingBtn}</span>
               <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
