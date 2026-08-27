@@ -2,93 +2,71 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 
-// Counters: how many spots taken out of total
+// Spot counters out of 100 total spots
 const SPLIT_TAKEN = 56;
-const SPLIT_TOTAL = 100;
 const COACHING_TAKEN = 16;
-const COACHING_TOTAL = 30;
+const TOTAL_SPOTS = 100;
 
 function SpotCounter({
   taken,
-  total,
-  variant = "blue",
+  total = 100,
+  isArabic = false,
 }: {
   taken: number;
-  total: number;
-  variant?: "blue" | "slate";
+  total?: number;
+  isArabic?: boolean;
 }) {
   const remaining = total - taken;
   const pct = Math.round((taken / total) * 100);
-  const segCount = 20;
-  const filledSegs = Math.round((pct / 100) * segCount);
 
   return (
-    <div className="mt-5 space-y-3">
-      {/* Top row: remaining count + claimed text */}
-      <div className="flex items-end justify-between">
-        <div className="flex items-baseline gap-1.5">
-          <span
-            className={`text-3xl font-black tabular-nums ${
-              variant === "blue" ? "text-blue-400" : "text-slate-200"
-            }`}
-          >
-            {remaining}
+    <div className="mt-5 p-3.5 rounded-sm bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/20 shadow-inner">
+      {/* Top row: Pulse indicator & Claimed Counter */}
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
           </span>
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            spots left
+          <span className="text-[11px] font-bold tracking-wider uppercase text-blue-300">
+            {isArabic ? "دفعة الخصم (أول 100 مشترك)" : "Discount Batch (First 100)"}
           </span>
         </div>
         <div className="text-right">
-          <span
-            className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm border ${
-              variant === "blue"
-                ? "text-blue-400 border-blue-500/30 bg-blue-500/8"
-                : "text-slate-400 border-slate-700 bg-slate-800/60"
-            }`}
-          >
-            {taken}/{total} claimed
+          <span className="text-xs font-black text-white tracking-wide">
+            {taken}/{total}
+          </span>
+          <span className="text-[10px] text-slate-400 ml-1 font-semibold">
+            {isArabic ? "مشترك" : "claimed"}
           </span>
         </div>
       </div>
 
-      {/* Segmented bar */}
-      <div className="flex gap-[3px]">
-        {Array.from({ length: segCount }).map((_, i) => {
-          const filled = i < filledSegs;
-          return (
-            <div
-              key={i}
-              className={`flex-1 h-[5px] rounded-full transition-all ${
-                filled
-                  ? variant === "blue"
-                    ? "bg-blue-500"
-                    : "bg-slate-400"
-                  : "bg-slate-800"
-              }`}
-            />
-          );
-        })}
+      {/* Sleek Gradient Progress Bar */}
+      <div className="h-2 bg-slate-900/90 rounded-full p-[1px] border border-slate-800/80 overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          whileInView={{ width: `${pct}%` }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+        />
       </div>
 
-      {/* Urgency line */}
-      <p
-        className={`text-[10px] font-semibold uppercase tracking-wider ${
-          remaining <= 10
-            ? "text-red-400"
-            : variant === "blue"
-            ? "text-blue-500"
-            : "text-slate-500"
-        }`}
-      >
-        {remaining <= 5
-          ? "⚡ Almost full — act now"
-          : remaining <= 15
-          ? "🔥 Filling up fast"
-          : "Limited availability at this price"}
-      </p>
+      {/* Bottom Info: Remaining count & percent badge */}
+      <div className="flex items-center justify-between mt-2 text-[11px]">
+        <span className="font-semibold text-slate-200">
+          {isArabic
+            ? `متبقي ${remaining} مقعد فقط بهذا السعر`
+            : `${remaining} spots remaining at this price`}
+        </span>
+        <span className="text-blue-400 font-bold text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+          {pct}% {isArabic ? "مكتمل" : "filled"}
+        </span>
+      </div>
     </div>
   );
 }
@@ -97,11 +75,11 @@ export function TwoPathsSection() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
-  // Discounted prices (40% off from real base prices)
-  const splitOriginalEGP = Math.round(499 / 0.6);   // = 832
-  const splitOriginalEUR = Math.round(19 / 0.6);    // = 32
-  const coachingOriginalEGP = Math.round(2499 / 0.6); // = 4165
-  const coachingOriginalEUR = Math.round(119 / 0.6); // = 198
+  // Base undiscounted prices
+  const splitOriginalEGP = 499;
+  const splitOriginalEUR = 19;
+  const coachingOriginalEGP = "2,499";
+  const coachingOriginalEUR = 119;
 
   return (
     <section id="plans" className="section-padding px-6">
@@ -144,12 +122,14 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1">{t.twoPaths.offer1.sub}</p>
                 </div>
                 <div className="text-right">
-                  {/* Crossed-out original price */}
-                  <p className="text-sm text-slate-500 line-through mb-0.5">
+                  {/* Crossed-out original price (499 EGP) */}
+                  <p className="text-sm text-slate-500 line-through mb-0.5 font-medium">
                     {splitOriginalEGP} EGP / {splitOriginalEUR} €
                   </p>
                   <div className="flex items-center gap-2 justify-end">
-                    <span className="bg-orange-500/20 text-orange-400 text-[0.65rem] font-extrabold px-2 py-0.5 rounded-sm">-40%</span>
+                    <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[0.65rem] font-black px-2 py-0.5 rounded-sm">
+                      -40%
+                    </span>
                     <p className="text-3xl font-extrabold text-white">
                       {t.twoPaths.offer1.price}
                       <span className="text-sm font-normal text-slate-400 mx-1">{t.twoPaths.offer1.currency}</span>
@@ -161,8 +141,8 @@ export function TwoPathsSection() {
                 </div>
               </div>
 
-              {/* Spot counter */}
-              <SpotCounter taken={SPLIT_TAKEN} total={SPLIT_TOTAL} variant="slate" />
+              {/* Spot counter (56 / 100) */}
+              <SpotCounter taken={SPLIT_TAKEN} total={TOTAL_SPOTS} isArabic={isArabic} />
 
               <div className="h-px bg-slate-800 my-6" />
 
@@ -196,18 +176,19 @@ export function TwoPathsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="bg-[#0f1626] border-2 border-blue-500/40 rounded-sm p-8 flex flex-col justify-between relative"
+            className="bg-[#0f1626] border-2 border-blue-500/40 rounded-sm p-8 flex flex-col justify-between relative shadow-xl shadow-blue-950/30"
           >
             {/* Top badge */}
-            <div className={`absolute -top-3 ${isArabic ? "left-6" : "right-6"} bg-blue-600 text-white text-[0.65rem] font-extrabold tracking-wider uppercase px-3 py-1 rounded-sm shadow-md`}>
-              {isArabic ? "الأكثر طلباً" : "MOST POPULAR"}
+            <div className={`absolute -top-3 ${isArabic ? "left-6" : "right-6"} bg-blue-600 text-white text-[0.65rem] font-extrabold tracking-wider uppercase px-3 py-1 rounded-sm shadow-md flex items-center gap-1`}>
+              <Sparkles size={11} />
+              <span>{isArabic ? "الأكثر طلباً" : "MOST POPULAR"}</span>
             </div>
 
             <div>
               <div className="flex items-start justify-between mb-6 pt-2">
                 <div>
                   <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-sm inline-block mb-3">
-                    Offer 02
+                    {t.twoPaths.offer2.badge}
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
                     {t.twoPaths.offer2.title}
@@ -215,12 +196,14 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1">{t.twoPaths.offer2.sub}</p>
                 </div>
                 <div className="text-right">
-                  {/* Crossed-out original price */}
-                  <p className="text-sm text-slate-500 line-through mb-0.5">
+                  {/* Crossed-out original price (2,499 EGP) */}
+                  <p className="text-sm text-slate-500 line-through mb-0.5 font-medium">
                     {coachingOriginalEGP} EGP / {coachingOriginalEUR} €
                   </p>
                   <div className="flex items-center gap-2 justify-end">
-                    <span className="bg-orange-500/20 text-orange-400 text-[0.65rem] font-extrabold px-2 py-0.5 rounded-sm">-40%</span>
+                    <span className="bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[0.65rem] font-black px-2 py-0.5 rounded-sm">
+                      -40%
+                    </span>
                     <p className="text-3xl font-extrabold text-blue-400">
                       {t.twoPaths.offer2.price}
                       <span className="text-sm font-normal text-slate-400 mx-1">{t.twoPaths.offer2.currency}</span>
@@ -232,8 +215,8 @@ export function TwoPathsSection() {
                 </div>
               </div>
 
-              {/* Spot counter */}
-              <SpotCounter taken={COACHING_TAKEN} total={COACHING_TOTAL} variant="blue" />
+              {/* Spot counter (16 / 100) */}
+              <SpotCounter taken={COACHING_TAKEN} total={TOTAL_SPOTS} isArabic={isArabic} />
 
               <div className="h-px bg-slate-800 my-6" />
 
@@ -265,3 +248,4 @@ export function TwoPathsSection() {
     </section>
   );
 }
+

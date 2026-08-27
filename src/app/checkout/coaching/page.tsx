@@ -26,10 +26,10 @@ import { useLanguage } from "@/lib/language-context";
 
 const COACHING_TAKEN = 16;
 const TOTAL_SPOTS = 100;
-const COACHING_PRICE_EGP = 2499;
-const COACHING_PRICE_EUR = 119;
-const ORIGINAL_EGP = Math.round(COACHING_PRICE_EGP / 0.6);
-const ORIGINAL_EUR = Math.round(COACHING_PRICE_EUR / 0.6);
+const COACHING_PRICE_EGP = 1499;
+const COACHING_PRICE_EUR = 71;
+const ORIGINAL_EGP = 2499;
+const ORIGINAL_EUR = 119;
 
 const pillarIcons = [Dumbbell, Apple, Pill, Heart];
 
@@ -306,14 +306,16 @@ export default function CoachingCheckoutPage() {
             {/* Left: Spots & Pricing summary */}
             <div className="lg:col-span-5 space-y-6">
               {/* Discount Offer Banner */}
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-sm p-5">
+              <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-sm p-5 shadow-inner">
                 <div className="flex items-start gap-3">
-                  <Flame size={22} className="text-orange-400 shrink-0 mt-0.5" />
+                  <div className="w-8 h-8 rounded-sm bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
+                    <Sparkles size={16} className="text-blue-400" />
+                  </div>
                   <div>
                     <p className="text-white font-bold text-sm">
-                      {isArabic ? "خصم 40% لفترة محدودة — الأكثر طلباً" : "40% OFF — Most Popular Choice"}
+                      {isArabic ? "خصم 40% لأول 100 مشترك — الأكثر طلباً" : "40% OFF — First 100 Buyers"}
                     </p>
-                    <p className="text-slate-400 text-xs mt-1">
+                    <p className="text-slate-300 text-xs mt-1">
                       {isArabic
                         ? `متبقي ${TOTAL_SPOTS - COACHING_TAKEN} مقعداً فقط بهذا السعر`
                         : `${TOTAL_SPOTS - COACHING_TAKEN} spots remaining at this price`}
@@ -323,16 +325,16 @@ export default function CoachingCheckoutPage() {
 
                 {/* Progress bar */}
                 <div className="mt-4">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5 font-medium">
+                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1.5 font-semibold">
                     <span>{COACHING_TAKEN}/{TOTAL_SPOTS} {isArabic ? "مشترك" : "claimed"}</span>
                     <span className="text-blue-400">{TOTAL_SPOTS - COACHING_TAKEN} {isArabic ? "متبقي" : "left"}</span>
                   </div>
-                  <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-900 rounded-full p-[1px] border border-slate-800 overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${(COACHING_TAKEN / TOTAL_SPOTS) * 100}%` }}
                       transition={{ duration: 1.2, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"
+                      className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
                     />
                   </div>
                 </div>
