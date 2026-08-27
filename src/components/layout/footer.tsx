@@ -75,7 +75,7 @@ export function Footer() {
             </ul>
             <div className="flex gap-4 mt-6">
               <a
-                href="https://www.youtube.com/@amar.el.7ewety"
+                href="https://youtube.com/@amar.el.7ewety?si=crwo5B3iAO_C1ufW"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--text-muted)] hover:text-red-500 transition-colors"

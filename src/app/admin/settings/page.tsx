@@ -95,6 +95,12 @@ export default function AdminSettingsPage() {
           hint: "https://instagram.com/amar.fitness",
           defaultValue: "https://instagram.com/amar.fitness",
         },
+        {
+          key: "youtube_url",
+          label: isArabic ? "رابط قناة يوتيوب" : "YouTube Channel URL",
+          hint: "https://youtube.com/@amar.el.7ewety?si=crwo5B3iAO_C1ufW",
+          defaultValue: "https://youtube.com/@amar.el.7ewety?si=crwo5B3iAO_C1ufW",
+        },
       ],
     },
   ];

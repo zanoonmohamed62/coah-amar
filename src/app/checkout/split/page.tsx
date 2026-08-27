@@ -10,12 +10,11 @@ import {
   ShieldCheck,
   Flame,
   Dumbbell,
-  FileText,
-  BarChart3,
-  Clock,
+  ListChecks,
+  Timer,
   TrendingUp,
-  BookOpen,
-  Zap,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 
@@ -26,17 +25,10 @@ const SPLIT_PRICE_EUR = 19;
 const ORIGINAL_EGP = Math.round(SPLIT_PRICE_EGP / 0.6);
 const ORIGINAL_EUR = Math.round(SPLIT_PRICE_EUR / 0.6);
 
-const features = [
-  { icon: Dumbbell, text: "Complete 7-day training structure" },
-  { icon: BarChart3, text: "Sets & reps ranges for every exercise" },
-  { icon: Zap, text: "Weak points & priority system" },
-  { icon: Clock, text: "Rest time rules" },
-  { icon: TrendingUp, text: "Progressive overload rule" },
-  { icon: BookOpen, text: "Training log & progress tracking" },
-];
+const highlightIcons = [Dumbbell, ListChecks, Timer, TrendingUp];
 
 export default function SplitCheckoutPage() {
-  const { isArabic } = useLanguage();
+  const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
   const [paymentMethod, setPaymentMethod] = useState<"instapay" | "paypal" | "telda">("instapay");
@@ -51,7 +43,7 @@ export default function SplitCheckoutPage() {
     fetch("/api/products")
       .then((r) => r.json())
       .then((data: { products?: { id: string; slug: string }[] }) => {
-        const p = (data.products || []).find((p) => p.slug === "training-split" || p.slug === "training-plan" || p.slug === "ammar-x-split");
+        const p = (data.products || []).find((p) => p.slug === "training-split" || p.slug === "training-plan" || p.slug === "ammar-x-split" || p.slug === "amar-x-split");
         if (p) setProductId(p.id);
       })
       .catch(() => {});
@@ -59,7 +51,7 @@ export default function SplitCheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId) { setError("Product not found. Please try again."); return; }
+    if (!productId) { setError(isArabic ? "لم يتم العثور على المنتج. حاول مرة أخرى." : "Product not found. Please try again."); return; }
     setIsSubmitting(true);
     setError("");
 
@@ -83,29 +75,36 @@ export default function SplitCheckoutPage() {
     });
 
     setIsSubmitting(false);
-    if (!res.ok) { setError("Something went wrong. Please try again."); return; }
+    if (!res.ok) { setError(isArabic ? "حدث خطأ ما. يرجى المحاولة مرة أخرى." : "Something went wrong. Please try again."); return; }
     setOrderRef(ref);
     setIsSuccess(true);
   };
 
   if (isSuccess) {
     const waMsg = encodeURIComponent(
-      `Hi Coach Amar! I purchased the Amar X Split.\nOrder: ${orderRef}\nName: ${formData.name}\nPayment: ${paymentMethod.toUpperCase()}\nPlease confirm my payment.`
+      isArabic
+        ? `مرحباً كوتش عمار! قمت بطلب خطة Amar X Split.\nرقم الطلب: ${orderRef}\nالاسم: ${formData.name}\nطريقة الدفع: ${paymentMethod.toUpperCase()}\nيرجى تأكيد الدفع وتفعيل الوصول.`
+        : `Hi Coach Amar! I purchased the Amar X Split.\nOrder: ${orderRef}\nName: ${formData.name}\nPayment: ${paymentMethod.toUpperCase()}\nPlease confirm my payment.`
     );
     return (
       <div className="min-h-screen flex items-center justify-center px-6 bg-[#07090e]">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center space-y-6"
+          className="max-w-md w-full text-center space-y-6 bg-[#0b0f19] border border-slate-800 p-8 rounded-sm shadow-2xl"
         >
           <div className="w-16 h-16 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center mx-auto">
             <Check size={28} className="text-green-400" />
           </div>
-          <h1 className="text-3xl font-extrabold text-white">Order Received!</h1>
-          <p className="text-slate-400">
-            Your order <span className="text-blue-400 font-bold">{orderRef}</span> has been placed.
-            {paymentMethod === "instapay" && " Send your payment screenshot on WhatsApp to confirm."}
+          <h1 className="text-3xl font-extrabold text-white">
+            {isArabic ? "تم استلام طلبك بنجاح!" : "Order Received!"}
+          </h1>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            {isArabic ? "رقم طلبك هو " : "Your order "}
+            <span className="text-blue-400 font-bold">{orderRef}</span>
+            {isArabic
+              ? ". الخطوة الأخيرة: أرسل صورة التحويل عبر واتساب لتفعيل وصولك للجدول فوراً."
+              : ". Send your payment screenshot on WhatsApp to confirm and unlock your plan immediately."}
           </p>
           <a
             href={`https://wa.me/34610354255?text=${waMsg}`}
@@ -113,11 +112,11 @@ export default function SplitCheckoutPage() {
             rel="noopener noreferrer"
             className="btn-primary w-full flex items-center justify-center gap-2 py-3.5"
           >
-            <span>Confirm on WhatsApp</span>
+            <span>{isArabic ? "تأكيد عبر واتساب مع الكوتش" : "Confirm on WhatsApp"}</span>
             <ArrowIcon size={15} />
           </a>
           <Link href="/" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">
-            Back to Home
+            {isArabic ? "العودة للرئيسية" : "Back to Home"}
           </Link>
         </motion.div>
       </div>
@@ -125,185 +124,327 @@ export default function SplitCheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#07090e] pt-24 pb-16 px-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#07090e] pt-24 pb-20 px-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Navigation Breadcrumb */}
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-blue-400 transition-colors"
+          >
+            <ArrowIcon size={14} className={isArabic ? "rotate-180" : ""} />
+            <span>{isArabic ? "العودة للرئيسية" : "Back to Home"}</span>
+          </Link>
+        </div>
 
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-sm mb-4">
-            Offer 01 — Limited Spots
-          </span>
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-4">
-            AMAR X SPLIT
-          </h1>
-          <p className="text-slate-400 text-lg max-w-lg mx-auto">
-            The complete 7-day training structure built with old school principles and modern progression science.
-          </p>
-        </motion.div>
+        {/* ── SECTION 1: THE TRAINING PLAN EXPLANATION & BREAKDOWN ── */}
+        <div className="mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Column: Heading & 4 Feature Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="lg:col-span-7"
+            >
+              <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-sm mb-4">
+                {t.trainingDetail.badge}
+              </span>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight mb-4 tracking-tight">
+                {isArabic ? "نظام التدريب المتقدم" : "THE TRAINING PLAN"}
+                <br />
+                <span className="text-blue-500">“AMAR X SPLIT”</span>
+              </h1>
 
-          {/* Left: What you get */}
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-8 max-w-xl">
+                {t.trainingDetail.desc}
+              </p>
 
-            {/* Discount badge */}
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-sm p-4 mb-6 flex items-center gap-3">
-              <Flame size={20} className="text-orange-400 flex-shrink-0" />
-              <div>
-                <p className="text-orange-400 font-bold text-sm">40% OFF — First 100 buyers</p>
-                <p className="text-slate-400 text-xs">{TOTAL_SPOTS - SPLIT_TAKEN} spots remaining at this price</p>
+              {/* 4 Feature Highlights Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {t.trainingDetail.highlights.map((item, i) => {
+                  const IconComponent = highlightIcons[i] || Dumbbell;
+                  return (
+                    <div
+                      key={i}
+                      className="bg-[#0b0f19] border border-slate-800 rounded-sm p-4 hover:border-blue-500/30 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-sm bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
+                        <IconComponent size={16} className="text-blue-400" />
+                      </div>
+                      <p className="text-sm font-bold text-white mb-1">{item.title}</p>
+                      <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Spot progress bar */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-                <span>{SPLIT_TAKEN}/{TOTAL_SPOTS} claimed</span>
-                <span>{TOTAL_SPOTS - SPLIT_TAKEN} left</span>
-              </div>
-              <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(SPLIT_TAKEN / TOTAL_SPOTS) * 100}%` }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full"
-                />
-              </div>
-            </div>
+            {/* Right Column: Visual Athletic Card with Promo details */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="lg:col-span-5"
+            >
+              <div className="relative rounded-sm overflow-hidden border border-blue-500/30 bg-[#0b0f19] shadow-2xl p-6 sm:p-8 flex flex-col justify-between aspect-[4/3] min-h-[360px]">
+                {/* Background glow */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-60" />
 
-            <h2 className="text-xl font-bold text-white mb-4">What&apos;s Inside</h2>
-            <ul className="space-y-3 mb-8">
-              {features.map(({ icon: Icon, text }, i) => (
-                <motion.li
-                  key={i}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + i * 0.07 }}
-                  className="flex items-center gap-3 text-slate-300 text-sm"
-                >
-                  <div className="w-8 h-8 bg-blue-500/10 border border-blue-500/20 rounded-sm flex items-center justify-center flex-shrink-0">
-                    <Icon size={15} className="text-blue-400" />
+                {/* Simulated PDF Header */}
+                <div className="flex justify-between items-center opacity-60">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-red-500/80" />
+                    <div className="w-2 h-2 rounded-full bg-amber-500/80" />
+                    <div className="w-2 h-2 rounded-full bg-emerald-500/80" />
                   </div>
-                  <span>{text}</span>
-                </motion.li>
-              ))}
-            </ul>
-
-            {/* Price display */}
-            <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-5">
-              <div className="flex items-baseline gap-3 mb-1">
-                <span className="text-slate-500 line-through text-lg">{ORIGINAL_EGP} EGP</span>
-                <span className="bg-orange-500/20 text-orange-400 text-xs font-extrabold px-2 py-0.5 rounded-sm">-40%</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-extrabold text-white">{SPLIT_PRICE_EGP}</span>
-                <span className="text-slate-400">EGP</span>
-                <span className="text-slate-500 mx-1">/</span>
-                <span className="text-2xl font-bold text-blue-400">{SPLIT_PRICE_EUR} €</span>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">One-time payment · Instant digital delivery</p>
-            </div>
-
-            {/* Guarantee */}
-            <div className="flex items-center gap-2.5 mt-4 text-xs text-slate-500">
-              <ShieldCheck size={14} className="text-blue-400" />
-              <span>Secured payment · Your data is safe</span>
-            </div>
-          </motion.div>
-
-          {/* Right: Order form */}
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-            <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6">
-              <h2 className="text-lg font-bold text-white mb-6">Complete Your Order</h2>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-sm px-4 py-3 text-sm text-red-400">
-                    {error}
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Your name"
-                    className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                  />
+                  <div className="text-[10px] font-mono tracking-widest text-blue-400">AMARX_SPLIT.PDF</div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="your@email.com"
-                    className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Phone / WhatsApp</label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+20 or +34..."
-                    className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                  />
-                </div>
-
-                {/* Payment Method */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-2">Payment Method</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["instapay", "paypal", "telda"] as const).map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setPaymentMethod(m)}
-                        className={`py-2.5 rounded-sm text-xs font-bold border transition-all uppercase ${
-                          paymentMethod === m
-                            ? "border-blue-500 bg-blue-500/10 text-blue-400"
-                            : "border-slate-800 text-slate-500 hover:border-slate-700"
-                        }`}
-                      >
-                        {m === "instapay" ? "InstaPay" : m === "paypal" ? "PayPal" : "Telda"}
-                      </button>
-                    ))}
+                {/* Center Athletic Typography */}
+                <div className="text-center my-auto py-4">
+                  <h3 className="text-5xl sm:text-6xl font-black text-white leading-none tracking-tighter" style={{ fontFamily: "var(--font-outfit)" }}>
+                    AMAR
+                  </h3>
+                  <div className="flex items-center justify-center gap-3 my-2">
+                    <div className="h-px bg-white/20 w-12" />
+                    <span className="text-3xl font-black text-blue-400 leading-none italic">X</span>
+                    <div className="h-px bg-white/20 w-12" />
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">
-                    {paymentMethod === "instapay" && "📱 Send to: amar.fitness@instapay — then confirm on WhatsApp"}
-                    {paymentMethod === "paypal" && "🌐 PayPal.me/amar.fitness — then confirm on WhatsApp"}
-                    {paymentMethod === "telda" && "💳 @amar.fitness on Telda — then confirm on WhatsApp"}
+                  <h3 className="text-5xl sm:text-6xl font-black text-white leading-none tracking-tighter" style={{ fontFamily: "var(--font-outfit)" }}>
+                    SPLIT
+                  </h3>
+                </div>
+
+                {/* Price tag bar */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-800/80">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider block">
+                      {isArabic ? "دفع مرة واحدة" : "ONE-TIME"}
+                    </span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-2xl font-black text-white">{SPLIT_PRICE_EGP}</span>
+                      <span className="text-xs text-slate-400">LE / {SPLIT_PRICE_EUR} €</span>
+                    </div>
+                  </div>
+                  <span className="bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-sm">
+                    {isArabic ? "تفعيل فوري" : "Instant Access"}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* ── SECTION 2: CHECKOUT & PAYMENT FORM ── */}
+        <div className="border-t border-slate-800 pt-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            {/* Left: Spots & Pricing summary */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Discount Offer Banner */}
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-sm p-5">
+                <div className="flex items-start gap-3">
+                  <Flame size={22} className="text-orange-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-orange-400 font-bold text-sm">
+                      {isArabic ? "خصم 40% لأول 100 مشترك" : "40% OFF — First 100 buyers"}
+                    </p>
+                    <p className="text-slate-400 text-xs mt-1">
+                      {isArabic
+                        ? `متبقي ${TOTAL_SPOTS - SPLIT_TAKEN} مقعداً فقط بهذا السعر`
+                        : `${TOTAL_SPOTS - SPLIT_TAKEN} spots remaining at this price`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5 font-medium">
+                    <span>{SPLIT_TAKEN}/{TOTAL_SPOTS} {isArabic ? "مشترك" : "claimed"}</span>
+                    <span className="text-orange-400">{TOTAL_SPOTS - SPLIT_TAKEN} {isArabic ? "متبقي" : "left"}</span>
+                  </div>
+                  <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(SPLIT_TAKEN / TOTAL_SPOTS) * 100}%` }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                      className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Summary Box */}
+              <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 space-y-4">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Sparkles size={16} className="text-blue-400" />
+                  <span>{isArabic ? "ملخص الطلب" : "Order Summary"}</span>
+                </h3>
+
+                <div className="flex items-center justify-between py-2 border-b border-slate-800 text-sm">
+                  <span className="text-slate-300 font-medium">Amar X Split (7-Day Program)</span>
+                  <div className="text-right">
+                    <span className="text-xs text-slate-500 line-through mr-2">{ORIGINAL_EGP} LE</span>
+                    <span className="text-white font-bold">{SPLIT_PRICE_EGP} LE</span>
+                  </div>
+                </div>
+
+                <div className="flex items-baseline justify-between pt-2">
+                  <span className="text-slate-400 text-xs">{isArabic ? "الإجمالي المطلوب" : "Total Amount"}</span>
+                  <div className="text-right">
+                    <span className="text-2xl font-black text-blue-400">{SPLIT_PRICE_EGP} LE</span>
+                    <span className="text-xs text-slate-400 ml-1.5">({SPLIT_PRICE_EUR} €)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trust Badge */}
+              <div className="flex items-center gap-3 text-xs text-slate-400 px-1">
+                <ShieldCheck size={16} className="text-blue-400 shrink-0" />
+                <span>
+                  {isArabic
+                    ? "دفع آمن 100% — تفعيل فوري ومباشر على حسابك أو الواتساب"
+                    : "100% Secure Checkout · Instant Delivery & Direct WhatsApp Support"}
+                </span>
+              </div>
+            </div>
+
+            {/* Right: Payment & Customer Form */}
+            <div className="lg:col-span-7">
+              <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 sm:p-8">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Lock size={18} className="text-blue-400" />
+                  <span>{isArabic ? "بيانات المشترك والدفع" : "Customer & Payment Details"}</span>
+                </h2>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {error && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-sm px-4 py-3 text-sm text-red-400">
+                      {error}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      {isArabic ? "الاسم بالكامل *" : "Full Name *"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder={isArabic ? "اسمك بالكامل" : "Your full name"}
+                      className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        {isArabic ? "البريد الإلكتروني *" : "Email Address *"}
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="your@email.com"
+                        className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        {isArabic ? "رقم الواتساب للتفعيل *" : "WhatsApp Phone *"}
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="+20 or +34..."
+                        className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Payment Method Selector */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-2">
+                      {isArabic ? "اختر طريقة الدفع" : "Select Payment Method"}
+                    </label>
+                    <div className="grid grid-cols-3 gap-2.5">
+                      {(["instapay", "paypal", "telda"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setPaymentMethod(m)}
+                          className={`py-3 rounded-sm text-xs font-bold border transition-all uppercase ${
+                            paymentMethod === m
+                              ? "border-blue-500 bg-blue-500/15 text-blue-400 shadow-md shadow-blue-500/10"
+                              : "border-slate-800 text-slate-400 hover:border-slate-700 bg-[#07090e]"
+                          }`}
+                        >
+                          {m === "instapay" ? "InstaPay" : m === "paypal" ? "PayPal" : "Telda"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Payment instructions */}
+                    <div className="bg-[#07090e] border border-slate-800/80 rounded-sm p-3.5 mt-3 text-xs text-slate-400 leading-relaxed">
+                      {paymentMethod === "instapay" && (
+                        <p>
+                          📱 <strong className="text-white">InstaPay:</strong> التحويل على عنوان:{" "}
+                          <span className="text-blue-400 font-mono font-bold select-all">amar.fitness@instapay</span>
+                        </p>
+                      )}
+                      {paymentMethod === "paypal" && (
+                        <p>
+                          🌐 <strong className="text-white">PayPal:</strong> التحويل عبر الرابط:{" "}
+                          <span className="text-blue-400 font-mono font-bold select-all">paypal.me/amar.fitness</span>
+                        </p>
+                      )}
+                      {paymentMethod === "telda" && (
+                        <p>
+                          💳 <strong className="text-white">Telda:</strong> التحويل على يوزر:{" "}
+                          <span className="text-blue-400 font-mono font-bold select-all">@amar.fitness</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn-primary w-full py-4 flex items-center justify-center gap-2 group disabled:opacity-70 text-base font-bold shadow-lg shadow-blue-600/20"
+                  >
+                    <span>
+                      {isSubmitting
+                        ? isArabic ? "جاري تسجيل الطلب..." : "Processing..."
+                        : isArabic
+                        ? `احصل على الـ Split الآن — ${SPLIT_PRICE_EGP} ج.م`
+                        : `Get The Split Now — ${SPLIT_PRICE_EGP} EGP`}
+                    </span>
+                    {!isSubmitting && (
+                      <ArrowIcon
+                        size={16}
+                        className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`}
+                      />
+                    )}
+                  </button>
+
+                  <p className="text-center text-xs text-slate-500">
+                    {isArabic
+                      ? "بعد الضغط سيتم تحويلك للواتساب لإرسال صورة التحويل واستلام ملفاتك فوراً."
+                      : "After payment, you will confirm via WhatsApp to activate instant access."}
                   </p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="btn-primary w-full py-3.5 flex items-center justify-center gap-2 group disabled:opacity-70"
-                >
-                  <span>{isSubmitting ? "Processing..." : `Get The Split — ${SPLIT_PRICE_EGP} EGP`}</span>
-                  {!isSubmitting && <ArrowIcon size={15} className="group-hover:translate-x-1 transition-transform" />}
-                </button>
-
-                <p className="text-center text-xs text-slate-500">
-                  After payment, confirm via WhatsApp to activate your access instantly.
-                </p>
-              </form>
+                </form>
+              </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>
