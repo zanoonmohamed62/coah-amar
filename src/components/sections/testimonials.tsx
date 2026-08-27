@@ -11,16 +11,16 @@ export function TestimonialsSection() {
 
   const reviews = [
     {
-      name: get("testimonials", "t1_name"),
-      duration: get("testimonials", "t1_duration"),
-      result: get("testimonials", "t1_result"),
-      text: get("testimonials", "t1_text"),
+      name: get("testimonials", "t1_name", ""),
+      duration: get("testimonials", "t1_duration", ""),
+      result: get("testimonials", "t1_result", ""),
+      text: get("testimonials", "t1_text", ""),
     },
     {
-      name: get("testimonials", "t2_name"),
-      duration: get("testimonials", "t2_duration"),
-      result: get("testimonials", "t2_result"),
-      text: get("testimonials", "t2_text"),
+      name: get("testimonials", "t2_name", ""),
+      duration: get("testimonials", "t2_duration", ""),
+      result: get("testimonials", "t2_result", ""),
+      text: get("testimonials", "t2_text", ""),
     },
   ].filter(r => r.name && r.text);
 
