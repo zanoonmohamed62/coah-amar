@@ -44,7 +44,7 @@ const SECTIONS: SectionDef[] = [
     key: "hero",
     fields: [
       { id: "badge", labelEn: "Badge Text", labelAr: "نص الشارة العلوية (Badge)", type: "text", hintEn: 'e.g. X "MÉTHODE"', hintAr: 'مثال: X "MÉTHODE"' },
-      { id: "titleLine1", labelEn: "Headline Line 1", labelAr: "العنوان الرئيسي - السطر 1", type: "text", hintEn: "e.g. THE AMMAR", hintAr: "مثال: THE AMMAR" },
+      { id: "titleLine1", labelEn: "Headline Line 1", labelAr: "العنوان الرئيسي - السطر 1", type: "text", hintEn: "e.g. THE AMAR", hintAr: "مثال: THE AMAR" },
       { id: "titleLine2", labelEn: "Headline Line 2", labelAr: "العنوان الرئيسي - السطر 2", type: "text", hintEn: 'e.g. "X SPLIT"', hintAr: 'مثال: "X SPLIT"' },
       { id: "titleLine3", labelEn: "Headline Line 3", labelAr: "العنوان الرئيسي - السطر 3", type: "text", hintEn: "e.g. BUILD DIFFERENT", hintAr: "مثال: ابني جسمك بذكاء" },
       { id: "description", labelEn: "Hero Description", labelAr: "الوصف الترويجي أسفل العنوان", type: "textarea", hintEn: "Subheadline text below the main title", hintAr: "نص الوصف التوضيحي للنظام" },

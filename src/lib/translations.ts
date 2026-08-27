@@ -241,7 +241,7 @@ export const translations: Record<Language, TranslationSchema> = {
     },
     hero: {
       badge: 'X "MÉTHODE"',
-      titleLine1: "THE AMMAR",
+      titleLine1: "THE AMAR",
       titleLine2: '"X SPLIT"',
       titleLine3: "BUILD DIFFERENT",
       description: "Hybrid training — old school training, modern progression. Built around your body, schedule, and goals.",
@@ -254,7 +254,7 @@ export const translations: Record<Language, TranslationSchema> = {
       stat2Label: "Years Experience",
       stat3Value: "0",
       stat3Label: "Client Rating",
-      cardBadge: "Ammar Fitness",
+      cardBadge: "Amar Fitness",
       cardTitle: "1-on-1 Personal Coaching",
     },
     trust: {
@@ -636,7 +636,7 @@ export const translations: Record<Language, TranslationSchema> = {
     },
     hero: {
       badge: 'X "MÉTHODE"',
-      titleLine1: "THE AMMAR",
+      titleLine1: "THE AMAR",
       titleLine2: '“X SPLIT”',
       titleLine3: "BUILD DIFFERENT",
       description: "مش مجرد ملف PDF عادي. نظام تدريب وتغذية متكامل مصمم خصيصاً لجسمك، جدول يومك، وأهدافك الرياضية.",
@@ -678,8 +678,8 @@ export const translations: Record<Language, TranslationSchema> = {
         "بدون قياس تطور حقيقي للأوزان",
         "ملف PDF بتنزله وتنساه للأبد",
       ],
-      coachingTitleBadge: "نظام كوتش عمار المخصص",
-      coachingHeading: "مبني حواليك أنت.. وبيتعدل مع كل أسبوع",
+      coachingTitleBadge: "هايبرد تريننج",
+      coachingHeading: "أسلوب تقليدي.. بتطور علمي حديث.",
       coachingPoints: [
         "مصمم خصيصاً لجسمك وهدفك",
         "تعديلات أسبوعية مستمرة حسب تطورك",

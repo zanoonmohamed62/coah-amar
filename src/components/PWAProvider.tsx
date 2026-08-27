@@ -129,7 +129,7 @@ export function PWAProvider() {
           <div className="flex items-start gap-3">
             {/* Blue App Icon */}
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-blue-500/20 shadow-md shadow-blue-500/10">
-              <img src="/icons/icon-192.png" alt="AMMAR X" className="w-full h-full object-cover" />
+              <img src="/icons/icon-192.png" alt="AMAR X" className="w-full h-full object-cover" />
             </div>
             <div>
               <p className="text-sm font-black text-white">ضيف الأبليكيشن على هاتفك</p>

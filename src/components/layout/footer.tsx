@@ -21,10 +21,9 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 border border-[var(--accent)] flex items-center justify-center rounded-sm bg-[var(--accent-glow)]">
-                <span className="text-[var(--accent)] font-bold text-sm" style={{ fontFamily: "var(--font-outfit)" }}>
-                  A
-                </span>
+              <div className="w-8 h-8 rounded-sm overflow-hidden flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/icon.svg" alt="Amar X Split" className="w-full h-full object-contain" />
               </div>
               <span
                 className="font-bold tracking-wider uppercase text-sm"
@@ -76,7 +75,7 @@ export function Footer() {
             </ul>
             <div className="flex gap-4 mt-6">
               <a
-                href="https://www.youtube.com/@AmarFitness"
+                href="https://www.youtube.com/@amar.el.7ewety"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--text-muted)] hover:text-red-500 transition-colors"

@@ -80,60 +80,18 @@ export function CoachingDetailSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="relative rounded-sm overflow-hidden border border-[var(--border-accent)] bg-[#0d121c] aspect-video shadow-2xl group flex flex-col p-4 sm:p-6 card-hover"
+            className="relative rounded-sm overflow-hidden border border-[var(--border-accent)] aspect-video shadow-2xl group card-hover"
           >
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:20px_20px]" />
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--accent)]/10 rounded-full blur-3xl pointer-events-none" />
-            
-            {/* Simulated Dashboard Header */}
-            <div className="flex items-center justify-between mb-6 sm:mb-8 relative z-10 border-b border-[var(--border)] pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center">
-                  <Heart size={14} className="text-[var(--accent)]" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">{isArabic ? "متابعة حية" : "Live Tracking"}</div>
-                  <div className="text-sm font-bold text-white">Coach Dashboard</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <div className="text-[10px] text-emerald-400 font-mono tracking-wide">SYNCED</div>
-              </div>
-            </div>
-
-            {/* Simulated Data Cards */}
-            <div className="grid grid-cols-2 gap-4 relative z-10 flex-1">
-              <div className="glass border border-[var(--border)] rounded-sm p-4 flex flex-col justify-between group-hover:border-blue-500/30 transition-colors bg-white/5">
-                <div className="flex justify-between items-start">
-                  <Dumbbell size={16} className="text-[var(--text-muted)]" />
-                  <div className="text-[10px] text-[var(--accent)] font-mono font-bold bg-[var(--accent)]/10 px-2 py-0.5 rounded-sm">+12%</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-black text-white mt-4" style={{ fontFamily: "var(--font-outfit)" }}>120 <span className="text-sm text-[var(--text-muted)]">KG</span></div>
-                  <div className="text-[10px] text-[var(--text-muted)] uppercase mt-1 tracking-wider">Bench Press (1RM)</div>
-                </div>
-              </div>
-
-              <div className="glass border border-[var(--border-accent)] rounded-sm p-4 flex flex-col justify-between bg-[var(--accent)]/5">
-                <div className="flex justify-between items-start">
-                  <Apple size={16} className="text-[var(--accent)]" />
-                  <div className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded-sm">ON TRACK</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-black text-white mt-4" style={{ fontFamily: "var(--font-outfit)" }}>2,850 <span className="text-sm text-[var(--text-muted)]">Kcal</span></div>
-                  <div className="text-[10px] text-[var(--text-muted)] uppercase mt-1 tracking-wider">Daily Macros</div>
-                  <div className="w-full h-1.5 bg-black/40 mt-3 rounded-full overflow-hidden flex">
-                    <div className="h-full bg-[var(--accent)] w-[40%]" />
-                    <div className="h-full bg-emerald-500 w-[30%]" />
-                    <div className="h-full bg-amber-500 w-[15%]" />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Image
+              src="/assets/split-cover.png"
+              alt="Amar X Split"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+            />
 
             {/* Stats overlay */}
-            <div className={`absolute bottom-6 ${isArabic ? "right-6" : "left-6"} flex gap-4`}>
+            <div className={`absolute bottom-6 ${isArabic ? "right-6" : "left-6"} flex gap-4 z-10`}>
               {t.coachingDetail.clientStats.map((s) => (
                 <div key={s.label} className="glass border border-[var(--border)] rounded-sm px-3.5 py-2">
                   <p className="text-xs text-[var(--text-muted)]">{s.label}</p>

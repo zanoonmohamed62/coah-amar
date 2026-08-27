@@ -91,7 +91,7 @@ export default function AccountPage() {
         <div className="flex items-center gap-3 px-5 py-3 border-b border-[var(--border)] last:border-0">
           <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">THE AMMAR &ldquo;X SPLIT&rdquo; (12 Weeks Plan)</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">THE AMAR &ldquo;X SPLIT&rdquo; (12 Weeks Plan)</p>
             <p className="text-xs text-[var(--text-muted)]">{isArabic ? "مفعل ومتاح للتحميل والتصفح" : "Active & unlocked for download"}</p>
           </div>
           <span className="text-xs text-[var(--accent)] font-bold">{isArabic ? "مدى الحياة" : "Lifetime"}</span>

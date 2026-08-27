@@ -27,7 +27,7 @@ This version of Next.js uses modern App Router conventions with React 19. All se
 ### 2. UI Section Components (`src/components/sections/`)
 | Section | File | Key Highlights |
 |---------|------|----------------|
-| **Hero** | `hero.tsx` | `THE AMMAR`, `“X SPLIT”`, `BUILD DIFFERENT`, Badge `X "MÉTHODE"`, Let's Talk CTA |
+| **Hero** | `hero.tsx` | `THE AMAR`, `“X SPLIT”`, `BUILD DIFFERENT`, Badge `X "MÉTHODE"`, Let's Talk CTA |
 | **Trust Strip** | `trust-strip.tsx` | Horizontal values bar (Personalized, Data-driven, etc.) |
 | **Problem** | `problem.tsx` | Generic PDF vs Living Coaching System comparison |
 | **Two Paths** | `two-paths.tsx` | Offers cards: Training Plan (399 LE / 19 €) & Coaching (1,399 LE / 79 €) |

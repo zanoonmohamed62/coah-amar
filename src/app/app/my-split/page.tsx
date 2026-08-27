@@ -46,7 +46,7 @@ export default function MySplitPage() {
             <span>{isArabic ? "\u0627\u0644\u0639\u0648\u062f\u0629 \u0644\u0644\u0631\u0626\u064a\u0633\u064a\u0629" : "Back to Dashboard"}</span>
           </Link>
           <h1 className="text-2xl font-black text-[var(--text-primary)] flex items-center gap-2.5">
-            <span className="text-[var(--accent)]">THE AMMAR</span> &ldquo;X SPLIT&rdquo;
+            <span className="text-[var(--accent)]">THE AMAR</span> &ldquo;X SPLIT&rdquo;
           </h1>
         </div>
         <a

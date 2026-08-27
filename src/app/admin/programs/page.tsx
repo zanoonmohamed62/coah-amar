@@ -444,7 +444,7 @@ export default function ProgramsPage() {
                   required
                   value={newProgramForm.title}
                   onChange={(e) => setNewProgramForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="e.g. THE AMMAR - 12 Week Hypertrophy"
+                  placeholder="e.g. THE AMAR - 12 Week Hypertrophy"
                   className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                 />
               </div>

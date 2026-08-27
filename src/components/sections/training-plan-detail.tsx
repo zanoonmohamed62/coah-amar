@@ -56,7 +56,7 @@ export function TrainingPlanSection() {
             </div>
 
             <div className="flex flex-wrap items-center gap-6">
-              <Link href="/checkout?plan=training" className="btn-primary flex items-center gap-2 relative z-10 group">
+              <Link href="/checkout/split" className="btn-primary flex items-center gap-2 relative z-10 group">
                 <span>{t.trainingDetail.btn}</span>
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
               </Link>

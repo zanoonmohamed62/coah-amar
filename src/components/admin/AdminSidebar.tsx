@@ -57,7 +57,7 @@ export function AdminSidebar() {
           </div>
           <div>
             <span className="text-base font-black tracking-tight text-[var(--text-primary)]">
-              THE <span className="text-[var(--accent)]">AMMAR</span>
+              THE <span className="text-[var(--accent)]">AMAR</span>
             </span>
             <span className="block text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
               {t.brandSub}

@@ -21,7 +21,7 @@ import { useLanguage } from "@/lib/language-context";
 
 const SPLIT_TAKEN = 56;
 const TOTAL_SPOTS = 100;
-const SPLIT_PRICE_EGP = 497;
+const SPLIT_PRICE_EGP = 499;
 const SPLIT_PRICE_EUR = 19;
 const ORIGINAL_EGP = Math.round(SPLIT_PRICE_EGP / 0.6);
 const ORIGINAL_EUR = Math.round(SPLIT_PRICE_EUR / 0.6);
@@ -51,7 +51,7 @@ export default function SplitCheckoutPage() {
     fetch("/api/products")
       .then((r) => r.json())
       .then((data: { products?: { id: string; slug: string }[] }) => {
-        const p = (data.products || []).find((p) => p.slug === "training-plan" || p.slug === "ammar-x-split");
+        const p = (data.products || []).find((p) => p.slug === "training-split" || p.slug === "training-plan" || p.slug === "ammar-x-split");
         if (p) setProductId(p.id);
       })
       .catch(() => {});
@@ -90,7 +90,7 @@ export default function SplitCheckoutPage() {
 
   if (isSuccess) {
     const waMsg = encodeURIComponent(
-      `Hi Coach Amar! I purchased the Ammar X Split.\nOrder: ${orderRef}\nName: ${formData.name}\nPayment: ${paymentMethod.toUpperCase()}\nPlease confirm my payment.`
+      `Hi Coach Amar! I purchased the Amar X Split.\nOrder: ${orderRef}\nName: ${formData.name}\nPayment: ${paymentMethod.toUpperCase()}\nPlease confirm my payment.`
     );
     return (
       <div className="min-h-screen flex items-center justify-center px-6 bg-[#07090e]">
@@ -138,7 +138,7 @@ export default function SplitCheckoutPage() {
             Offer 01 — Limited Spots
           </span>
           <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-4">
-            AMMAR X SPLIT
+            AMAR X SPLIT
           </h1>
           <p className="text-slate-400 text-lg max-w-lg mx-auto">
             The complete 7-day training structure built with old school principles and modern progression science.

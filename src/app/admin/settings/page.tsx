@@ -86,8 +86,8 @@ export default function AdminSettingsPage() {
         {
           key: "site_name",
           label: isArabic ? "اسم الموقع / الكوتش" : "Brand / Coach Name",
-          hint: "THE AMMAR",
-          defaultValue: "THE AMMAR",
+          hint: "THE AMAR",
+          defaultValue: "THE AMAR",
         },
         {
           key: "instagram_url",
