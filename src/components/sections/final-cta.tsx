@@ -4,9 +4,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 export function FinalCTASection() {
   const { t, isArabic } = useLanguage();
+  const get = useSiteContent();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
   return (
@@ -31,32 +33,32 @@ export function FinalCTASection() {
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         >
-          <span className="label-badge mb-8 inline-block">{t.finalCta.badge}</span>
+          <span className="label-badge mb-8 inline-block">{get("finalCta", "badge", t.finalCta.badge)}</span>
 
           <h2
             className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight mb-8"
           >
-            <span className="text-gradient-white block">{t.finalCta.titleLine1}</span>
-            <span className="text-gradient block">{t.finalCta.titleLine2}</span>
-            <span className="text-gradient-white block">{t.finalCta.titleLine3}</span>
+            <span className="text-gradient-white block">{get("finalCta", "titleLine1", t.finalCta.titleLine1)}</span>
+            <span className="text-gradient block">{get("finalCta", "titleLine2", t.finalCta.titleLine2)}</span>
+            <span className="text-gradient-white block">{get("finalCta", "titleLine3", t.finalCta.titleLine3)}</span>
           </h2>
 
-          <p className="text-[var(--text-secondary)] text-base sm:text-lg leading-relaxed mb-12 max-w-xl mx-auto">
-            {t.finalCta.subtitle}
+          <p className="text-[var(--text-secondary)] text-base sm:text-lg leading-relaxed mb-12 max-w-xl mx-auto whitespace-pre-wrap">
+            {get("finalCta", "subtitle", t.finalCta.subtitle)}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/checkout/split" className="btn-secondary flex items-center justify-center gap-2">
-              {t.finalCta.planBtn}
+              {get("finalCta", "planBtn", t.finalCta.planBtn)}
             </Link>
             <Link href="/checkout/coaching" className="btn-primary flex items-center justify-center gap-2 group">
-              <span>{t.finalCta.coachingBtn}</span>
+              <span>{get("finalCta", "coachingBtn", t.finalCta.coachingBtn)}</span>
               <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
           </div>
 
           <p className="text-xs text-[var(--text-muted)] mt-8 tracking-wide">
-            {t.finalCta.footerTag}
+            {get("finalCta", "footerTag", t.finalCta.footerTag)}
           </p>
         </motion.div>
       </div>

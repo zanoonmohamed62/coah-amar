@@ -5,12 +5,48 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Dumbbell, Apple, Pill, Heart, BarChart3, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 const pillarIcons = [Dumbbell, Apple, Pill, Heart];
 
 export function CoachingDetailSection() {
   const { t, isArabic } = useLanguage();
+  const get = useSiteContent();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+
+  const pillars = [
+    {
+      title: get("coachingDetail", "pillar1_title", t.coachingDetail.pillars[0]?.title),
+      items: get("coachingDetail", "pillar1_items", t.coachingDetail.pillars[0]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
+    },
+    {
+      title: get("coachingDetail", "pillar2_title", t.coachingDetail.pillars[1]?.title),
+      items: get("coachingDetail", "pillar2_items", t.coachingDetail.pillars[1]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
+    },
+    {
+      title: get("coachingDetail", "pillar3_title", t.coachingDetail.pillars[2]?.title),
+      items: get("coachingDetail", "pillar3_items", t.coachingDetail.pillars[2]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
+    },
+    {
+      title: get("coachingDetail", "pillar4_title", t.coachingDetail.pillars[3]?.title),
+      items: get("coachingDetail", "pillar4_items", t.coachingDetail.pillars[3]?.items.join("\n") || "").split("\n").map(s => s.trim()).filter(Boolean),
+    },
+  ];
+
+  const clientStats = [
+    {
+      label: get("coachingDetail", "stat1_label", t.coachingDetail.clientStats[0]?.label),
+      value: get("coachingDetail", "stat1_value", t.coachingDetail.clientStats[0]?.value),
+    },
+    {
+      label: get("coachingDetail", "stat2_label", t.coachingDetail.clientStats[1]?.label),
+      value: get("coachingDetail", "stat2_value", t.coachingDetail.clientStats[1]?.value),
+    },
+    {
+      label: get("coachingDetail", "stat3_label", t.coachingDetail.clientStats[2]?.label),
+      value: get("coachingDetail", "stat3_value", t.coachingDetail.clientStats[2]?.value),
+    }
+  ];
 
   return (
     <section className="section-padding px-6 border-t border-[var(--border)] relative overflow-hidden">
@@ -26,22 +62,22 @@ export function CoachingDetailSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="label-badge mb-4 inline-block">{t.coachingDetail.badge}</span>
+          <span className="label-badge mb-4 inline-block">{get("coachingDetail", "badge", t.coachingDetail.badge)}</span>
           <h2
             className="text-3xl md:text-5xl font-bold text-gradient-white leading-tight mb-4"
           >
-            {t.coachingDetail.titleLine1}
+            {get("coachingDetail", "titleLine1", t.coachingDetail.titleLine1)}
             <br />
-            <span className="text-gradient">{t.coachingDetail.titleLine2}</span>
+            <span className="text-gradient">{get("coachingDetail", "titleLine2", t.coachingDetail.titleLine2)}</span>
           </h2>
-          <p className="text-[var(--text-secondary)] max-w-lg mx-auto leading-relaxed">
-            {t.coachingDetail.desc}
+          <p className="text-[var(--text-secondary)] max-w-lg mx-auto leading-relaxed whitespace-pre-wrap">
+            {get("coachingDetail", "desc", t.coachingDetail.desc)}
           </p>
         </motion.div>
 
         {/* Pillars grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
-          {t.coachingDetail.pillars.map((pillar, i) => {
+          {pillars.map((pillar, i) => {
             const IconComp = pillarIcons[i] || Dumbbell;
             return (
               <motion.div
@@ -92,7 +128,7 @@ export function CoachingDetailSection() {
 
             {/* Stats overlay */}
             <div className={`absolute bottom-6 ${isArabic ? "right-6" : "left-6"} flex gap-4 z-10`}>
-              {t.coachingDetail.clientStats.map((s) => (
+              {clientStats.map((s) => (
                 <div key={s.label} className="glass border border-[var(--border)] rounded-sm px-3.5 py-2">
                   <p className="text-xs text-[var(--text-muted)]">{s.label}</p>
                   <p className="text-lg font-bold text-gradient" style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}>{s.value}</p>
@@ -110,17 +146,17 @@ export function CoachingDetailSection() {
             <h3
               className="text-3xl font-bold text-gradient-white mb-4 leading-tight"
             >
-              {t.coachingDetail.visualTitle}
+              {get("coachingDetail", "visualTitle", t.coachingDetail.visualTitle)}
             </h3>
-            <p className="text-[var(--text-secondary)] leading-relaxed mb-6">
-              {t.coachingDetail.visualDesc}
+            <p className="text-[var(--text-secondary)] leading-relaxed mb-6 whitespace-pre-wrap">
+              {get("coachingDetail", "visualDesc", t.coachingDetail.visualDesc)}
             </p>
 
             <div className="space-y-3 mb-8">
               {[
-                { icon: BarChart3, text: t.coachingDetail.feature1 },
-                { icon: MessageCircle, text: t.coachingDetail.feature2 },
-                { icon: Heart, text: t.coachingDetail.feature3 },
+                { icon: BarChart3, text: get("coachingDetail", "feature1", t.coachingDetail.feature1) },
+                { icon: MessageCircle, text: get("coachingDetail", "feature2", t.coachingDetail.feature2) },
+                { icon: Heart, text: get("coachingDetail", "feature3", t.coachingDetail.feature3) },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-sm bg-[var(--accent-glow)] flex items-center justify-center flex-shrink-0">
@@ -133,7 +169,7 @@ export function CoachingDetailSection() {
 
             <div className="flex items-center gap-4">
               <Link href="/checkout?plan=coaching" className="btn-primary flex items-center gap-2 relative z-10 group">
-                <span>{t.coachingDetail.btn}</span>
+                <span>{get("coachingDetail", "btn", t.coachingDetail.btn)}</span>
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
               </Link>
             </div>

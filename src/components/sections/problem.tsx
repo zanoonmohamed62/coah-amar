@@ -3,6 +3,7 @@
 import { motion, type Variants } from "framer-motion";
 import { X, Check, Dumbbell, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -15,6 +16,13 @@ const fadeUp: Variants = {
 
 export function ProblemSection() {
   const { t, isArabic } = useLanguage();
+  const get = useSiteContent();
+
+  const genericPointsStr = get("problem", "genericPoints", t.problem.genericPoints.join("\n"));
+  const genericPoints = genericPointsStr.split("\n").map(s => s.trim()).filter(Boolean);
+
+  const coachingPointsStr = get("problem", "coachingPoints", t.problem.coachingPoints.join("\n"));
+  const coachingPoints = coachingPointsStr.split("\n").map(s => s.trim()).filter(Boolean);
 
   return (
     <section className="section-padding px-6">
@@ -27,12 +35,12 @@ export function ProblemSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="label-badge mb-4 inline-block">{t.problem.badge}</span>
-          <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight">
-            {t.problem.title}
+          <span className="label-badge mb-4 inline-block">{get("problem", "badge", t.problem.badge)}</span>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight whitespace-pre-wrap">
+            {get("problem", "title", t.problem.title)}
           </h2>
-          <p className="text-slate-400 mt-4 max-w-2xl mx-auto leading-relaxed text-sm md:text-base">
-            {t.problem.subtitle}
+          <p className="text-slate-400 mt-4 max-w-2xl mx-auto leading-relaxed text-sm md:text-base whitespace-pre-wrap">
+            {get("problem", "subtitle", t.problem.subtitle)}
           </p>
         </motion.div>
 
@@ -53,16 +61,16 @@ export function ProblemSection() {
                 </div>
                 <div>
                   <p className="text-[11px] text-slate-400 font-bold tracking-widest uppercase mb-0.5">
-                    {t.problem.genericTitleBadge}
+                    {get("problem", "genericTitleBadge", t.problem.genericTitleBadge)}
                   </p>
                   <p className="text-lg font-bold text-slate-200">
-                    {t.problem.genericHeading}
+                    {get("problem", "genericHeading", t.problem.genericHeading)}
                   </p>
                 </div>
               </div>
 
               <ul className="space-y-3.5">
-                {t.problem.genericPoints.map((item, i) => (
+                {genericPoints.map((item, i) => (
                   <motion.li
                     key={i}
                     custom={i}
@@ -100,16 +108,16 @@ export function ProblemSection() {
                 </div>
                 <div>
                   <p className="text-[11px] text-blue-400 font-bold tracking-widest uppercase mb-0.5">
-                    {t.problem.coachingTitleBadge}
+                    {get("problem", "coachingTitleBadge", t.problem.coachingTitleBadge)}
                   </p>
                   <p className="text-lg font-bold text-white">
-                    {t.problem.coachingHeading}
+                    {get("problem", "coachingHeading", t.problem.coachingHeading)}
                   </p>
                 </div>
               </div>
 
               <ul className="space-y-3.5">
-                {t.problem.coachingPoints.map((item, i) => (
+                {coachingPoints.map((item, i) => (
                   <motion.li
                     key={i}
                     custom={i}

@@ -1,16 +1,35 @@
 "use client";
 
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 import { Dumbbell, ShieldCheck, Flame, MessageCircle } from "lucide-react";
 
 export function TrustStrip() {
   const { isArabic } = useLanguage();
 
+  const get = useSiteContent();
+
   const pillars = [
-    { title: isArabic ? "هايبرد تريننج" : "Hybrid Training", sub: isArabic ? "أسلوب تقليدي بتطور علمي حديث" : "Old school training Modern progression.", icon: Dumbbell },
-    { title: isArabic ? "تغذية دقيقة بدون حرمان" : "Precision Nutrition", sub: isArabic ? "حساب السعرات والماكروز" : "Targeted macro calibration", icon: Flame },
-    { title: isArabic ? "متابعة مباشرة عبر واتساب" : "Direct WhatsApp Support", sub: isArabic ? "تواصل مع الكوتش شخصياً" : "Direct 1-on-1 coach access", icon: MessageCircle },
-    { title: isArabic ? "ضمان تطور مستمر" : "Progressive Results", sub: isArabic ? "تعديلات أسبوعية دقيقة" : "Weekly data adjustments", icon: ShieldCheck },
+    { 
+      title: get("trustStrip", "value1_title", isArabic ? "هايبرد تريننج" : "Hybrid Training"), 
+      sub: get("trustStrip", "value1_sub", isArabic ? "أسلوب تقليدي بتطور علمي حديث" : "Old school training Modern progression."), 
+      icon: Dumbbell 
+    },
+    { 
+      title: get("trustStrip", "value2_title", isArabic ? "تغذية دقيقة بدون حرمان" : "Precision Nutrition"), 
+      sub: get("trustStrip", "value2_sub", isArabic ? "حساب السعرات والماكروز" : "Targeted macro calibration"), 
+      icon: Flame 
+    },
+    { 
+      title: get("trustStrip", "value3_title", isArabic ? "متابعة مباشرة عبر واتساب" : "Direct WhatsApp Support"), 
+      sub: get("trustStrip", "value3_sub", isArabic ? "تواصل مع الكوتش شخصياً" : "Direct 1-on-1 coach access"), 
+      icon: MessageCircle 
+    },
+    { 
+      title: get("trustStrip", "value4_title", isArabic ? "ضمان تطور مستمر" : "Progressive Results"), 
+      sub: get("trustStrip", "value4_sub", isArabic ? "تعديلات أسبوعية دقيقة" : "Weekly data adjustments"), 
+      icon: ShieldCheck 
+    },
   ];
 
   return (

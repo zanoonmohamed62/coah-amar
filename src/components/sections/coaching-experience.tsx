@@ -4,10 +4,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Apple, Heart, BarChart3 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 export function CoachingExperienceSection() {
   const [activeWeek, setActiveWeek] = useState(0);
   const { t, isArabic } = useLanguage();
+  const get = useSiteContent();
   const weeks = t.experience.weeks;
   const week = weeks[activeWeek] || weeks[0];
 
@@ -21,16 +23,16 @@ export function CoachingExperienceSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <span className="label-badge mb-4 inline-block">{t.experience.badge}</span>
+          <span className="label-badge mb-4 inline-block">{get("experience", "badge", t.experience.badge)}</span>
           <h2
             className="text-3xl md:text-5xl font-bold text-gradient-white leading-tight"
           >
-            {t.experience.titleLine1}
+            {get("experience", "titleLine1", t.experience.titleLine1)}
             <br />
-            <span className="text-gradient">{t.experience.titleLine2}</span>
+            <span className="text-gradient">{get("experience", "titleLine2", t.experience.titleLine2)}</span>
           </h2>
-          <p className="text-[var(--text-secondary)] mt-4 max-w-md mx-auto leading-relaxed">
-            {t.experience.subtitle}
+          <p className="text-[var(--text-secondary)] mt-4 max-w-md mx-auto leading-relaxed whitespace-pre-wrap">
+            {get("experience", "subtitle", t.experience.subtitle)}
           </p>
         </motion.div>
 
@@ -70,7 +72,7 @@ export function CoachingExperienceSection() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-[var(--text-muted)] mb-1">{t.experience.metricsProgress}</p>
+                <p className="text-xs text-[var(--text-muted)] mb-1">{get("experience", "metricsProgress", t.experience.metricsProgress)}</p>
                 <p className="text-sm text-[var(--accent)] font-semibold">{week.progress}</p>
               </div>
             </div>
@@ -81,7 +83,7 @@ export function CoachingExperienceSection() {
               <div className="glass border border-[var(--border)] rounded-sm p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Dumbbell size={15} className="text-[var(--accent)]" />
-                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{t.experience.metricsTraining}</span>
+                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{get("experience", "metricsTraining", t.experience.metricsTraining)}</span>
                 </div>
                 <div className="flex gap-1 mb-2">
                   {Array(week.training.total).fill(0).map((_, i) => (
@@ -105,7 +107,7 @@ export function CoachingExperienceSection() {
               <div className="glass border border-[var(--border)] rounded-sm p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Apple size={15} className="text-[var(--accent)]" />
-                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{t.experience.metricsNutrition}</span>
+                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{get("experience", "metricsNutrition", t.experience.metricsNutrition)}</span>
                 </div>
                 <p className="text-lg font-bold text-gradient mb-0.5" style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}>
                   {week.nutrition.value}
@@ -117,7 +119,7 @@ export function CoachingExperienceSection() {
               <div className="glass border border-[var(--border)] rounded-sm p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Heart size={15} className="text-[var(--accent)]" />
-                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{t.experience.metricsCardio}</span>
+                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{get("experience", "metricsCardio", t.experience.metricsCardio)}</span>
                 </div>
                 <p className="text-lg font-bold text-gradient mb-0.5" style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}>
                   {week.cardio.value}
@@ -129,7 +131,7 @@ export function CoachingExperienceSection() {
               <div className="glass border border-[var(--border)] rounded-sm p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <BarChart3 size={15} className="text-[var(--accent)]" />
-                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{t.experience.metricsCheckIn}</span>
+                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{get("experience", "metricsCheckIn", t.experience.metricsCheckIn)}</span>
                 </div>
                 <p className="text-sm font-semibold text-[var(--text-secondary)] leading-snug">{week.checkin}</p>
               </div>

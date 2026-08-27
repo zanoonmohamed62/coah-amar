@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Dumbbell, Lock, Mail, ArrowRight, ShieldCheck, User } from "lucide-react";
 import { Suspense } from "react";
@@ -40,9 +40,8 @@ function LoginForm() {
       }
 
       // Fetch active session to check role
-      const sessionRes = await fetch("/api/auth/session");
-      const session = await sessionRes.json();
-      const role = session?.user?.role;
+      const session = await getSession();
+      const role = (session?.user as any)?.role;
 
       if (callbackUrl) {
         router.push(callbackUrl);

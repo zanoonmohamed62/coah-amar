@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ShoppingCart, User, Zap, MessageCircle, TrendingUp, RotateCcw } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 const planIcons = [ShoppingCart, User, Zap];
 const coachingIcons = [ShoppingCart, User, Zap, MessageCircle, TrendingUp, RotateCcw];
@@ -42,6 +43,19 @@ function StepCard({ step, icon: Icon, title, desc, delay }: {
 
 export function HowItWorksSection() {
   const { t, isArabic } = useLanguage();
+  const get = useSiteContent();
+
+  const planSteps = t.howItWorks.planSteps.map((step, i) => ({
+    step: step.step,
+    title: get("howItWorks", `plan_step${i + 1}_title`, step.title),
+    desc: get("howItWorks", `plan_step${i + 1}_desc`, step.desc),
+  }));
+
+  const coachingSteps = t.howItWorks.coachingSteps.map((step, i) => ({
+    step: step.step,
+    title: get("howItWorks", `coach_step${i + 1}_title`, step.title),
+    desc: get("howItWorks", `coach_step${i + 1}_desc`, step.desc),
+  }));
 
   return (
     <section className="section-padding px-6 border-t border-[var(--border)]">
@@ -53,14 +67,14 @@ export function HowItWorksSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="label-badge mb-4 inline-block">{t.howItWorks.badge}</span>
+          <span className="label-badge mb-4 inline-block">{get("howItWorks", "badge", t.howItWorks.badge)}</span>
           <h2
             className="text-3xl md:text-5xl font-bold text-gradient-white leading-tight"
           >
-            {t.howItWorks.title}
+            {get("howItWorks", "title", t.howItWorks.title)}
           </h2>
-          <p className="text-[var(--text-secondary)] mt-4 max-w-md mx-auto leading-relaxed">
-            {t.howItWorks.subtitle}
+          <p className="text-[var(--text-secondary)] mt-4 max-w-md mx-auto leading-relaxed whitespace-pre-wrap">
+            {get("howItWorks", "subtitle", t.howItWorks.subtitle)}
           </p>
         </motion.div>
 
@@ -68,12 +82,12 @@ export function HowItWorksSection() {
           {/* Training Plan track */}
           <div>
             <div className="flex items-center gap-3 mb-8">
-              <span className="label-badge">{t.howItWorks.planTrack}</span>
+              <span className="label-badge">{get("howItWorks", "planTrack", t.howItWorks.planTrack)}</span>
             </div>
             <div className="space-y-6 relative">
               {/* Connecting line */}
               <div className={`absolute ${isArabic ? "right-5" : "left-5"} top-10 bottom-0 w-px bg-gradient-to-b from-[var(--border-accent)] to-transparent`} />
-              {t.howItWorks.planSteps.map((s, i) => {
+              {planSteps.map((s, i) => {
                 const Icon = planIcons[i] || Zap;
                 return (
                   <StepCard key={i} step={s.step} icon={Icon} title={s.title} desc={s.desc} delay={i * 0.12} />
@@ -85,11 +99,11 @@ export function HowItWorksSection() {
           {/* Coaching track */}
           <div>
             <div className="flex items-center gap-3 mb-8">
-              <span className="label-badge">{t.howItWorks.coachingTrack}</span>
+              <span className="label-badge">{get("howItWorks", "coachingTrack", t.howItWorks.coachingTrack)}</span>
             </div>
             <div className="space-y-6 relative">
               <div className={`absolute ${isArabic ? "right-5" : "left-5"} top-10 bottom-0 w-px bg-gradient-to-b from-[var(--border-accent)] to-transparent`} />
-              {t.howItWorks.coachingSteps.map((s, i) => {
+              {coachingSteps.map((s, i) => {
                 const Icon = coachingIcons[i] || Zap;
                 return (
                   <StepCard key={i} step={s.step} icon={Icon} title={s.title} desc={s.desc} delay={i * 0.1} />

@@ -4,6 +4,8 @@ import { ProblemSection } from "@/components/sections/problem";
 import { TwoPathsSection } from "@/components/sections/two-paths";
 import { HowItWorksSection } from "@/components/sections/how-it-works";
 import { CoachSection } from "@/components/sections/coach";
+import { CoachingExperienceSection } from "@/components/sections/coaching-experience";
+import { TestimonialsSection } from "@/components/sections/testimonials";
 import { FAQSection } from "@/components/sections/faq";
 import { FinalCTASection } from "@/components/sections/final-cta";
 
@@ -16,6 +18,8 @@ export default function HomePage() {
       <TwoPathsSection />
       <HowItWorksSection />
       <CoachSection />
+      <CoachingExperienceSection />
+      <TestimonialsSection />
       <FAQSection />
       <FinalCTASection />
     </>

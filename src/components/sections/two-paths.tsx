@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Check, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 // Spot counters out of 100 total spots
 const SPLIT_TAKEN = 56;
@@ -73,6 +74,7 @@ function SpotCounter({
 
 export function TwoPathsSection() {
   const { t, isArabic } = useLanguage();
+  const get = useSiteContent();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
   // Base undiscounted prices
@@ -92,12 +94,12 @@ export function TwoPathsSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="label-badge mb-4 inline-block">{t.twoPaths.badge}</span>
-          <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight">
-            {t.twoPaths.title}
+          <span className="label-badge mb-4 inline-block">{get("pricing", "badge", t.twoPaths.badge)}</span>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight whitespace-pre-wrap">
+            {get("pricing", "title", t.twoPaths.title)}
           </h2>
-          <p className="text-slate-400 mt-4 max-w-xl mx-auto leading-relaxed">
-            {t.twoPaths.subtitle}
+          <p className="text-slate-400 mt-4 max-w-xl mx-auto leading-relaxed whitespace-pre-wrap">
+            {get("pricing", "subtitle", t.twoPaths.subtitle)}
           </p>
         </motion.div>
 
@@ -117,22 +119,24 @@ export function TwoPathsSection() {
                     {t.twoPaths.offer1.badge}
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
-                    {t.twoPaths.offer1.title}
+                    {get("pricing", "offer1_title", t.twoPaths.offer1.title)}
                   </h3>
-                  <p className="text-slate-400 text-sm mt-1">{t.twoPaths.offer1.sub}</p>
+                  <p className="text-slate-400 text-sm mt-1">{get("pricing", "offer1_sub", t.twoPaths.offer1.sub)}</p>
                 </div>
                 <div className="text-right">
                   {/* Crossed-out original price (499 EGP) */}
-                  <p className="text-sm text-slate-500 line-through mb-0.5 font-medium">
-                    {splitOriginalEGP} EGP / {splitOriginalEUR} €
-                  </p>
+                  <div className="flex items-center justify-end gap-1.5 text-sm text-slate-500 line-through mb-0.5 font-medium">
+                    <span dir="ltr">{splitOriginalEGP} EGP</span>
+                    <span>/</span>
+                    <span dir="ltr">{splitOriginalEUR} €</span>
+                  </div>
                   <div className="flex items-center gap-2 justify-end">
                     <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[0.65rem] font-black px-2 py-0.5 rounded-sm">
                       -40%
                     </span>
                     <p className="text-3xl font-extrabold text-white">
-                      {t.twoPaths.offer1.price}
-                      <span className="text-sm font-normal text-slate-400 mx-1">{t.twoPaths.offer1.currency}</span>
+                      {get("pricing", "offer1_price", t.twoPaths.offer1.price)}
+                      <span className="text-sm font-normal text-slate-400 mx-1">{get("pricing", "offer1_currency", t.twoPaths.offer1.currency)}</span>
                     </p>
                   </div>
                   <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-slate-400 border border-slate-700/80 px-2 py-0.5 rounded-sm inline-block mt-1">
@@ -147,7 +151,7 @@ export function TwoPathsSection() {
               <div className="h-px bg-slate-800 my-6" />
 
               <ul className="space-y-3 mb-8">
-                {t.twoPaths.offer1.features.map((f, i) => (
+                {get("pricing", "offer1_features", t.twoPaths.offer1.features.join("\n")).split("\n").map(s => s.trim()).filter(Boolean).map((f, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
                     <Check size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
@@ -161,7 +165,7 @@ export function TwoPathsSection() {
                 href="/checkout/split"
                 className="btn-secondary w-full flex items-center justify-center gap-2 text-center group py-3"
               >
-                <span>{t.twoPaths.offer1.btn}</span>
+                <span>{get("pricing", "offer1_btn", t.twoPaths.offer1.btn)}</span>
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
               </Link>
               <p className="text-center text-xs text-slate-400 mt-2.5">
@@ -191,22 +195,24 @@ export function TwoPathsSection() {
                     {t.twoPaths.offer2.badge}
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
-                    {t.twoPaths.offer2.title}
+                    {get("pricing", "offer2_title", t.twoPaths.offer2.title)}
                   </h3>
-                  <p className="text-slate-400 text-sm mt-1">{t.twoPaths.offer2.sub}</p>
+                  <p className="text-slate-400 text-sm mt-1">{get("pricing", "offer2_sub", t.twoPaths.offer2.sub)}</p>
                 </div>
                 <div className="text-right">
                   {/* Crossed-out original price (2,499 EGP) */}
-                  <p className="text-sm text-slate-500 line-through mb-0.5 font-medium">
-                    {coachingOriginalEGP} EGP / {coachingOriginalEUR} €
-                  </p>
+                  <div className="flex items-center justify-end gap-1.5 text-sm text-slate-500 line-through mb-0.5 font-medium">
+                    <span dir="ltr">{coachingOriginalEGP} EGP</span>
+                    <span>/</span>
+                    <span dir="ltr">{coachingOriginalEUR} €</span>
+                  </div>
                   <div className="flex items-center gap-2 justify-end">
                     <span className="bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[0.65rem] font-black px-2 py-0.5 rounded-sm">
                       -40%
                     </span>
                     <p className="text-3xl font-extrabold text-blue-400">
-                      {t.twoPaths.offer2.price}
-                      <span className="text-sm font-normal text-slate-400 mx-1">{t.twoPaths.offer2.currency}</span>
+                      {get("pricing", "offer2_price", t.twoPaths.offer2.price)}
+                      <span className="text-sm font-normal text-slate-400 mx-1">{get("pricing", "offer2_currency", t.twoPaths.offer2.currency)}</span>
                     </p>
                   </div>
                   <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-sm inline-block mt-1">
@@ -221,7 +227,7 @@ export function TwoPathsSection() {
               <div className="h-px bg-slate-800 my-6" />
 
               <ul className="space-y-3 mb-8">
-                {t.twoPaths.offer2.features.map((f, i) => (
+                {get("pricing", "offer2_features", t.twoPaths.offer2.features.join("\n")).split("\n").map(s => s.trim()).filter(Boolean).map((f, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-slate-200 font-medium">
                     <Check size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
@@ -235,11 +241,11 @@ export function TwoPathsSection() {
                 href="/checkout/coaching"
                 className="btn-primary w-full flex items-center justify-center gap-2 group py-3"
               >
-                <span>{t.twoPaths.offer2.btn}</span>
+                <span>{get("pricing", "offer2_btn", t.twoPaths.offer2.btn)}</span>
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
               </Link>
               <p className="text-center text-xs text-slate-400 mt-2.5">
-                {t.twoPaths.offer2.renewal}
+                {get("pricing", "offer2_renewal", t.twoPaths.offer2.renewal)}
               </p>
             </div>
           </motion.div>

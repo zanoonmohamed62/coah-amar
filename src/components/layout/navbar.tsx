@@ -5,11 +5,13 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Globe, LayoutDashboard, Users } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { lang, toggleLang, isArabic, t } = useLanguage();
+  const get = useSiteContent();
 
   useEffect(() => {
     let prevScrolled = false;
@@ -25,10 +27,10 @@ export function Navbar() {
   }, []);
 
   const navLinks = [
-    { href: "#plans", label: t.nav.plans },
-    { href: "#coach", label: t.nav.coach },
-    { href: "#results", label: t.nav.results },
-    { href: "#faq", label: t.nav.faq },
+    { href: "#plans", label: get("nav", "plans", t.nav.plans) },
+    { href: "#coach", label: get("nav", "coach", t.nav.coach) },
+    { href: "#results", label: get("nav", "results", t.nav.results) },
+    { href: "#faq", label: get("nav", "faq", t.nav.faq) },
   ];
 
   return (
@@ -54,7 +56,7 @@ export function Navbar() {
               className="font-bold tracking-wider uppercase text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors hidden sm:inline"
               style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}
             >
-              {t.nav.brand}
+              {get("nav", "brand", t.nav.brand)}
             </span>
           </Link>
 
@@ -100,7 +102,7 @@ export function Navbar() {
             </Link>
 
             <Link href="#plans" className="btn-primary text-xs relative z-10">
-              {t.nav.startNow}
+              {get("nav", "startNow", t.nav.startNow)}
             </Link>
           </div>
 
@@ -190,7 +192,7 @@ export function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className="btn-primary w-full text-center"
               >
-                {t.nav.startNow}
+                {get("nav", "startNow", t.nav.startNow)}
               </Link>
             </motion.div>
           </motion.div>

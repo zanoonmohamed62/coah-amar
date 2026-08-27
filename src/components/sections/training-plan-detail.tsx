@@ -5,12 +5,33 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Dumbbell, ListChecks, Timer, TrendingUp } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSiteContent } from "@/lib/use-site-content";
 
 const icons = [Dumbbell, ListChecks, Timer, TrendingUp];
 
 export function TrainingPlanSection() {
   const { t, isArabic } = useLanguage();
+  const get = useSiteContent();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+
+  const highlights = [
+    {
+      title: get("trainingDetail", "highlight1_title", t.trainingDetail.highlights[0]?.title),
+      desc: get("trainingDetail", "highlight1_desc", t.trainingDetail.highlights[0]?.desc),
+    },
+    {
+      title: get("trainingDetail", "highlight2_title", t.trainingDetail.highlights[1]?.title),
+      desc: get("trainingDetail", "highlight2_desc", t.trainingDetail.highlights[1]?.desc),
+    },
+    {
+      title: get("trainingDetail", "highlight3_title", t.trainingDetail.highlights[2]?.title),
+      desc: get("trainingDetail", "highlight3_desc", t.trainingDetail.highlights[2]?.desc),
+    },
+    {
+      title: get("trainingDetail", "highlight4_title", t.trainingDetail.highlights[3]?.title),
+      desc: get("trainingDetail", "highlight4_desc", t.trainingDetail.highlights[3]?.desc),
+    }
+  ];
 
   return (
     <section className="section-padding px-6 border-t border-[var(--border)]">
@@ -23,20 +44,20 @@ export function TrainingPlanSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
           >
-            <span className="label-badge mb-4 inline-block">{t.trainingDetail.badge}</span>
+            <span className="label-badge mb-4 inline-block">{get("trainingDetail", "badge", t.trainingDetail.badge)}</span>
             <h2
               className="text-4xl md:text-5xl font-bold text-gradient-white leading-tight mb-4"
             >
-              {t.trainingDetail.titleLine1}
+              {get("trainingDetail", "titleLine1", t.trainingDetail.titleLine1)}
               <br />
-              <span className="text-gradient">{t.trainingDetail.titleLine2}</span>
+              <span className="text-gradient">{get("trainingDetail", "titleLine2", t.trainingDetail.titleLine2)}</span>
             </h2>
-            <p className="text-[var(--text-secondary)] leading-relaxed mb-8 max-w-md">
-              {t.trainingDetail.desc}
+            <p className="text-[var(--text-secondary)] leading-relaxed mb-8 max-w-md whitespace-pre-wrap">
+              {get("trainingDetail", "desc", t.trainingDetail.desc)}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-              {t.trainingDetail.highlights.map((item, i) => {
+              {highlights.map((item, i) => {
                 const IconComponent = icons[i] || Dumbbell;
                 return (
                   <motion.div
@@ -57,11 +78,11 @@ export function TrainingPlanSection() {
 
             <div className="flex flex-wrap items-center gap-6">
               <Link href="/checkout/split" className="btn-primary flex items-center gap-2 relative z-10 group">
-                <span>{t.trainingDetail.btn}</span>
+                <span>{get("trainingDetail", "btn", t.trainingDetail.btn)}</span>
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
               </Link>
-              <p className="text-xs text-[var(--text-muted)] whitespace-pre-line leading-relaxed">
-                {t.trainingDetail.paymentInfo}
+              <p className="text-xs text-[var(--text-muted)] whitespace-pre-wrap leading-relaxed">
+                {get("trainingDetail", "paymentInfo", t.trainingDetail.paymentInfo)}
               </p>
             </div>
           </motion.div>
@@ -123,11 +144,11 @@ export function TrainingPlanSection() {
 
             {/* Price tag overlay */}
             <div className={`absolute -bottom-4 ${isArabic ? "-left-4" : "-right-4"} glass-accent border border-[var(--border-accent)] rounded-sm px-6 py-4 text-center shadow-xl`}>
-              <p className="text-xs text-[var(--accent)] tracking-wider uppercase mb-1">{t.trainingDetail.cardBadge}</p>
+              <p className="text-xs text-[var(--accent)] tracking-wider uppercase mb-1">{get("trainingDetail", "cardBadge", t.trainingDetail.cardBadge)}</p>
               <p className="text-3xl font-bold text-gradient" style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}>
-                {t.trainingDetail.cardPrice} <span className="text-sm font-normal text-[var(--text-muted)]">{t.trainingDetail.cardCurrency}</span>
+                {get("trainingDetail", "cardPrice", t.trainingDetail.cardPrice)} <span className="text-sm font-normal text-[var(--text-muted)]">{get("trainingDetail", "cardCurrency", t.trainingDetail.cardCurrency)}</span>
               </p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">{t.trainingDetail.cardSub}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">{get("trainingDetail", "cardSub", t.trainingDetail.cardSub)}</p>
             </div>
           </motion.div>
         </div>
