@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <AdminSidebar />
       <div className={`flex-1 ${isArabic ? "mr-64" : "ml-64"} flex flex-col min-w-0 transition-all duration-200`}>
         <AdminHeader />
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-8 overflow-hidden">
           {children}
         </main>
       </div>
