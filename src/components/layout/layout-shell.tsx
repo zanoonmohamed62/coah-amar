@@ -1,22 +1,36 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { Suspense } from "react";
 
-export function LayoutShell({ children }: { children: React.ReactNode }) {
+function LayoutShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const previewSection = searchParams.get("preview_section");
   const isDashboard = pathname.startsWith("/admin") || pathname.startsWith("/app");
 
   if (isDashboard) {
     return <main className="min-h-screen">{children}</main>;
   }
 
+  const showNav = !previewSection || previewSection === "nav";
+  const showFooter = !previewSection || previewSection === "footer";
+
   return (
     <>
-      <Navbar />
+      {showNav && <Navbar />}
       <main>{children}</main>
-      <Footer />
+      {showFooter && <Footer />}
     </>
+  );
+}
+
+export function LayoutShell({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<main>{children}</main>}>
+      <LayoutShellInner>{children}</LayoutShellInner>
+    </Suspense>
   );
 }

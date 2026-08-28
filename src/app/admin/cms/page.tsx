@@ -829,7 +829,7 @@ export default function CMSPage() {
             </div>
             {/* Frame */}
             <div style={{ flex:1, display:'flex', alignItems:'flex-start', justifyContent:'center', padding:16, overflow:'hidden', background:'#141720' }}>
-              <PreviewFrame key={previewKey} viewMode={viewMode}/>
+              <PreviewFrame key={previewKey} viewMode={viewMode} sectionId={activeDef.id} />
             </div>
             <div style={{ padding:'5px 14px', borderTop:'1px solid rgba(255,255,255,0.07)', background:'rgba(8,10,14,0.8)' }}>
               <p style={{ fontSize:10, color:'rgba(255,255,255,0.2)', textAlign:'center', margin:0 }}>Refreshes after save · ↺ to refresh manually</p>
@@ -846,7 +846,7 @@ export default function CMSPage() {
 // PREVIEW FRAME — ResizeObserver-based scale calc
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PreviewFrame({ viewMode }: { viewMode: "desktop" | "mobile" }) {
+function PreviewFrame({ viewMode, sectionId }: { viewMode: "desktop" | "mobile"; sectionId: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
 
@@ -870,7 +870,7 @@ function PreviewFrame({ viewMode }: { viewMode: "desktop" | "mobile" }) {
     <div ref={containerRef} style={{ width:'100%', height:'100%', display:'flex', alignItems:'flex-start', justifyContent:'center', overflow:'hidden' }}>
       <div style={{ width: SITE_W * scale, height: SITE_H * scale, position:'relative', boxShadow:'0 8px 48px rgba(0,0,0,0.7)', borderRadius: viewMode==='mobile' ? 28 : 8, overflow:'hidden', border:'1px solid rgba(255,255,255,0.1)', flexShrink:0 }}>
         <iframe
-          src="/"
+          src={`/?preview_section=${sectionId}`}
           title="Site Preview"
           style={{ position:'absolute', top:0, left:0, width:SITE_W, height:SITE_H, border:'none', transformOrigin:'top left', transform:`scale(${scale})` }}
         />
