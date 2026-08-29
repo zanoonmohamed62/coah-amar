@@ -4,7 +4,6 @@ import { ProblemSection } from "@/components/sections/problem";
 import { TwoPathsSection } from "@/components/sections/two-paths";
 import { HowItWorksSection } from "@/components/sections/how-it-works";
 import { CoachSection } from "@/components/sections/coach";
-import { CoachingExperienceSection } from "@/components/sections/coaching-experience";
 import { TestimonialsSection } from "@/components/sections/testimonials";
 import { FAQSection } from "@/components/sections/faq";
 import { FinalCTASection } from "@/components/sections/final-cta";
@@ -19,7 +18,6 @@ export default function HomePage() {
       <SectionWrapper sectionId="pricing"><TwoPathsSection /></SectionWrapper>
       <SectionWrapper sectionId="howItWorks"><HowItWorksSection /></SectionWrapper>
       <SectionWrapper sectionId="coach"><CoachSection /></SectionWrapper>
-      <SectionWrapper sectionId="experience"><CoachingExperienceSection /></SectionWrapper>
       <SectionWrapper sectionId="testimonials"><TestimonialsSection /></SectionWrapper>
       <SectionWrapper sectionId="faq"><FAQSection /></SectionWrapper>
       <SectionWrapper sectionId="finalCta"><FinalCTASection /></SectionWrapper>
