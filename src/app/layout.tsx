@@ -3,6 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { LanguageProvider } from "@/lib/language-context";
+import { SessionWrapper } from "@/components/providers/SessionWrapper";
 
 const inter = { variable: "--font-inter" };
 const outfit = { variable: "--font-outfit" };
@@ -77,11 +78,13 @@ export default function RootLayout({
       </head>
       <body>
         <SWKillSwitch />
-        <PWAInstallProvider>
-          <LanguageProvider>
-            <LayoutShell>{children}</LayoutShell>
-          </LanguageProvider>
-        </PWAInstallProvider>
+        <SessionWrapper>
+          <PWAInstallProvider>
+            <LanguageProvider>
+              <LayoutShell>{children}</LayoutShell>
+            </LanguageProvider>
+          </PWAInstallProvider>
+        </SessionWrapper>
       </body>
     </html>
   );
