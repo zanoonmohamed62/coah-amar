@@ -3,7 +3,7 @@
 //  Strategy: App shell cache-first, PDF network-first
 // ═══════════════════════════════════════════════════════
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const SHELL_CACHE = `amar-shell-${CACHE_VERSION}`;
 const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 
@@ -21,10 +21,15 @@ const SHELL_URLS = [
 ];
 
 // ── Install: pre-cache app shell ──────────────────────
+// Each URL is cached independently: /app and /app/my-split redirect to /login
+// when signed out, and a single failure inside cache.addAll() would reject the
+// whole install and leave the worker permanently broken.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE).then((cache) =>
-      cache.addAll(SHELL_URLS)
+      Promise.all(
+        SHELL_URLS.map((url) => cache.add(url).catch(() => {}))
+      )
     ).then(() => self.skipWaiting())
   );
 });
@@ -46,15 +51,21 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // App shell pages — Cache-first with network fallback.
-  // /api/split is intentionally excluded — see the note on SHELL_URLS above.
-  if (url.pathname.startsWith("/app")) {
+  // Only ever handle same-origin GETs. Anything else (POST/PUT, cross-origin
+  // fonts/CDN, etc.) must fall through untouched — calling respondWith() on
+  // those re-issues the request and loses the original semantics, which breaks
+  // navigations outright.
+  if (event.request.method !== "GET" || url.origin !== self.location.origin) return;
+
+  // App shell pages — cache-first with network fallback. API routes under
+  // /api are never cached: they are auth/entitlement gated and must always
+  // hit the network (see the note on SHELL_URLS above re: /api/split).
+  if (url.pathname.startsWith("/app") && !url.pathname.startsWith("/api")) {
     event.respondWith(handleShellFetch(event.request));
     return;
   }
 
-  // Everything else — pass through
-  event.respondWith(fetch(event.request));
+  // Everything else — do not intercept; let the browser handle it natively.
 });
 
 // ── Shell: Cache-first, network fallback ─────────────

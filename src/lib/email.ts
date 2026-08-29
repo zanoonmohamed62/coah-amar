@@ -1,7 +1,6 @@
-import { Resend } from "resend";
 import { getSetting } from "@/lib/settings";
+import { sendMail } from "@/lib/mailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.EMAIL_FROM || "Coach Amar <noreply@coachair.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://coachair.com";
 
@@ -22,7 +21,7 @@ export async function sendOrderConfirmationEmail({
   const coachWA = await getSetting("whatsapp_number");
 
   try {
-    return await resend.emails.send({
+    return await sendMail({
       from: FROM, to,
       subject: `Order Received — ${orderRef}`,
       html: `
@@ -58,7 +57,7 @@ export async function sendAccessGrantedEmail({
   const coachWA = await getSetting("whatsapp_number");
 
   try {
-    return await resend.emails.send({
+    return await sendMail({
       from: FROM, to,
       subject: `Access Granted — Your ${productName} is ready`,
       html: `
