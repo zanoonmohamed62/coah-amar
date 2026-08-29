@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
+import { useSettings } from "@/lib/use-settings";
 import { usePWAInstall } from "@/lib/pwa-install-context";
 import { Smartphone } from "lucide-react";
 
@@ -13,6 +14,8 @@ export function HeroSection() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const get = useSiteContent();
+  const getSetting = useSettings();
+  const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
   const { canInstall, triggerInstall } = usePWAInstall();
 
   return (
@@ -82,7 +85,7 @@ export function HeroSection() {
             )}
 
             <a
-              href="https://wa.me/34610354255"
+              href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary flex items-center justify-center py-3.5 px-5 hover:border-blue-500/40 transition-colors text-sm"

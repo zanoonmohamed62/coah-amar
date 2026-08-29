@@ -1,22 +1,21 @@
 # CLAUDE.md — Coach Amar Web Platform
 
-## ⚡ Zero-Scan Rule (Strict Token Efficiency)
-- **DO NOT scan, list, or read arbitrary project files** at session start.
-- All core architecture, file locations, schemas, and flows are documented in this file.
-- When editing, read **ONLY** the specific target file and lines using line-range slicing.
+For architecture, routes, database schema, auth model, and current in-progress work, see
+**`ENGINEERING.md`** — this file covers stack, layout, and commands only. Both files are
+maintained but can lag reality; verify specifics against source before a change depends on exact
+behavior.
 
 ---
 
 ## 🏗️ Project Overview & Tech Stack
-- **Brand**: THE AMMAR ("X SPLIT" / "BUILD DIFFERENT" / X "MÉTHODE").
+- **Brand**: THE AMAR — "Amar X Split" ("BUILD DIFFERENT" / X "MÉTHODE").
 - **Framework**: Next.js 16 (App Router) + React 19 + TypeScript (Strict mode).
 - **Styling**: Tailwind CSS v4 + Vanilla CSS custom variables (`src/app/globals.css`).
 - **Animations**: Framer Motion (`framer-motion`).
 - **Icons**: Lucide React (`lucide-react`).
-- **Database / ORM**: PostgreSQL (via Supabase) with Prisma ORM 7 (`@prisma/client`, `@prisma/adapter-pg`).
-- **Auth**: NextAuth v5 Beta (`next-auth`, JWT strategy, Credentials provider).
+- **Database / ORM**: PostgreSQL with Prisma ORM 7 (`@prisma/client`, `@prisma/adapter-pg`).
+- **Auth**: NextAuth v5 Beta (`next-auth`, JWT strategy, Google OAuth + Credentials providers).
 - **Email**: Resend API (`resend`).
-- **Git Remote**: `git@github.com:zanoonmohamed62/coah-amar.git` (SSH authenticated).
 
 ---
 
@@ -24,53 +23,37 @@
 
 ```text
 amar-site/
-├── assets/                          # Original uploaded raw assets
 ├── prisma/
-│   ├── schema.prisma                # PostgreSQL models (User, Order, Plan, CheckIn, etc.)
+│   ├── schema.prisma                # PostgreSQL models — see ENGINEERING.md for the full list
 │   └── seed.ts                      # DB seeder script
+├── private-assets/                  # The plan PDF (gitignored, not tracked)
+├── private_media/                   # Admin-uploaded media (gitignored, not tracked)
 ├── public/
-│   └── assets/                      # Static web assets
-│       ├── coach-header-new.jpg     # Hero section header image
-│       ├── coach-about-new.jpg      # About Coach section image
-│       ├── training-dashboard.png   # Training plan visual
-│       └── coaching-dashboard.png   # 1-on-1 coaching visual
+│   ├── manifest.json, sw.js         # PWA manifest + service worker (real, see ENGINEERING.md)
+│   └── assets/                      # Static web assets (images, icons)
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx               # Root layout with LanguageProvider & fonts
+│   │   ├── layout.tsx               # Root layout with LanguageProvider, PWA meta tags
 │   │   ├── page.tsx                 # Landing page (combines all section components)
 │   │   ├── globals.css              # Theme tokens, dark palette (#07090e), utility classes
-│   │   ├── checkout/page.tsx        # Order registration & WhatsApp redirection flow
-│   │   ├── login/page.tsx           # Authentication login page
-│   │   ├── app/                     # Client Portal (/app/training, /app/nutrition, /app/checkins)
-│   │   ├── admin/                   # Admin Portal (/admin/orders, /admin/clients, /admin/cms, /admin/settings)
-│   │   └── api/
-│   │       ├── auth/                # NextAuth route handlers
-│   │       ├── orders/              # Order submission & status APIs
-│   │       ├── checkout/            # Checkout webhook / processing
-│   │       └── admin/               # Admin endpoints (products, users, payments, programs)
+│   │   ├── checkout/{split,coaching}/page.tsx  # The two live checkout funnels
+│   │   ├── login/page.tsx           # Google OAuth + Credentials login
+│   │   ├── app/                     # Customer portal (/app, /app/my-split, /app/account)
+│   │   ├── admin/                   # Admin panel — see ENGINEERING.md for the full page list
+│   │   └── api/                     # See ENGINEERING.md for the full route map
 │   ├── components/
 │   │   ├── layout/
 │   │   │   ├── navbar.tsx           # Global responsive navigation + Lang switcher
 │   │   │   └── footer.tsx           # Global footer with WhatsApp & Instagram links
-│   │   ├── sections/                # Landing page modular sections:
-│   │   │   ├── hero.tsx             # Hero section (THE AMMAR, "X SPLIT", Let's Talk CTA)
-│   │   │   ├── trust-strip.tsx      # Values ticker (Personalized, Scientific, etc.)
-│   │   │   ├── problem.tsx          # Generic PDF vs Custom System comparison
-│   │   │   ├── two-paths.tsx        # Offer 1 (Plan 399 LE/19€) vs Offer 2 (Coaching 1,399 LE/79€)
-│   │   │   ├── training-plan-detail.tsx # Deep-dive into Training Plan
-│   │   │   ├── coaching-detail.tsx  # Deep-dive into 3-month coaching pillars
-│   │   │   ├── how-it-works.tsx     # 3-step vs 6-step workflow
-│   │   │   ├── coach.tsx            # About Coach Amar + Instagram CTA
-│   │   │   ├── coaching-experience.tsx # 12-week progression timeline
-│   │   │   ├── testimonials.tsx     # Client transformation reviews
-│   │   │   ├── faq.tsx              # Comprehensive FAQ accordion
-│   │   │   └── final-cta.tsx        # Bottom conversion call-to-action
+│   │   ├── sections/                # Landing page modular sections (hero, two-paths, faq, etc.)
+│   │   ├── client/                  # Customer-portal client components (PdfCanvas, AppSidebar)
 │   │   └── dashboard/               # Reusable dashboard UI (Sidebar, cards, tables)
 │   └── lib/
 │       ├── translations.ts          # Single source of truth for EN and AR dictionaries
 │       ├── language-context.tsx     # React Context for language (en / ar) and direction (ltr / rtl)
-│       ├── prisma.ts                # PrismaClient singleton instance
-│       ├── auth.ts                  # NextAuth handlers and session utilities
+│       ├── db.ts                    # PrismaClient singleton instance
+│       ├── auth.ts / auth.config.ts # NextAuth handlers and session utilities
+│       ├── auth-guard.ts            # requireAdmin / requireCustomer / requireAuth helpers
 │       └── email.ts                 # Resend email notifications
 ```
 
@@ -90,23 +73,32 @@ amar-site/
 ---
 
 ## 💰 Current Pricing & Offers
-1. **Training Plan (Offer 01)**:
-   - Price: `399 LE / 19 €` (`٣٩٩ ج.م / 19 €`)
-   - Type: One-time payment, instant digital delivery.
-2. **Personal Coaching (Offer 02 - 3 Months)**:
-   - Price: `1,399 LE / 79 €` (`١,٣٩٩ ج.م / 79 €`)
-   - Type: 3 months complete coaching, custom nutrition, training & weekly check-ins.
-3. **Coaching Renewal**:
-   - Price: `999 LE / 69 €` (`٩٩٩ ج.م / 69 €`) per 3 months.
+
+Prices live in `Product.price` in the database (piastres) — see `ENGINEERING.md`'s "Known gaps"
+section for the in-progress work unifying every display of these prices onto that single source.
+
+1. **Training Plan (Offer 01)**: `499 LE`. One-time payment, lifetime access to the PDF.
+2. **Personal Coaching (Offer 02 - 3 Months)**: `2,499 LE`. PDF + 3 months of WhatsApp coaching.
 
 ---
 
 ## 📱 External Integrations & Payments
 - **WhatsApp**: `https://wa.me/34610354255`
 - **Instagram**: `https://www.instagram.com/amar.el.7ewety/`
-- **InstaPay**: `amar.fitness@instapay`
-- **PayPal**: `amar.fitness@paypal.me`
-- **Telda**: `@amar.fitness`
+- **InstaPay**: `amar.fitness@instapay` (manual — customer sends a WhatsApp screenshot, admin confirms)
+- **Telda**: `@amar.fitness` (manual, same flow as InstaPay)
+- **PayPal**: `amar.fitness@paypal.me` (automated via webhook — see `ENGINEERING.md`)
+
+These are being migrated to read from the `Setting` table instead of being hardcoded — see
+`ENGINEERING.md`'s "Known gaps" section.
+
+---
+
+## 🎨 UI Conventions
+- Background: `#07090e` / `#0b0f19`. Accent: electric blue (`rgba(59, 130, 246, ...)`).
+- Fonts: `Alexandria` for Arabic, `Outfit`/`Inter` for English.
+- Maintain RTL/LTR symmetry with Tailwind `rtl:` variants and the `dir` attribute.
+- Use the `@/` path alias for imports.
 
 ---
 
@@ -124,6 +116,6 @@ npm run build
 # Push database schema changes
 npx prisma db push
 
-# Push code to GitHub (SSH authenticated)
+# Push code to GitHub
 git push origin main
 ```

@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Download, RefreshCw, X, Wifi, Plus } from "lucide-react";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
+import { Wifi, X, Plus } from "lucide-react";
+import { usePWAInstall } from "@/lib/pwa-install-context";
 
 export function PWAProvider() {
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const { canInstall, triggerInstall } = usePWAInstall();
   const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const [showUpdateBanner, setShowUpdateBanner] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
   // ── Register Service Worker ───────────────────────────
@@ -27,26 +22,16 @@ export function PWAProvider() {
         return () => window.removeEventListener("focus", checkUpdate);
       })
       .catch(console.error);
-
-    // Listen for messages from SW
-    navigator.serviceWorker.addEventListener("message", (event) => {
-      if (event.data?.type === "PDF_UPDATED") {
-        setShowUpdateBanner(true);
-      }
-    });
   }, []);
 
-  // ── Install prompt capture ────────────────────────────
+  // ── Install prompt capture (shared with the Hero "Install App" button
+  // via PWAInstallProvider — one source of truth for canInstall) ─────
   useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as BeforeInstallPromptEvent);
-      // Delay showing banner by 3s so user can see the app first
-      setTimeout(() => setShowInstallBanner(true), 3000);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+    if (!canInstall) return;
+    // Delay showing banner by 3s so user can see the app first
+    const timer = setTimeout(() => setShowInstallBanner(true), 3000);
+    return () => clearTimeout(timer);
+  }, [canInstall]);
 
   // ── Online/Offline tracking ───────────────────────────
   useEffect(() => {
@@ -63,21 +48,9 @@ export function PWAProvider() {
 
   // ── Handlers ─────────────────────────────────────────
   const handleInstall = useCallback(async () => {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === "accepted") {
-      setInstallPrompt(null);
-      setShowInstallBanner(false);
-    }
-  }, [installPrompt]);
-
-  const handleRefreshForUpdate = useCallback(() => {
-    // Tell SW to clear PDF cache, then reload
-    navigator.serviceWorker.controller?.postMessage({ type: "CLEAR_PDF_CACHE" });
-    setShowUpdateBanner(false);
-    window.location.reload();
-  }, []);
+    await triggerInstall();
+    setShowInstallBanner(false);
+  }, [triggerInstall]);
 
   return (
     <>
@@ -89,36 +62,8 @@ export function PWAProvider() {
         </div>
       )}
 
-      {/* ── PDF Update banner ── */}
-      {showUpdateBanner && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 bg-[#0d1117] border border-[#c4ff00]/30 rounded-sm shadow-2xl shadow-[#c4ff00]/5 backdrop-blur-md max-w-sm w-full mx-4">
-          <div className="w-8 h-8 rounded-sm bg-[#c4ff00]/10 text-[#c4ff00] flex items-center justify-center flex-shrink-0">
-            <Download size={15} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white">تحديث جديد متاح</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">الكوتش عمّر الجدول بتاعك</p>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleRefreshForUpdate}
-              className="px-3 py-1.5 bg-[#c4ff00] text-black text-[11px] font-black rounded-sm hover:bg-[#c4ff00]/90 transition-colors flex items-center gap-1"
-            >
-              <RefreshCw size={11} />
-              <span>تحديث</span>
-            </button>
-            <button
-              onClick={() => setShowUpdateBanner(false)}
-              className="p-1.5 text-gray-500 hover:text-white transition-colors"
-            >
-              <X size={13} />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* ── Install PWA banner ── */}
-      {showInstallBanner && installPrompt && (
+      {showInstallBanner && canInstall && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm mx-4 px-4 py-4 bg-[#0d1117] border border-blue-500/30 rounded-sm shadow-2xl shadow-black/50 backdrop-blur-md">
           <button
             onClick={() => setShowInstallBanner(false)}

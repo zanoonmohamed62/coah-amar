@@ -19,7 +19,8 @@ async function verifyPayPal(req: NextRequest, body: string): Promise<boolean> {
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
-  if (process.env.NODE_ENV === "production" && !await verifyPayPal(req, rawBody)) return NextResponse.json({ error: "Invalid" }, { status: 401 });
+  const skipVerification = process.env.SKIP_WEBHOOK_VERIFICATION === "true";
+  if (!skipVerification && !await verifyPayPal(req, rawBody)) return NextResponse.json({ error: "Invalid" }, { status: 401 });
 
   const event = JSON.parse(rawBody);
   if (event.event_type !== "PAYMENT.CAPTURE.COMPLETED") return NextResponse.json({ received: true });

@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 export const authConfig = {
   pages: {
@@ -7,7 +8,7 @@ export const authConfig = {
   },
   trustHost: true,
   session: { strategy: "jwt" },
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "development-secret-key-coach-amar-2025-super-secure-production-ready",
+  secret: getAuthSecret(),
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
@@ -31,7 +32,7 @@ export const authConfig = {
       }
 
       // Customer/App routes — require any authenticated user
-      if (pathname.startsWith("/app") || pathname.startsWith("/api/customer")) {
+      if (pathname.startsWith("/app") || pathname.startsWith("/api/customer") || pathname.startsWith("/api/split")) {
         if (!isLoggedIn) {
           const redirectUrl = new URL("/login", nextUrl.origin);
           redirectUrl.searchParams.set("callbackUrl", pathname);

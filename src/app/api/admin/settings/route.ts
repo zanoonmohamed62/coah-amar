@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guard";
+import { redis } from "@/lib/redis";
 
 export async function GET(_req: NextRequest) {
   const { error } = await requireAdmin();
@@ -25,6 +26,8 @@ export async function PUT(req: NextRequest) {
       })
     )
   );
+
+  await redis.del("settings:all").catch(() => {});
 
   return NextResponse.json({ settings: updated });
 }

@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Dumbbell, Lock, Mail, ArrowRight, ShieldCheck, User } from "lucide-react";
+import { Eye, EyeOff, Dumbbell, Lock, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import { Suspense } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/language-context";
+import { useSettings } from "@/lib/use-settings";
 
 function LoginForm() {
   const router = useRouter();
@@ -14,11 +15,14 @@ function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "";
   const reason = searchParams.get("reason") || "";
   const { isArabic } = useLanguage();
+  const getSetting = useSettings();
+  const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,15 +61,10 @@ function LoginForm() {
     }
   };
 
-  const fillCredentials = (type: "admin" | "client") => {
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
     setError("");
-    if (type === "admin") {
-      setEmail("admin@coachair.com");
-      setPassword("CoachAmar2025!");
-    } else {
-      setEmail("client@amar.fitness");
-      setPassword("Client2025!");
-    }
+    await signIn("google", { callbackUrl: callbackUrl || "/app" });
   };
 
   return (
@@ -172,34 +171,27 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* 1-Click Quick Login Presets */}
+          {/* Google sign-in */}
           <div className="pt-4 border-t border-slate-800/80">
-            <p className="text-[11px] font-semibold text-slate-400 mb-2.5 text-center">
-              {isArabic ? "تسجيل سريع بنقرة واحدة (تجريبي):" : "Quick 1-Click Access:"}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => fillCredentials("admin")}
-                className="px-3 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 rounded-sm text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
-              >
-                <ShieldCheck size={14} />
-                <span>Coach Admin</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials("client")}
-                className="px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 rounded-sm text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
-              >
-                <User size={14} />
-                <span>Client Athlete</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+              className="w-full px-3 py-2.5 bg-white/95 hover:bg-white text-slate-800 rounded-sm text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-75"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3.01h3.89c2.28-2.1 3.56-5.18 3.56-8.82z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.89-3.01c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.72-4.94H1.27v3.1C3.25 21.3 7.31 24 12 24z" />
+                <path fill="#FBBC05" d="M5.28 14.29a7.2 7.2 0 0 1 0-4.58v-3.1H1.27a12 12 0 0 0 0 10.78z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.45-3.45C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.61l4.01 3.1C6.23 6.86 8.88 4.75 12 4.75z" />
+              </svg>
+              <span>{isArabic ? "الدخول عبر جوجل" : "Sign in with Google"}</span>
+            </button>
           </div>
 
           <p className="text-center text-xs text-slate-500 pt-2">
             {isArabic ? "نسيت كلمة المرور؟ تواصل مع الكوتش على " : "Need help? Contact Coach Amar on "}
-            <a href="https://wa.me/34610354255" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+            <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
               WhatsApp
             </a>
           </p>

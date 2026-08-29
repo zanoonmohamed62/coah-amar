@@ -5,8 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Maximize2, Minimize2, ChevronLeft, ChevronRight, MessageCircle, ShieldCheck, Loader2 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
-
-const WA = process.env.NEXT_PUBLIC_COACH_WHATSAPP?.replace("+", "") || "34610354255";
+import { useSettings } from "@/lib/use-settings";
 
 const PdfCanvas = dynamic(() => import("@/components/client/PdfCanvas"), {
   ssr: false,
@@ -19,6 +18,8 @@ const PdfCanvas = dynamic(() => import("@/components/client/PdfCanvas"), {
 
 export default function MySplitPage() {
   const { isArabic } = useLanguage();
+  const getSetting = useSettings();
+  const WA = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
   const ArrowIcon = isArabic ? ChevronRight : ChevronLeft;
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);

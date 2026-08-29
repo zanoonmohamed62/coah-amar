@@ -42,7 +42,7 @@ export default function ProductsPage() {
     name: "",
     slug: "",
     type: "TRAINING_PLAN",
-    price: 399,
+    price: 499,
     currency: "EGP",
     description: "",
     features: "",
@@ -70,7 +70,7 @@ export default function ProductsPage() {
       name: "",
       slug: "",
       type: "TRAINING_PLAN",
-      price: 399,
+      price: 499,
       currency: "EGP",
       description: "",
       features: isArabic

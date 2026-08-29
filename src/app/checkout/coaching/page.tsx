@@ -23,19 +23,19 @@ import {
   Wallet,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSettings } from "@/lib/use-settings";
 
 const COACHING_TAKEN = 16;
 const TOTAL_SPOTS = 100;
-const COACHING_PRICE_EGP = 1499;
-const COACHING_PRICE_EUR = 71;
-const ORIGINAL_EGP = 2499;
-const ORIGINAL_EUR = 119;
+const COACHING_PRICE_EUR = 119;
 
 const pillarIcons = [Dumbbell, Apple, Pill, Heart];
 
 export default function CoachingCheckoutPage() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+  const getSetting = useSettings();
+  const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
   const [paymentMethod, setPaymentMethod] = useState<"instapay" | "paypal" | "telda">("instapay");
   const [formData, setFormData] = useState({
@@ -51,13 +51,17 @@ export default function CoachingCheckoutPage() {
   const [orderRef, setOrderRef] = useState("");
   const [error, setError] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
+  const [priceEGP, setPriceEGP] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
-      .then((data: { products?: { id: string; slug: string }[] }) => {
+      .then((data: { products?: { id: string; slug: string; price: number }[] }) => {
         const p = (data.products || []).find((p) => p.slug === "personal-coaching" || p.slug === "coaching-3months" || p.slug === "coaching");
-        if (p) setProductId(p.id);
+        if (p) {
+          setProductId(p.id);
+          setPriceEGP(p.price / 100);
+        }
       })
       .catch(() => {});
   }, []);
@@ -94,6 +98,12 @@ export default function CoachingCheckoutPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || (isArabic ? "حدث خطأ أثناء تسجيل الطلب." : "Failed to place order."));
+      }
+
+      const data = await res.json();
+      if (data.approvalUrl) {
+        window.location.href = data.approvalUrl;
+        return;
       }
 
       setOrderRef(ref);
@@ -150,12 +160,12 @@ export default function CoachingCheckoutPage() {
             </div>
             <div className="flex justify-between">
               <span>{isArabic ? "المبلغ:" : "Amount:"}</span>
-              <span className="text-white font-semibold">{COACHING_PRICE_EGP} LE / {COACHING_PRICE_EUR} €</span>
+              <span className="text-white font-semibold">{priceEGP ?? 2499} LE / {COACHING_PRICE_EUR} €</span>
             </div>
           </div>
 
           <a
-            href={`https://wa.me/34610354255?text=${waMsg}`}
+            href={`https://wa.me/${waNumber}?text=${waMsg}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-base font-bold shadow-lg shadow-blue-600/30"
@@ -313,12 +323,12 @@ export default function CoachingCheckoutPage() {
                   </div>
                   <div>
                     <p className="text-white font-bold text-sm">
-                      {isArabic ? "خصم 40% لأول 100 مشترك — الأكثر طلباً" : "40% OFF — First 100 Buyers"}
+                      {isArabic ? "دفعة محدودة — الأكثر طلباً" : "Limited Batch — Most Popular"}
                     </p>
                     <p className="text-slate-300 text-xs mt-1">
                       {isArabic
-                        ? `متبقي ${TOTAL_SPOTS - COACHING_TAKEN} مقعداً فقط بهذا السعر`
-                        : `${TOTAL_SPOTS - COACHING_TAKEN} spots remaining at this price`}
+                        ? `متبقي ${TOTAL_SPOTS - COACHING_TAKEN} مقعداً فقط في هذه الدفعة`
+                        : `${TOTAL_SPOTS - COACHING_TAKEN} spots remaining in this batch`}
                     </p>
                   </div>
                 </div>
@@ -353,15 +363,14 @@ export default function CoachingCheckoutPage() {
                     <p className="text-xs text-slate-400 mt-0.5">{isArabic ? "نظام متكامل لمدة ٣ شهور كاملة" : "3-Month Full Transformation System"}</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs text-slate-500 line-through mr-2">{ORIGINAL_EGP} LE</span>
-                    <span className="text-blue-400 font-bold">{COACHING_PRICE_EGP} LE</span>
+                    <span className="text-blue-400 font-bold">{priceEGP ?? 2499} LE</span>
                   </div>
                 </div>
 
                 <div className="flex items-baseline justify-between pt-2">
                   <span className="text-slate-400 text-xs">{isArabic ? "الإجمالي المطلوب" : "Total Amount"}</span>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-white">{COACHING_PRICE_EGP} LE</span>
+                    <span className="text-2xl font-black text-white">{priceEGP ?? 2499} LE</span>
                     <span className="text-xs text-slate-400 ml-1.5">({COACHING_PRICE_EUR} €)</span>
                   </div>
                 </div>
@@ -525,19 +534,19 @@ export default function CoachingCheckoutPage() {
                       {paymentMethod === "instapay" && (
                         <p>
                           📱 <strong className="text-white">InstaPay:</strong> التحويل على عنوان:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">amar.fitness@instapay</span>
+                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("instapay_handle")}</span>
                         </p>
                       )}
                       {paymentMethod === "paypal" && (
                         <p>
                           🌐 <strong className="text-white">PayPal:</strong> التحويل عبر الرابط:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">paypal.me/amar.fitness</span>
+                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("paypal_link").replace(/^https?:\/\//, "")}</span>
                         </p>
                       )}
                       {paymentMethod === "telda" && (
                         <p>
                           💳 <strong className="text-white">Telda:</strong> التحويل على يوزر:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">@amar.fitness</span>
+                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("telda_handle")}</span>
                         </p>
                       )}
                     </div>
@@ -553,8 +562,8 @@ export default function CoachingCheckoutPage() {
                       {isSubmitting
                         ? isArabic ? "جاري تسجيل الطلب..." : "Processing..."
                         : isArabic
-                        ? `اشترك في التدريب الشخصي الآن — ${COACHING_PRICE_EGP.toLocaleString()} ج.م`
-                        : `Start Personal Coaching — ${COACHING_PRICE_EGP.toLocaleString()} EGP`}
+                        ? `اشترك في التدريب الشخصي الآن — ${(priceEGP ?? 2499).toLocaleString()} ج.م`
+                        : `Start Personal Coaching — ${(priceEGP ?? 2499).toLocaleString()} EGP`}
                     </span>
                     {!isSubmitting && (
                       <ArrowIcon

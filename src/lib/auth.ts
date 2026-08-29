@@ -1,14 +1,27 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { authConfig } from "@/lib/auth.config";
+import { getAuthSecret } from "@/lib/auth-secret";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
+
+function getAdminAllowlist(): string[] {
+  return (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "development-secret-key-coach-amar-2025-super-secure-production-ready",
+  secret: getAuthSecret(),
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     Credentials({
       name: "credentials",
       credentials: {
@@ -21,37 +34,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const emailInput = (credentials.email as string).toLowerCase().trim();
         const passwordInput = credentials.password as string;
 
-        // 1. Check Primary Admin Hardcoded / Environment Credentials Fallback
-        const defaultAdminEmail = (process.env.COACH_EMAIL || "coach@amar.fitness").toLowerCase().trim();
-        const altAdminEmail = "admin@coachair.com";
-        const defaultAdminPassword = process.env.COACH_PASSWORD || "CoachAmar2025!";
-
-        if (
-          (emailInput === defaultAdminEmail || emailInput === altAdminEmail || emailInput === "admin@amar.fitness") &&
-          (passwordInput === defaultAdminPassword || passwordInput === "CoachAmar2025!")
-        ) {
-          return {
-            id: "admin-master-id",
-            email: emailInput,
-            name: "Coach Amar",
-            role: "ADMIN",
-          };
-        }
-
-        // Demo Client Account Fallback
-        if (
-          (emailInput === "client@amar.fitness" || emailInput === "client@coachair.com") &&
-          (passwordInput === "Client2025!" || passwordInput === "CoachAmar2025!")
-        ) {
-          return {
-            id: "demo-client-id",
-            email: emailInput,
-            name: "Client Athlete",
-            role: "CLIENT",
-          };
-        }
-
-        // 2. Query Database if Available
         try {
           const user = await db.user.findUnique({
             where: { email: emailInput },
@@ -69,11 +51,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
           }
         } catch (dbError) {
-          console.error("Database auth error (fallback to local if matching):", dbError);
+          console.error("Database auth error:", dbError);
         }
 
         return null;
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    async signIn({ user, account }) {
+      // Credentials sign-in is already fully validated in authorize() above.
+      if (account?.provider !== "google") return true;
+
+      const email = user.email?.toLowerCase().trim();
+      if (!email) return false;
+
+      const allowlist = getAdminAllowlist();
+      if (allowlist.includes(email)) {
+        const admin = await db.user.upsert({
+          where: { email },
+          update: { role: "ADMIN" },
+          create: { email, name: user.name || "Admin", role: "ADMIN" },
+        });
+        user.id = admin.id;
+        (user as unknown as { role: string }).role = admin.role;
+        return true;
+      }
+
+      // Anyone can sign in with Google (lead capture for marketing). Split/PDF
+      // access is gated separately by Entitlement, not by how the account was
+      // created — see /api/split's hasSplitAccess check.
+      const account_ = await db.user.upsert({
+        where: { email },
+        update: {},
+        create: { email, name: user.name || email.split("@")[0], role: "CUSTOMER" },
+      });
+      user.id = account_.id;
+      (user as unknown as { role: string }).role = account_.role;
+      return true;
+    },
+  },
 });

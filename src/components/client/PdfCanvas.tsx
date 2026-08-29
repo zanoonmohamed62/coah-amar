@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { Loader2, WifiOff, CheckCircle2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 
-const IDB_DB    = "amar-split-cache";
-const IDB_STORE = "pdf-blobs";
-const IDB_KEY   = "amarx-split-v2"; // bumped key to force re-fetch after upgrade
+const IDB_DB      = "amar-split-cache";
+const IDB_STORE   = "pdf-blobs";
+const IDB_KEY     = "amarx-split-v2"; // bumped key to force re-fetch after upgrade
+const IDB_VER_KEY = "amarx-split-version";
 
 function openIDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -35,16 +37,66 @@ async function getCached(): Promise<ArrayBuffer | null> {
   } catch { return null; }
 }
 
-async function saveToCache(buf: ArrayBuffer): Promise<void> {
+async function saveToCache(buf: ArrayBuffer, version: string): Promise<void> {
   try {
     const db = await openIDB();
     await new Promise<void>((res, rej) => {
       const tx = db.transaction(IDB_STORE, "readwrite");
       tx.objectStore(IDB_STORE).put(buf.slice(0), IDB_KEY);
+      tx.objectStore(IDB_STORE).put(version, IDB_VER_KEY);
       tx.oncomplete = () => res();
       tx.onerror    = () => rej(tx.error);
     });
   } catch { /* silent */ }
+}
+
+async function getCachedVersion(): Promise<string | null> {
+  try {
+    const db = await openIDB();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const r  = tx.objectStore(IDB_STORE).get(IDB_VER_KEY);
+      r.onsuccess = () => res(typeof r.result === "string" ? r.result : null);
+      r.onerror   = () => rej(r.error);
+    });
+  } catch { return null; }
+}
+
+async function fetchCurrentVersion(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/split/version", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.version ?? null;
+  } catch { return null; }
+}
+
+// Deters leaks by making any copy traceable to the customer who viewed it.
+// Drawn fresh onto every rendered page from the live session — never baked
+// into a stored file — so it can't be captured once and stripped for reuse.
+function drawWatermark(ctx: CanvasRenderingContext2D, width: number, height: number, text: string) {
+  if (!text) return;
+  ctx.save();
+  ctx.globalAlpha = 0.1;
+  ctx.fillStyle = "#3b82f6";
+  ctx.font = "bold 13px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const angle = -Math.PI / 6;
+  const stepX = 240;
+  const stepY = 130;
+
+  for (let y = -stepY; y < height + stepY; y += stepY) {
+    for (let x = -stepX; x < width + stepX; x += stepX) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
 }
 
 interface Props {
@@ -52,6 +104,9 @@ interface Props {
 }
 
 export default function PdfCanvas({ isArabic }: Props) {
+  const session = useSession()?.data;
+  const user = session?.user as { name?: string; email?: string } | undefined;
+  const watermarkText = user?.email || user?.name || "";
   const viewerRef   = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfRef      = useRef<any>(null);
@@ -173,6 +228,8 @@ export default function PdfCanvas({ isArabic }: Props) {
       await task.promise;
       renderTasks.current[pageIndex] = null;
 
+      drawWatermark(ctx, viewport.width, viewport.height, watermarkText);
+
       // Build annotation (link) overlay
       const annotations = await page.getAnnotations();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -213,7 +270,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       if (err && typeof err === "object" && "name" in err && (err as { name: string }).name === "RenderingCancelledException") return;
       console.warn(`[PdfCanvas] Page ${pageNum} render issue:`, err);
     }
-  }, []);
+  }, [watermarkText]);
 
   const renderAll = useCallback(async () => {
     if (!pdfRef.current || !viewerRef.current) return;
@@ -233,14 +290,25 @@ export default function PdfCanvas({ isArabic }: Props) {
       // pdfjs v4 uses .mjs worker
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 
-      let buf = await getCached();
+      const [cachedBuf, cachedVersion, currentVersion] = await Promise.all([
+        getCached(),
+        getCachedVersion(),
+        fetchCurrentVersion(),
+      ]);
+
+      // Reuse the cached copy only if we know for certain it's still current.
+      // If the version check fails (offline), trust whatever is cached rather
+      // than blocking the viewer.
+      const cacheIsStale = currentVersion !== null && cachedVersion !== null && currentVersion !== cachedVersion;
+
+      let buf = cachedBuf && !cacheIsStale ? cachedBuf : null;
       if (buf) {
         setIsOfflineCached(true);
       } else {
         const res = await fetch("/api/split", { cache: "no-store" });
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         buf = await res.arrayBuffer();
-        await saveToCache(buf);
+        await saveToCache(buf, currentVersion ?? "legacy");
         setIsOfflineCached(true);
       }
 

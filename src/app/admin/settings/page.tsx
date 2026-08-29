@@ -1,15 +1,119 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Save,
   RefreshCw,
   CreditCard,
   MessageSquare,
   Share2,
+  FileText,
+  Upload,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
+
+type MediaAsset = { id: string; originalName: string; size: number; createdAt: string };
+
+function SplitPdfSection({ isArabic }: { isArabic: boolean }) {
+  const [activeId, setActiveId] = useState<string>("");
+  const [asset, setAsset] = useState<MediaAsset | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    const settingsRes = await fetch("/api/admin/settings").then(r => r.json()).catch(() => null);
+    const id = (settingsRes?.settings || []).find((s: { key: string }) => s.key === "active_split_media_id")?.value || "";
+    setActiveId(id);
+    if (id) {
+      const mediaRes = await fetch("/api/admin/media").then(r => r.json()).catch(() => null);
+      const found = (mediaRes?.assets || []).find((a: MediaAsset) => a.id === id);
+      setAsset(found || null);
+    } else {
+      setAsset(null);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleUpload(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setMsg({ text: isArabic ? "الملف لازم يكون PDF" : "File must be a PDF", ok: false });
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("isProtected", "true");
+      const uploadRes = await fetch("/api/admin/media", { method: "POST", body: fd });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.asset?.id) throw new Error();
+
+      const settingRes = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "active_split_media_id", value: uploadData.asset.id }),
+      });
+      if (!settingRes.ok) throw new Error();
+
+      setMsg({ text: isArabic ? "تم تحديث الملف بنجاح" : "File updated successfully", ok: true });
+      await load();
+    } catch {
+      setMsg({ text: isArabic ? "فشل رفع الملف" : "Upload failed", ok: false });
+    }
+    setUploading(false);
+    setTimeout(() => setMsg(null), 3000);
+  }
+
+  return (
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)]">
+        <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
+          <FileText size={16} />
+        </div>
+        <div>
+          <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+            {isArabic ? "ملف خطة التدريب (PDF)" : "Training Plan File (PDF)"}
+          </h3>
+          <p className="text-[11px] text-[var(--text-muted)]">
+            {isArabic ? "الملف اللي بيشوفه العميل في لوحة التحكم" : "The file customers see in their portal"}
+          </p>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-4">
+        <div className="text-xs text-[var(--text-muted)]">
+          {activeId && asset ? (
+            <p>
+              {isArabic ? "الملف الحالي: " : "Current file: "}
+              <span className="text-[var(--text-primary)] font-semibold">{asset.originalName}</span>
+              {" "}({(asset.size / 1024 / 1024).toFixed(1)} MB)
+            </p>
+          ) : (
+            <p>{isArabic ? "لسه مفيش ملف مرفوع — الموقع بيستخدم الملف الأساسي الحالي." : "No file uploaded yet — the site is using the original default file."}</p>
+          )}
+          {msg && (
+            <p className={`mt-2 font-bold ${msg.ok ? "text-emerald-400" : "text-red-400"}`}>{msg.text}</p>
+          )}
+        </div>
+
+        <button
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="px-4 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-sm transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+        >
+          <Upload size={14} />
+          <span>{uploading ? (isArabic ? "جاري الرفع..." : "Uploading…") : (isArabic ? "رفع ملف جديد" : "Upload New File")}</span>
+        </button>
+        <input ref={inputRef} type="file" accept="application/pdf,.pdf" className="hidden" onChange={e => handleUpload(e.target.files)} />
+      </div>
+    </div>
+  );
+}
 
 export default function AdminSettingsPage() {
   const [data, setData] = useState<Record<string, string>>({});
@@ -179,6 +283,7 @@ export default function AdminSettingsPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          <SplitPdfSection isArabic={isArabic} />
           {SETTING_SECTIONS.map(({ label, icon: Icon, description, items }) => (
             <div
               key={label}

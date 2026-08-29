@@ -1,9 +1,9 @@
 import { Resend } from "resend";
+import { getSetting } from "@/lib/settings";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.EMAIL_FROM || "Coach Amar <noreply@coachair.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://coachair.com";
-const COACH_WA = process.env.NEXT_PUBLIC_COACH_WHATSAPP || "+34610354255";
 
 // ─────────────────────────────────────────────────────────────
 // ORDER CONFIRMATION — sent immediately after checkout
@@ -19,12 +19,13 @@ export async function sendOrderConfirmationEmail({
     PAYPAL: "PayPal",
     TELDA: "Telda",
   };
-  const isInstapay = paymentMethod === "INSTAPAY";
+  const coachWA = await getSetting("whatsapp_number");
 
-  return resend.emails.send({
-    from: FROM, to,
-    subject: `Order Received — ${orderRef}`,
-    html: `
+  try {
+    return await resend.emails.send({
+      from: FROM, to,
+      subject: `Order Received — ${orderRef}`,
+      html: `
 <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#07090e;color:#f1f5f9;max-width:560px;margin:0 auto;padding:24px;">
   <div style="border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:32px;">
     <h1 style="color:#3b82f6;font-size:22px;margin-bottom:8px;">Order Received ✓</h1>
@@ -35,13 +36,14 @@ export async function sendOrderConfirmationEmail({
       <p style="margin:4px 0;"><strong>Amount:</strong> ${amount} EGP</p>
       <p style="margin:4px 0;"><strong>Payment:</strong> ${methodLabel[paymentMethod] || paymentMethod}</p>
     </div>
-    ${isInstapay
-      ? `<p style="color:#f59e0b;font-size:13px;">⚠️ To complete your order, send your InstaPay transfer screenshot to Coach Amar on WhatsApp: <a href="https://wa.me/${COACH_WA.replace("+","")}" style="color:#3b82f6;">${COACH_WA}</a></p>`
-      : `<p style="color:#94a3b8;font-size:13px;">Your account will be activated automatically once payment is confirmed. You'll receive login access by email.</p>`
-    }
+    <p style="color:#f59e0b;font-size:13px;">⚠️ To complete your order, send your ${methodLabel[paymentMethod] || paymentMethod} transfer screenshot to Coach Amar on WhatsApp: <a href="https://wa.me/${coachWA.replace("+","")}" style="color:#3b82f6;">${coachWA}</a></p>
   </div>
 </body></html>`.trim(),
-  });
+    });
+  } catch (err) {
+    console.error("sendOrderConfirmationEmail failed:", err);
+    throw err;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -53,10 +55,13 @@ export async function sendAccessGrantedEmail({
   to: string; name: string; email: string; tempPassword: string;
   productName: string; isCoaching: boolean;
 }) {
-  return resend.emails.send({
-    from: FROM, to,
-    subject: `Access Granted — Your ${productName} is ready`,
-    html: `
+  const coachWA = await getSetting("whatsapp_number");
+
+  try {
+    return await resend.emails.send({
+      from: FROM, to,
+      subject: `Access Granted — Your ${productName} is ready`,
+      html: `
 <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#07090e;color:#f1f5f9;max-width:560px;margin:0 auto;padding:24px;">
   <div style="border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:32px;">
     <h1 style="color:#3b82f6;font-size:22px;margin-bottom:8px;">Welcome, ${name}!</h1>
@@ -71,46 +76,14 @@ export async function sendAccessGrantedEmail({
     </a>
     <p style="color:#64748b;font-size:12px;">Please change your password after first login.</p>
     ${isCoaching
-      ? `<p style="color:#94a3b8;font-size:13px;margin-top:16px;">For personal coaching, Coach Amar will reach out on WhatsApp at ${COACH_WA}.</p>`
+      ? `<p style="color:#94a3b8;font-size:13px;margin-top:16px;">For personal coaching, Coach Amar will reach out on WhatsApp at ${coachWA}.</p>`
       : ""
     }
   </div>
 </body></html>`.trim(),
-  });
-}
-
-// ─────────────────────────────────────────────────────────────
-// RENEWAL REMINDER — sent 7 days before coaching expires
-// ─────────────────────────────────────────────────────────────
-export async function sendRenewalReminderEmail({
-  to, name, daysLeft, expiresAt,
-}: {
-  to: string; name: string; daysLeft: number; expiresAt: string;
-}) {
-  return resend.emails.send({
-    from: FROM, to,
-    subject: `Your coaching expires in ${daysLeft} days — Renew to continue`,
-    html: `
-<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#07090e;color:#f1f5f9;max-width:560px;margin:0 auto;padding:24px;">
-  <div style="border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:32px;">
-    <h2 style="color:#3b82f6;">Your coaching expires in ${daysLeft} days</h2>
-    <p>Hi ${name}, your current Personal Coaching period ends on <strong>${expiresAt}</strong>.</p>
-    <p style="color:#94a3b8;">Renew now to continue your progress without interruption.</p>
-    <a href="${APP_URL}/app/account" style="display:inline-block;background:#3b82f6;color:#fff;padding:12px 28px;border-radius:2px;text-decoration:none;font-weight:bold;">
-      Renew Coaching →
-    </a>
-  </div>
-</body></html>`.trim(),
-  });
-}
-
-// ─────────────────────────────────────────────────────────────
-// INSTAPAY CONFIRMED (admin manually confirmed) — now account created
-// ─────────────────────────────────────────────────────────────
-export async function sendInstapayConfirmedEmail({
-  to, name, email, tempPassword, productName,
-}: {
-  to: string; name: string; email: string; tempPassword: string; productName: string;
-}) {
-  return sendAccessGrantedEmail({ to, name, email, tempPassword, productName, isCoaching: productName.toLowerCase().includes("coaching") });
+    });
+  } catch (err) {
+    console.error("sendAccessGrantedEmail failed:", err);
+    throw err;
+  }
 }

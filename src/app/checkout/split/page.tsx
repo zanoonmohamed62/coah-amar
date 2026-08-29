@@ -17,19 +17,19 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSettings } from "@/lib/use-settings";
 
 const SPLIT_TAKEN = 56;
 const TOTAL_SPOTS = 100;
-const SPLIT_PRICE_EGP = 299;
-const SPLIT_PRICE_EUR = 11;
-const ORIGINAL_EGP = 499;
-const ORIGINAL_EUR = 19;
+const SPLIT_PRICE_EUR = 19;
 
 const highlightIcons = [Dumbbell, ListChecks, Timer, TrendingUp];
 
 export default function SplitCheckoutPage() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+  const getSetting = useSettings();
+  const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
   const [paymentMethod, setPaymentMethod] = useState<"instapay" | "paypal" | "telda">("instapay");
   const [formData, setFormData] = useState({ name: "", phone: "", email: "" });
@@ -38,13 +38,17 @@ export default function SplitCheckoutPage() {
   const [orderRef, setOrderRef] = useState("");
   const [error, setError] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
+  const [priceEGP, setPriceEGP] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
-      .then((data: { products?: { id: string; slug: string }[] }) => {
+      .then((data: { products?: { id: string; slug: string; price: number }[] }) => {
         const p = (data.products || []).find((p) => p.slug === "training-split" || p.slug === "training-plan" || p.slug === "ammar-x-split" || p.slug === "amar-x-split");
-        if (p) setProductId(p.id);
+        if (p) {
+          setProductId(p.id);
+          setPriceEGP(p.price / 100);
+        }
       })
       .catch(() => {});
   }, []);
@@ -74,8 +78,20 @@ export default function SplitCheckoutPage() {
       }),
     });
 
+    if (!res.ok) {
+      setIsSubmitting(false);
+      const data = await res.json().catch(() => null);
+      setError(data?.error || (isArabic ? "حدث خطأ ما. يرجى المحاولة مرة أخرى." : "Something went wrong. Please try again."));
+      return;
+    }
+
+    const data = await res.json();
+    if (data.approvalUrl) {
+      window.location.href = data.approvalUrl;
+      return;
+    }
+
     setIsSubmitting(false);
-    if (!res.ok) { setError(isArabic ? "حدث خطأ ما. يرجى المحاولة مرة أخرى." : "Something went wrong. Please try again."); return; }
     setOrderRef(ref);
     setIsSuccess(true);
   };
@@ -107,7 +123,7 @@ export default function SplitCheckoutPage() {
               : ". Send your payment screenshot on WhatsApp to confirm and unlock your plan immediately."}
           </p>
           <a
-            href={`https://wa.me/34610354255?text=${waMsg}`}
+            href={`https://wa.me/${waNumber}?text=${waMsg}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary w-full flex items-center justify-center gap-2 py-3.5"
@@ -225,7 +241,7 @@ export default function SplitCheckoutPage() {
                       {isArabic ? "دفع مرة واحدة" : "ONE-TIME"}
                     </span>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-black text-white">{SPLIT_PRICE_EGP}</span>
+                      <span className="text-2xl font-black text-white">{priceEGP ?? 499}</span>
                       <span className="text-xs text-slate-400">LE / {SPLIT_PRICE_EUR} €</span>
                     </div>
                   </div>
@@ -251,12 +267,12 @@ export default function SplitCheckoutPage() {
                   </div>
                   <div>
                     <p className="text-white font-bold text-sm">
-                      {isArabic ? "خصم 40% لأول 100 مشترك" : "40% OFF — First 100 buyers"}
+                      {isArabic ? "دفعة محدودة — أول 100 مشترك" : "Limited Batch — First 100 buyers"}
                     </p>
                     <p className="text-slate-300 text-xs mt-1">
                       {isArabic
-                        ? `متبقي ${TOTAL_SPOTS - SPLIT_TAKEN} مقعداً فقط بهذا السعر`
-                        : `${TOTAL_SPOTS - SPLIT_TAKEN} spots remaining at this price`}
+                        ? `متبقي ${TOTAL_SPOTS - SPLIT_TAKEN} مقعداً فقط في هذه الدفعة`
+                        : `${TOTAL_SPOTS - SPLIT_TAKEN} spots remaining in this batch`}
                     </p>
                   </div>
                 </div>
@@ -288,15 +304,14 @@ export default function SplitCheckoutPage() {
                 <div className="flex items-center justify-between py-2 border-b border-slate-800 text-sm">
                   <span className="text-slate-300 font-medium">Amar X Split (7-Day Program)</span>
                   <div className="text-right">
-                    <span className="text-xs text-slate-500 line-through mr-2">{ORIGINAL_EGP} LE</span>
-                    <span className="text-white font-bold">{SPLIT_PRICE_EGP} LE</span>
+                    <span className="text-white font-bold">{priceEGP ?? 499} LE</span>
                   </div>
                 </div>
 
                 <div className="flex items-baseline justify-between pt-2">
                   <span className="text-slate-400 text-xs">{isArabic ? "الإجمالي المطلوب" : "Total Amount"}</span>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-blue-400">{SPLIT_PRICE_EGP} LE</span>
+                    <span className="text-2xl font-black text-blue-400">{priceEGP ?? 499} LE</span>
                     <span className="text-xs text-slate-400 ml-1.5">({SPLIT_PRICE_EUR} €)</span>
                   </div>
                 </div>
@@ -399,19 +414,19 @@ export default function SplitCheckoutPage() {
                       {paymentMethod === "instapay" && (
                         <p>
                           📱 <strong className="text-white">InstaPay:</strong> التحويل على عنوان:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">amar.fitness@instapay</span>
+                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("instapay_handle")}</span>
                         </p>
                       )}
                       {paymentMethod === "paypal" && (
                         <p>
                           🌐 <strong className="text-white">PayPal:</strong> التحويل عبر الرابط:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">paypal.me/amar.fitness</span>
+                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("paypal_link").replace(/^https?:\/\//, "")}</span>
                         </p>
                       )}
                       {paymentMethod === "telda" && (
                         <p>
                           💳 <strong className="text-white">Telda:</strong> التحويل على يوزر:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">@amar.fitness</span>
+                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("telda_handle")}</span>
                         </p>
                       )}
                     </div>
@@ -427,8 +442,8 @@ export default function SplitCheckoutPage() {
                       {isSubmitting
                         ? isArabic ? "جاري تسجيل الطلب..." : "Processing..."
                         : isArabic
-                        ? `احصل على الـ Split الآن — ${SPLIT_PRICE_EGP} ج.م`
-                        : `Get The Split Now — ${SPLIT_PRICE_EGP} EGP`}
+                        ? `احصل على الـ Split الآن — ${priceEGP ?? 499} ج.م`
+                        : `Get The Split Now — ${priceEGP ?? 499} EGP`}
                     </span>
                     {!isSubmitting && (
                       <ArrowIcon

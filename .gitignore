@@ -36,6 +36,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# private/paid content — never track the training plan PDF
+/private-assets/
+/private_media/
+/assets/AMARX SPLIT.pdf
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

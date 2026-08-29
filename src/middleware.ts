@@ -9,5 +9,6 @@ export const config = {
     "/app/:path*",
     "/api/admin/:path*",
     "/api/customer/:path*",
+    "/api/split/:path*",
   ],
 };

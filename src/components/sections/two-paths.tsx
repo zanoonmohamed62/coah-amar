@@ -33,7 +33,7 @@ function SpotCounter({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
           </span>
           <span className="text-[11px] font-bold tracking-wider uppercase text-blue-300">
-            {isArabic ? "دفعة الخصم (أول 100 مشترك)" : "Discount Batch (First 100)"}
+            {isArabic ? "دفعة محدودة (أول 100 مشترك)" : "Limited Batch (First 100)"}
           </span>
         </div>
         <div className="text-right">
@@ -61,8 +61,8 @@ function SpotCounter({
       <div className="flex items-center justify-between mt-2 text-[11px]">
         <span className="font-semibold text-slate-200">
           {isArabic
-            ? `متبقي ${remaining} مقعد فقط بهذا السعر`
-            : `${remaining} spots remaining at this price`}
+            ? `متبقي ${remaining} مقعد فقط في هذه الدفعة`
+            : `${remaining} spots remaining in this batch`}
         </span>
         <span className="text-blue-400 font-bold text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
           {pct}% {isArabic ? "مكتمل" : "filled"}
@@ -76,12 +76,6 @@ export function TwoPathsSection() {
   const { t, isArabic } = useLanguage();
   const get = useSiteContent();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
-
-  // Base undiscounted prices
-  const splitOriginalEGP = 499;
-  const splitOriginalEUR = 19;
-  const coachingOriginalEGP = "2,499";
-  const coachingOriginalEUR = 119;
 
   return (
     <section id="plans" className="section-padding px-6">
@@ -124,16 +118,7 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1">{get("pricing", "offer1_sub", t.twoPaths.offer1.sub)}</p>
                 </div>
                 <div className="text-right">
-                  {/* Crossed-out original price (499 EGP) */}
-                  <div className="flex items-center justify-end gap-1.5 text-sm text-slate-500 line-through mb-0.5 font-medium">
-                    <span dir="ltr">{splitOriginalEGP} EGP</span>
-                    <span>/</span>
-                    <span dir="ltr">{splitOriginalEUR} €</span>
-                  </div>
                   <div className="flex items-center gap-2 justify-end">
-                    <span className="bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[0.65rem] font-black px-2 py-0.5 rounded-sm">
-                      -40%
-                    </span>
                     <p className="text-3xl font-extrabold text-white">
                       {get("pricing", "offer1_price", t.twoPaths.offer1.price)}
                       <span className="text-sm font-normal text-slate-400 mx-1">{get("pricing", "offer1_currency", t.twoPaths.offer1.currency)}</span>
@@ -200,16 +185,7 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1">{get("pricing", "offer2_sub", t.twoPaths.offer2.sub)}</p>
                 </div>
                 <div className="text-right">
-                  {/* Crossed-out original price (2,499 EGP) */}
-                  <div className="flex items-center justify-end gap-1.5 text-sm text-slate-500 line-through mb-0.5 font-medium">
-                    <span dir="ltr">{coachingOriginalEGP} EGP</span>
-                    <span>/</span>
-                    <span dir="ltr">{coachingOriginalEUR} €</span>
-                  </div>
                   <div className="flex items-center gap-2 justify-end">
-                    <span className="bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[0.65rem] font-black px-2 py-0.5 rounded-sm">
-                      -40%
-                    </span>
                     <p className="text-3xl font-extrabold text-blue-400">
                       {get("pricing", "offer2_price", t.twoPaths.offer2.price)}
                       <span className="text-sm font-normal text-slate-400 mx-1">{get("pricing", "offer2_currency", t.twoPaths.offer2.currency)}</span>

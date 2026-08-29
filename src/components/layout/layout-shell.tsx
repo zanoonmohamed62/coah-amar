@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { GoogleLeadBanner } from "@/components/GoogleLeadBanner";
 import { Suspense } from "react";
 
 function LayoutShellInner({ children }: { children: React.ReactNode }) {
@@ -23,6 +24,7 @@ function LayoutShellInner({ children }: { children: React.ReactNode }) {
       {showNav && <Navbar />}
       <main>{children}</main>
       {showFooter && <Footer />}
+      <GoogleLeadBanner />
     </>
   );
 }

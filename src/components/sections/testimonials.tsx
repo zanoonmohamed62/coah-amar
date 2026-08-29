@@ -4,10 +4,13 @@ import { motion } from "framer-motion";
 import { MessageSquarePlus, Star } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
+import { useSettings } from "@/lib/use-settings";
 
 export function TestimonialsSection() {
   const { t, isArabic } = useLanguage();
   const get = useSiteContent();
+  const getSetting = useSettings();
+  const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
   const reviews = [
     {
@@ -102,7 +105,7 @@ export function TestimonialsSection() {
 
           {/* CTA */}
           <a
-            href={`https://wa.me/34610354255?text=${encodeURIComponent(isArabic ? "مرحباً كوتش عمار، أريد مشاركة نتيجتي" : "Hi Coach Amar, I want to share my results")}`}
+            href={`https://wa.me/${waNumber}?text=${encodeURIComponent(isArabic ? "مرحباً كوتش عمار، أريد مشاركة نتيجتي" : "Hi Coach Amar, I want to share my results")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2.5 px-6 py-3 bg-blue-600/15 border border-blue-500/30 hover:border-blue-400 hover:bg-blue-600/25 text-blue-300 hover:text-white rounded-sm transition-all font-semibold text-sm"

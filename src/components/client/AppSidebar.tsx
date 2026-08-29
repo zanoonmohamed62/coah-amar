@@ -17,6 +17,7 @@ import {
   PanelRightClose
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { useSettings } from "@/lib/use-settings";
 import { useState } from "react";
 
 interface AppSidebarProps {
@@ -33,6 +34,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
   const CollapseIcon = isArabic ? PanelRightClose : PanelLeftClose;
   const ExpandIcon = isArabic ? PanelLeftClose : PanelRightClose;
   const [isUpdating, setIsUpdating] = useState(false);
+  const getSetting = useSettings();
 
   const links = [
     {
@@ -53,7 +55,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
     },
   ];
 
-  const WA = process.env.NEXT_PUBLIC_COACH_WHATSAPP?.replace("+", "") || "34610354255";
+  const WA = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
   const handleUpdate = async () => {
     setIsUpdating(true);

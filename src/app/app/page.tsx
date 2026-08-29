@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { FileText, MessageCircle, CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
-
-const WA_NUMBER = process.env.NEXT_PUBLIC_COACH_WHATSAPP?.replace("+", "") || "34610354255";
+import { useSettings } from "@/lib/use-settings";
 
 export default function AppHome() {
   const { isArabic } = useLanguage();
+  const getSetting = useSettings();
+  const WA_NUMBER = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] max-w-2xl mx-auto text-center space-y-10">
