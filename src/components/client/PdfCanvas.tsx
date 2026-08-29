@@ -123,13 +123,11 @@ export default function PdfCanvas({ isArabic }: Props) {
   const [scaleMultiplier, setScaleMultiplier] = useState(1);
   const [isBlurred, setIsBlurred] = useState(false);
 
-  // 1. Aggressive Anti-Screenshot & DRM
+  // 1. Anti-Screenshot & DRM
   useEffect(() => {
     const handleBlur = () => setIsBlurred(true);
     const handleFocus = () => setIsBlurred(false);
     const handleVisibility = () => setIsBlurred(document.hidden);
-    const handleMouseLeave = () => setIsBlurred(true);
-    const handleMouseEnter = () => setIsBlurred(false);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Block PrintScreen, F10, Ctrl+P, Ctrl+S, CMD+Shift+3, CMD+Shift+4, CMD+Shift+S
@@ -163,16 +161,12 @@ export default function PdfCanvas({ isArabic }: Props) {
     window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibility);
-    document.addEventListener("mouseleave", handleMouseLeave);
-    document.addEventListener("mouseenter", handleMouseEnter);
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
-      document.removeEventListener("mouseleave", handleMouseLeave);
-      document.removeEventListener("mouseenter", handleMouseEnter);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);

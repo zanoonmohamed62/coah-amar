@@ -15,12 +15,12 @@ function SectionWrapperInner({ sectionId, children }: { sectionId: string, child
   if (previewSection) {
     if (previewSection !== sectionId) return null;
     // We show it even if isHidden is true, so the admin can edit and preview hidden sections!
-    return <section id={sectionId} className={isHidden ? "opacity-50" : ""}>{children}</section>;
+    return <div id={sectionId} className={isHidden ? "opacity-50" : ""}>{children}</div>;
   }
 
   if (isHidden) return null;
   
-  return <section id={sectionId}>{children}</section>;
+  return <div id={sectionId}>{children}</div>;
 }
 
 export function SectionWrapper({
@@ -31,7 +31,7 @@ export function SectionWrapper({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<section id={sectionId}>{children}</section>}>
+    <Suspense fallback={<div id={sectionId}>{children}</div>}>
       <SectionWrapperInner sectionId={sectionId}>{children}</SectionWrapperInner>
     </Suspense>
   );

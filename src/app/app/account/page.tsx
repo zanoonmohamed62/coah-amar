@@ -75,7 +75,7 @@ export default function AccountPage() {
               {isArabic ? "جدد الآن لمتابعة التدريب دون انقطاع." : "Renew now to keep access without interruption."}
             </p>
           </div>
-          <Link href="/#pricing" className="btn-primary py-1.5 px-3 text-xs shrink-0 flex items-center gap-1.5">
+          <Link href="/#plans" className="btn-primary py-1.5 px-3 text-xs shrink-0 flex items-center gap-1.5">
             <RefreshCw size={12} /> {isArabic ? "تجديد الاشتراك" : "Renew"}
           </Link>
         </div>

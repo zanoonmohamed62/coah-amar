@@ -9,6 +9,7 @@ const inter = { variable: "--font-inter" };
 const outfit = { variable: "--font-outfit" };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://amarel7ewety.com"),
   title: "Coach Amar — Premium Fitness Coaching | كوتش عمار للتدريب الرياضي",
   description:
     "Personalized training, nutrition, and coaching built around your goals. Choose from a structured training plan or full personal coaching with Coach Amar.",

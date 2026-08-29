@@ -9,7 +9,8 @@ const DISMISS_KEY = "amarx-lead-banner-dismissed-at";
 const DISMISS_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export function GoogleLeadBanner() {
-  const { status } = useSession();
+  const session = useSession();
+  const status = session?.status;
   const { isArabic } = useLanguage();
   const [visible, setVisible] = useState(false);
 
