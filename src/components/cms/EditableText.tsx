@@ -32,10 +32,14 @@ export function EditableText({
   const { active, registerField, commitEdit } = useCmsEditMode();
   const ref = useRef<HTMLElement>(null);
   const lastCommitted = useRef(value);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (active) registerField(sectionId, fieldId, value);
   }, [active, sectionId, fieldId, value, registerField]);
+
+  // Clear any pending debounce timer on unmount so it can't fire after teardown.
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
   if (!active) {
     return (
@@ -88,10 +92,26 @@ export function EditableText({
           (e.currentTarget as HTMLElement).blur();
         }
       }}
+      onInput={(e: React.FormEvent<HTMLElement>) => {
+        // Commit while typing (debounced) so the parent's Save button reflects
+        // unsaved changes almost immediately, instead of only after the field
+        // loses focus — this is what makes Save reliably enable/save the very
+        // latest text instead of racing a stale blur-only commit.
+        const el = e.currentTarget as HTMLElement;
+        const next = el.textContent ?? "";
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          if (next !== lastCommitted.current) {
+            lastCommitted.current = next;
+            commitEdit(sectionId, fieldId, next);
+          }
+        }, 250);
+      }}
       onBlur={(e: React.FocusEvent<HTMLElement>) => {
         const el = e.currentTarget as HTMLElement;
         el.style.outline = "1px dashed transparent";
         el.style.backgroundColor = "transparent";
+        if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
         const next = el.textContent ?? "";
         if (next !== lastCommitted.current) {
           lastCommitted.current = next;

@@ -56,8 +56,10 @@ session secret from `src/lib/auth-secret.ts`, which throws at startup if `AUTH_S
 — finer per-resource checks (e.g. entitlement checks) happen inside the route handlers themselves
 via `src/lib/auth-guard.ts`'s `requireAdmin()`/`requireCustomer()`/`requireAuth()`.
 
-The user is currently in active development/testing, so `/admin` and `/app` links are
-deliberately easy to reach from the nav — intentional for now, not a bug.
+The public navbar's "Admin"/"Dashboard" quick-links (previously kept deliberately visible during
+active development) were removed on 2026-08-31 — the user asked for the public nav decluttered to
+look like a real production marketing site. `/admin` and `/app` are still reachable by URL directly
+(and behind their normal auth gates), just no longer advertised as buttons on the public homepage.
 
 ---
 

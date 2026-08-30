@@ -40,13 +40,20 @@ function SpotCounter({
   taken,
   total = 100,
   isArabic = false,
+  fieldPrefix,
+  get,
 }: {
   taken: number;
   total?: number;
   isArabic?: boolean;
+  fieldPrefix: string;
+  get: (sectionId: string, fieldId: string, fallback: string) => string;
 }) {
   const remaining = total - taken;
   const pct = Math.round((taken / total) * 100);
+  const badgeLabel = get("pricing", `${fieldPrefix}_spotBadge`, isArabic ? "دفعة محدودة (أول 100 مشترك)" : "Limited Batch (First 100)");
+  const claimedLabel = get("pricing", `${fieldPrefix}_spotClaimed`, isArabic ? "مشترك" : "claimed");
+  const filledLabel = get("pricing", `${fieldPrefix}_spotFilled`, isArabic ? "مكتمل" : "filled");
 
   return (
     <div className="mt-5 p-3.5 rounded-sm bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/20 shadow-inner">
@@ -58,7 +65,7 @@ function SpotCounter({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
           </span>
           <span className="text-[11px] font-bold tracking-wider uppercase text-blue-300">
-            {isArabic ? "دفعة محدودة (أول 100 مشترك)" : "Limited Batch (First 100)"}
+            <EditableText sectionId="pricing" fieldId={`${fieldPrefix}_spotBadge`} value={badgeLabel} />
           </span>
         </div>
         <div className="text-right">
@@ -66,7 +73,7 @@ function SpotCounter({
             {taken}/{total}
           </span>
           <span className="text-[10px] text-slate-400 ml-1 font-semibold">
-            {isArabic ? "مشترك" : "claimed"}
+            <EditableText sectionId="pricing" fieldId={`${fieldPrefix}_spotClaimed`} value={claimedLabel} />
           </span>
         </div>
       </div>
@@ -82,7 +89,8 @@ function SpotCounter({
         />
       </div>
 
-      {/* Bottom Info: Remaining count & percent badge */}
+      {/* Bottom Info: Remaining count & percent badge — the count itself is
+          computed (not CMS content), but the number is still shown live */}
       <div className="flex items-center justify-between mt-2 text-[11px]">
         <span className="font-semibold text-slate-200">
           {isArabic
@@ -90,7 +98,7 @@ function SpotCounter({
             : `${remaining} spots remaining in this batch`}
         </span>
         <span className="text-blue-400 font-bold text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
-          {pct}% {isArabic ? "مكتمل" : "filled"}
+          {pct}% <EditableText as="span" sectionId="pricing" fieldId={`${fieldPrefix}_spotFilled`} value={filledLabel} />
         </span>
       </div>
     </div>
@@ -140,7 +148,7 @@ export function TwoPathsSection() {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <span className="text-[0.65rem] font-bold tracking-widest text-slate-400 uppercase bg-slate-800/80 px-2.5 py-1 rounded-sm inline-block mb-3">
-                    {t.twoPaths.offer1.badge}
+                    <EditableText sectionId="pricing" fieldId="offer1_badge" value={get("pricing", "offer1_badge", t.twoPaths.offer1.badge)} />
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
                     <EditableText sectionId="pricing" fieldId="offer1_title" value={get("pricing", "offer1_title", t.twoPaths.offer1.title)} />
@@ -160,13 +168,13 @@ export function TwoPathsSection() {
                     </p>
                   )}
                   <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-slate-400 border border-slate-700/80 px-2 py-0.5 rounded-sm inline-block mt-1">
-                    {t.twoPaths.offer1.type}
+                    <EditableText sectionId="pricing" fieldId="offer1_type" value={get("pricing", "offer1_type", t.twoPaths.offer1.type)} />
                   </span>
                 </div>
               </div>
 
               {/* Spot counter (56 / 100) */}
-              <SpotCounter taken={SPLIT_TAKEN} total={TOTAL_SPOTS} isArabic={isArabic} />
+              <SpotCounter taken={SPLIT_TAKEN} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer1" get={get} />
 
               <div className="h-px bg-slate-800 my-6" />
 
@@ -202,7 +210,7 @@ export function TwoPathsSection() {
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
               </Link>
               <p className="text-center text-xs text-slate-400 mt-2.5">
-                {t.twoPaths.offer1.delivery}
+                <EditableText sectionId="pricing" fieldId="offer1_delivery" value={get("pricing", "offer1_delivery", t.twoPaths.offer1.delivery)} />
               </p>
             </div>
           </motion.div>
@@ -218,14 +226,14 @@ export function TwoPathsSection() {
             {/* Top badge */}
             <div className={`absolute -top-3 ${isArabic ? "left-6" : "right-6"} bg-blue-600 text-white text-[0.65rem] font-extrabold tracking-wider uppercase px-3 py-1 rounded-sm shadow-md flex items-center gap-1`}>
               <Sparkles size={11} />
-              <span>{isArabic ? "الأكثر طلباً" : "MOST POPULAR"}</span>
+              <EditableText as="span" sectionId="pricing" fieldId="offer2_mostPopular" value={get("pricing", "offer2_mostPopular", isArabic ? "الأكثر طلباً" : "MOST POPULAR")} />
             </div>
 
             <div>
               <div className="flex items-start justify-between mb-6 pt-2">
                 <div>
                   <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-sm inline-block mb-3">
-                    {t.twoPaths.offer2.badge}
+                    <EditableText sectionId="pricing" fieldId="offer2_badge" value={get("pricing", "offer2_badge", t.twoPaths.offer2.badge)} />
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
                     <EditableText sectionId="pricing" fieldId="offer2_title" value={get("pricing", "offer2_title", t.twoPaths.offer2.title)} />
@@ -245,13 +253,13 @@ export function TwoPathsSection() {
                     </p>
                   )}
                   <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-sm inline-block mt-1">
-                    {t.twoPaths.offer2.type}
+                    <EditableText sectionId="pricing" fieldId="offer2_type" value={get("pricing", "offer2_type", t.twoPaths.offer2.type)} />
                   </span>
                 </div>
               </div>
 
               {/* Spot counter (16 / 100) */}
-              <SpotCounter taken={COACHING_TAKEN} total={TOTAL_SPOTS} isArabic={isArabic} />
+              <SpotCounter taken={COACHING_TAKEN} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer2" get={get} />
 
               <div className="h-px bg-slate-800 my-6" />
 

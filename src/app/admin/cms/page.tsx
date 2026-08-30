@@ -25,6 +25,10 @@ export default function CMSPage() {
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [iframeReady, setIframeReady] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A ref mirror of `pending` so handleSave can read the truly-latest edits
+  // after an async flush round-trip, instead of a value closed over at click time.
+  const pendingRef = useRef<Record<string, PendingEdit>>({});
+  useEffect(() => { pendingRef.current = pending; }, [pending]);
 
   const dirtyCount = Object.keys(pending).length;
 
@@ -56,11 +60,39 @@ export default function CMSPage() {
     setIframeReady(false);
   }, [lang, editMode]);
 
+  // Ask the iframe to blur whatever's currently focused (forcing its onBlur
+  // commit to fire) and wait for its ack before reading pending edits — this
+  // closes the race where clicking Save right after typing could read a
+  // stale, empty pending list because postMessage delivery is asynchronous.
+  function flushAndWait(): Promise<void> {
+    return new Promise((resolve) => {
+      let done = false;
+      function finish() {
+        if (done) return;
+        done = true;
+        window.removeEventListener("message", onAck);
+        resolve();
+      }
+      function onAck(e: MessageEvent) {
+        if (e.origin !== window.location.origin) return;
+        if (e.data?.type === "cms-flush-ack") finish();
+      }
+      window.addEventListener("message", onAck);
+      iframeRef.current?.contentWindow?.postMessage({ type: "cms-flush" }, window.location.origin);
+      // Safety net in case the iframe never acks (e.g. not loaded yet).
+      setTimeout(finish, 250);
+    });
+  }
+
   async function handleSave() {
-    const updates = Object.values(pending);
-    if (updates.length === 0) return;
     setSaving(true);
     try {
+      await flushAndWait();
+      const updates = Object.values(pendingRef.current);
+      if (updates.length === 0) {
+        showToast("err", "No changes to save.");
+        return;
+      }
       const res = await fetch("/api/admin/cms/batch", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -69,10 +101,9 @@ export default function CMSPage() {
       if (!res.ok) throw new Error();
       setPending({});
       showToast("ok", `Saved ${updates.length} change${updates.length > 1 ? "s" : ""}`);
-      iframeRef.current?.contentWindow?.postMessage(
-        { type: "cms-refresh" },
-        window.location.origin
-      );
+      // No iframe reload here — every edited field already shows its new value
+      // in place (that's what was just typed/uploaded), so a reload would only
+      // add a slow round-trip for no visible benefit.
     } catch {
       showToast("err", "Save failed — please try again.");
     } finally {

@@ -56,6 +56,14 @@ export function CmsEditModeProvider({ children }: { children: React.ReactNode })
       if (e.data?.type === "cms-refresh") {
         clearSiteContentCache();
         window.location.reload();
+      } else if (e.data?.type === "cms-flush") {
+        // The Save button asked us to force-commit whatever's currently being
+        // typed before it reads the pending-edits list — blurring the active
+        // field fires its own onBlur commit, then we ack so the parent knows
+        // it's safe to proceed (avoids racing the async postMessage delivery).
+        const el = document.activeElement as HTMLElement | null;
+        if (el && el.hasAttribute("data-cms-field")) el.blur();
+        window.parent?.postMessage({ type: "cms-flush-ack" }, window.location.origin);
       }
     }
     window.addEventListener("message", onMessage);

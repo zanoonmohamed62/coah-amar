@@ -25,6 +25,7 @@ export function EditableImage({ sectionId, fieldId, value, alt, className, style
   const inputRef = useRef<HTMLInputElement>(null);
   const [hover, setHover] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
   const [src, setSrc] = useState(value);
 
   useEffect(() => setSrc(value), [value]);
@@ -39,23 +40,35 @@ export function EditableImage({ sectionId, fieldId, value, alt, className, style
 
   async function handleFile(file: File) {
     setUploading(true);
+    setError("");
     try {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/admin/cms/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.url) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
         setSrc(data.url);
         commitEdit(sectionId, fieldId, data.url);
+      } else {
+        setError(data.error || "Upload failed — try a smaller image (max 5MB)");
       }
+    } catch {
+      setError("Upload failed — check your connection and try again");
     } finally {
       setUploading(false);
     }
   }
 
+  const showOverlay = hover || uploading || !!error;
+
   return (
     <div
-      style={{ position: "relative", display: "contents" }}
+      // NOTE: this must NOT be display:contents — that makes `position:relative`
+      // a no-op (a contents box establishes no positioning context at all), which
+      // left the "Change Image" button positioned relative to whatever ancestor
+      // happened to be positioned instead of this wrapper. width/height 100% keeps
+      // it filling the exact same space the <img> used to occupy directly.
+      style={{ position: "relative", width: "100%", height: "100%" }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -72,33 +85,58 @@ export function EditableImage({ sectionId, fieldId, value, alt, className, style
         data-cms-section={sectionId}
         data-cms-field={fieldId}
       />
-      {hover && (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
+      {showOverlay && (
+        <div
           style={{
             position: "absolute",
             inset: 0,
-            margin: "auto",
-            width: "fit-content",
-            height: "fit-content",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: 6,
-            padding: "8px 14px",
-            background: "rgba(15,17,23,0.92)",
-            color: "#fff",
-            border: "1px solid rgba(59,130,246,0.6)",
-            borderRadius: 6,
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: uploading ? "default" : "pointer",
+            justifyContent: "center",
+            gap: 8,
             zIndex: 20,
+            padding: 12,
           }}
         >
-          {uploading ? "Uploading…" : "Change Image"}
-        </button>
+          <button
+            type="button"
+            onClick={() => { setError(""); inputRef.current?.click(); }}
+            disabled={uploading}
+            style={{
+              width: "fit-content",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              background: "rgba(15,17,23,0.92)",
+              color: "#fff",
+              border: "1px solid rgba(59,130,246,0.6)",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: uploading ? "default" : "pointer",
+            }}
+          >
+            {uploading ? "Uploading…" : "Change Image"}
+          </button>
+          {error && (
+            <p style={{
+              margin: 0,
+              maxWidth: 220,
+              textAlign: "center",
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#fca5a5",
+              background: "rgba(15,17,23,0.92)",
+              border: "1px solid rgba(239,68,68,0.5)",
+              borderRadius: 6,
+              padding: "6px 10px",
+            }}>
+              {error}
+            </p>
+          )}
+        </div>
       )}
       <input
         ref={inputRef}

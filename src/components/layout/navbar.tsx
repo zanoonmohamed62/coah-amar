@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Globe, LayoutDashboard, Users } from "lucide-react";
+import { Menu, X, Globe } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
 import { EditableText } from "@/components/cms/EditableText";
@@ -86,22 +86,6 @@ export function Navbar() {
               <span>{t.nav.langSwitch}</span>
             </button>
 
-            {/* Admin & Dashboard links */}
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-purple-500/40 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:border-purple-400 text-xs font-semibold transition-all"
-            >
-              <LayoutDashboard size={13} />
-              Admin
-            </Link>
-            <Link
-              href="/app"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-400 text-xs font-semibold transition-all"
-            >
-              <Users size={13} />
-              Dashboard
-            </Link>
-
             <Link href="#plans" className="btn-primary text-xs relative z-10">
               <EditableText sectionId="nav" fieldId="startNow" value={get("nav", "startNow", t.nav.startNow)} />
             </Link>
@@ -172,22 +156,6 @@ export function Navbar() {
                 <span>{t.nav.langSwitch}</span>
               </button>
 
-              <Link
-                href="/admin"
-                onClick={() => setMobileOpen(false)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-purple-500/40 bg-purple-500/10 text-purple-400 text-sm font-semibold"
-              >
-                <LayoutDashboard size={15} />
-                Admin Panel
-              </Link>
-              <Link
-                href="/app"
-                onClick={() => setMobileOpen(false)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-sm font-semibold"
-              >
-                <Users size={15} />
-                Client Dashboard
-              </Link>
               <Link
                 href="#plans"
                 onClick={() => setMobileOpen(false)}
