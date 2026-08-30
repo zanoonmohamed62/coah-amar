@@ -9,11 +9,102 @@ import {
   Share2,
   FileText,
   Upload,
+  QrCode,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
 
 type MediaAsset = { id: string; originalName: string; size: number; createdAt: string };
+
+function TeldaQrSection({ isArabic }: { isArabic: boolean }) {
+  const [qrUrl, setQrUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    const settingsRes = await fetch("/api/admin/settings").then(r => r.json()).catch(() => null);
+    const url = (settingsRes?.settings || []).find((s: { key: string }) => s.key === "telda_qr_url")?.value || "";
+    setQrUrl(url);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleUpload(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      // Reuses the same public-upload path the Site Editor uses for homepage
+      // images — a payment QR needs to be visible to logged-out checkout
+      // visitors, unlike the protected media library.
+      const uploadRes = await fetch("/api/admin/cms/upload", { method: "POST", body: fd });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.url) throw new Error();
+
+      const settingRes = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "telda_qr_url", value: uploadData.url }),
+      });
+      if (!settingRes.ok) throw new Error();
+
+      setQrUrl(uploadData.url);
+      setMsg({ text: isArabic ? "تم تحديث صورة الـQR" : "QR image updated", ok: true });
+    } catch {
+      setMsg({ text: isArabic ? "فشل رفع الصورة" : "Upload failed", ok: false });
+    }
+    setUploading(false);
+    setTimeout(() => setMsg(null), 3000);
+  }
+
+  return (
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)]">
+        <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
+          <QrCode size={16} />
+        </div>
+        <div>
+          <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+            {isArabic ? "صورة QR لتيلدا" : "Telda QR Code"}
+          </h3>
+          <p className="text-[11px] text-[var(--text-muted)]">
+            {isArabic ? "الصورة اللي بيشوفها العميل ويمسحها عند اختيار الدفع بتيلدا" : "Shown to customers when they choose Telda at checkout"}
+          </p>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-4">
+        {qrUrl ? (
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qrUrl} alt="Telda QR" className="w-28 h-28 object-contain bg-white rounded-sm border border-[var(--border)]" />
+            <p className="text-xs text-[var(--text-muted)]">
+              {isArabic ? "الصورة الحالية — ارفع صورة تانية لاستبدالها" : "Current image — upload another to replace it"}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-[var(--text-muted)]">
+            {isArabic ? "لسه مفيش صورة QR مرفوعة — خطوة الدفع بتيلدا هتعرض الاسم بس." : "No QR uploaded yet — the Telda checkout step will show only the handle."}
+          </p>
+        )}
+        {msg && <p className={`text-xs font-bold ${msg.ok ? "text-emerald-400" : "text-red-400"}`}>{msg.text}</p>}
+
+        <button
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="px-4 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-sm transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+        >
+          <Upload size={14} />
+          <span>{uploading ? (isArabic ? "جاري الرفع..." : "Uploading…") : (isArabic ? "رفع صورة QR" : "Upload QR Image")}</span>
+        </button>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => handleUpload(e.target.files)} />
+      </div>
+    </div>
+  );
+}
 
 function SplitPdfSection({ isArabic }: { isArabic: boolean }) {
   const [activeId, setActiveId] = useState<string>("");
@@ -133,15 +224,15 @@ export default function AdminSettingsPage() {
       items: [
         {
           key: "instapay_handle",
-          label: isArabic ? "عنوان / معرف انستاباي (InstaPay IPA)" : "InstaPay Handle / Address",
-          hint: "e.g. amar.fitness@instapay",
-          defaultValue: "amar.fitness@instapay",
+          label: isArabic ? "رقم انستاباي (InstaPay)" : "InstaPay Number",
+          hint: "e.g. 01108610434",
+          defaultValue: "01108610434",
         },
         {
           key: "paypal_link",
           label: isArabic ? "رابط باي بال (PayPal.Me)" : "PayPal Payment Link",
-          hint: "e.g. https://paypal.me/amarfitness",
-          defaultValue: "https://paypal.me/amarfitness",
+          hint: "e.g. https://www.paypal.me/yourname",
+          defaultValue: "https://www.paypal.me/amarel7ewety111",
         },
         {
           key: "telda_handle",
@@ -284,6 +375,7 @@ export default function AdminSettingsPage() {
       ) : (
         <div className="space-y-6">
           <SplitPdfSection isArabic={isArabic} />
+          <TeldaQrSection isArabic={isArabic} />
           {SETTING_SECTIONS.map(({ label, icon: Icon, description, items }) => (
             <div
               key={label}

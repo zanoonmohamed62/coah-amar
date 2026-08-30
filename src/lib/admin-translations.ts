@@ -12,6 +12,7 @@ export const adminTranslations = {
       products: "Products & Pricing",
       cms: "Website CMS",
       settings: "Settings",
+      team: "Manage Admins",
       clientApp: "Client Portal",
       signOut: "Sign Out",
     },
@@ -26,6 +27,7 @@ export const adminTranslations = {
         "/admin/products": { title: "Products & Plans", subtitle: "Configure packages, pricing, and active offers" },
         "/admin/cms": { title: "Website CMS", subtitle: "Control marketing copy, translations, and homepage sections" },
         "/admin/settings": { title: "Platform Settings", subtitle: "Payment handles, WhatsApp config, and platform defaults" },
+        "/admin/team": { title: "Manage Admins", subtitle: "Control who has full admin access to this dashboard" },
       },
     },
     overview: {
@@ -232,6 +234,7 @@ export const adminTranslations = {
       products: "الباقات والأسعار",
       cms: "إدارة محتوى الموقع",
       settings: "الإعدادات",
+      team: "إدارة الأدمن",
       clientApp: "بوابة المتدرب",
       signOut: "تسجيل الخروج",
     },
@@ -246,6 +249,7 @@ export const adminTranslations = {
         "/admin/products": { title: "الباقات والأسعار", subtitle: "تعديل خطط التدريب والأسعار والعروض المتاحة" },
         "/admin/cms": { title: "إدارة محتوى الموقع", subtitle: "تعديل النصوص والصور والأقسام في الموقع باللغتين" },
         "/admin/settings": { title: "إعدادات المنصة", subtitle: "بيانات انستاباي وباي بال وتيلدا ورقم الواتساب" },
+        "/admin/team": { title: "إدارة الأدمن", subtitle: "تحديد مين ليه صلاحية كاملة في لوحة التحكم" },
       },
     },
     overview: {

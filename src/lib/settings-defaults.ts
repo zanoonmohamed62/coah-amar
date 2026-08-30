@@ -2,9 +2,13 @@
 // safe to import from client components (see use-settings.ts).
 
 export const SETTING_DEFAULTS = {
-  instapay_handle: "amar.fitness@instapay",
-  paypal_link: "https://paypal.me/amarfitness",
+  instapay_handle: "01108610434",
+  paypal_link: "https://www.paypal.me/amarel7ewety111",
   telda_handle: "@amar.fitness",
+  // Public image URL (uploaded via /admin/settings, same public-upload path the
+  // Site Editor uses) shown on the checkout page's Telda step — Telda is
+  // scan-a-QR, not a text handle, so a handle string alone isn't enough.
+  telda_qr_url: "",
   whatsapp_number: "+34610354255",
   whatsapp_message_en: "Hi Coach Amar, I am interested in joining your program.",
   whatsapp_message_ar: "مرحباً كوتش عمار، أود الاستفسار عن برامج التدريب والمتابعة.",
@@ -25,6 +29,7 @@ export const PUBLIC_SETTING_KEYS: SettingKey[] = [
   "instapay_handle",
   "paypal_link",
   "telda_handle",
+  "telda_qr_url",
   "whatsapp_number",
   "whatsapp_message_en",
   "whatsapp_message_ar",

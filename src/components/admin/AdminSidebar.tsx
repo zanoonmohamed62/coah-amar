@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
@@ -32,6 +33,7 @@ export function AdminSidebar() {
     { href: "/admin/products", label: t.products, icon: Package },
     { href: "/admin/cms", label: t.cms, icon: FileText },
     { href: "/admin/settings", label: t.settings, icon: Settings },
+    { href: "/admin/team", label: t.team, icon: ShieldCheck },
   ];
 
   useEffect(() => {

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
+import { PaymentProofUpload } from "@/components/checkout/PaymentProofUpload";
 
 const COACHING_TAKEN = 16;
 const TOTAL_SPOTS = 100;
@@ -144,8 +145,8 @@ export default function CoachingCheckoutPage() {
 
           <p className="text-slate-300 text-sm leading-relaxed">
             {isArabic
-              ? "شكراً لاشتراكك مع كوتش عمار. الخطوة الأخيرة: أرسل صورة التحويل عبر الواتساب لتأكيد الدفع واستلام استمارة التقييم والبدء فوراً."
-              : "Thank you for joining. Final step: send your payment receipt on WhatsApp to confirm and receive your onboarding assessment."}
+              ? "شكراً لاشتراكك مع كوتش عمار. الخطوة الأخيرة: ارفع صورة التحويل تحت لتأكيد الدفع واستلام استمارة التقييم."
+              : "Thank you for joining. Final step: upload your payment screenshot below to confirm and receive your onboarding assessment."}
           </p>
 
           {/* Details summary */}
@@ -164,14 +165,16 @@ export default function CoachingCheckoutPage() {
             </div>
           </div>
 
+          <PaymentProofUpload orderRef={orderRef} />
+
           <a
             href={`https://wa.me/${waNumber}?text=${waMsg}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-base font-bold shadow-lg shadow-blue-600/30"
+            className="flex items-center justify-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors py-2"
           >
-            <MessageCircle size={18} />
-            <span>{isArabic ? "تأكيد الاشتراك عبر الواتساب" : "Confirm on WhatsApp"}</span>
+            <MessageCircle size={14} />
+            <span>{isArabic ? "محتاج مساعدة؟ تواصل عبر واتساب" : "Need help? Contact us on WhatsApp"}</span>
           </a>
 
           <Link href="/" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">
@@ -544,10 +547,20 @@ export default function CoachingCheckoutPage() {
                         </p>
                       )}
                       {paymentMethod === "telda" && (
-                        <p>
-                          💳 <strong className="text-white">Telda:</strong> التحويل على يوزر:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("telda_handle")}</span>
-                        </p>
+                        <div>
+                          <p>
+                            💳 <strong className="text-white">Telda:</strong> التحويل على يوزر:{" "}
+                            <span className="text-blue-400 font-mono font-bold select-all">{getSetting("telda_handle")}</span>
+                          </p>
+                          {getSetting("telda_qr_url") && (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={getSetting("telda_qr_url")}
+                              alt="Telda QR"
+                              className="w-32 h-32 object-contain bg-white rounded-sm mt-3"
+                            />
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

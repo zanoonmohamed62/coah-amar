@@ -117,6 +117,11 @@ model Order {
   gatewayRef    String?
   gatewayData   Json?
 
+  // Customer-uploaded proof of a manual transfer (InstaPay/Telda only — PayPal
+  // is confirmed automatically by webhook and never needs this)
+  paymentProofId String?
+  paymentProof   MediaAsset? @relation("OrderPaymentProof", fields: [paymentProofId], references: [id])
+
   // Snapshot of customer info at time of order
   customerName  String
   customerEmail String
@@ -237,12 +242,13 @@ model MediaAsset {
   size         Int      // bytes
   storageKey   String   // local path or cloud key
   isProtected  Boolean  @default(true) // true = requires entitlement
-  uploadedBy   String   // admin user id
+  uploadedBy   String?  // admin user id — null for customer-uploaded payment proofs (no session yet)
 
   createdAt    DateTime @default(now())
 
   exerciseImages Exercise[] @relation("ExerciseImage")
   exerciseVideos Exercise[] @relation("ExerciseVideo")
+  ordersAsProof  Order[]    @relation("OrderPaymentProof")
 
   @@map("media_assets")
 }

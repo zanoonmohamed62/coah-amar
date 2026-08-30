@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X, Globe, LogIn, LayoutDashboard, User } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
 import { EditableText } from "@/components/cms/EditableText";
@@ -13,6 +14,11 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { lang, toggleLang, isArabic, t } = useLanguage();
   const get = useSiteContent();
+  const { data: session, status } = useSession();
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const accountHref = role === "ADMIN" ? "/admin" : "/app";
+  const accountLabel = role === "ADMIN" ? (isArabic ? "لوحة التحكم" : "Admin") : (isArabic ? "حسابي" : "My Account");
+  const AccountIcon = role === "ADMIN" ? LayoutDashboard : User;
 
   useEffect(() => {
     let prevScrolled = false;
@@ -86,6 +92,24 @@ export function Navbar() {
               <span>{t.nav.langSwitch}</span>
             </button>
 
+            {status === "authenticated" ? (
+              <Link
+                href={accountHref}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--border)] glass hover:border-[var(--border-accent)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all"
+              >
+                <AccountIcon size={13} />
+                <span>{accountLabel}</span>
+              </Link>
+            ) : status !== "loading" ? (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--border)] glass hover:border-[var(--border-accent)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all"
+              >
+                <LogIn size={13} />
+                <span>{isArabic ? "تسجيل الدخول" : "Login"}</span>
+              </Link>
+            ) : null}
+
             <Link href="#plans" className="btn-primary text-xs relative z-10">
               <EditableText sectionId="nav" fieldId="startNow" value={get("nav", "startNow", t.nav.startNow)} />
             </Link>
@@ -155,6 +179,26 @@ export function Navbar() {
                 <Globe size={16} />
                 <span>{t.nav.langSwitch}</span>
               </button>
+
+              {status === "authenticated" ? (
+                <Link
+                  href={accountHref}
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-[var(--border-accent)] glass text-sm font-semibold text-[var(--text-secondary)]"
+                >
+                  <AccountIcon size={16} />
+                  <span>{accountLabel}</span>
+                </Link>
+              ) : status !== "loading" ? (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-[var(--border-accent)] glass text-sm font-semibold text-[var(--text-secondary)]"
+                >
+                  <LogIn size={16} />
+                  <span>{isArabic ? "تسجيل الدخول" : "Login"}</span>
+                </Link>
+              ) : null}
 
               <Link
                 href="#plans"

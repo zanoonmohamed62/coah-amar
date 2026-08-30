@@ -32,6 +32,7 @@ type Order = {
   customerGoal?: string | null;
   customerLevel?: string | null;
   customerNotes?: string | null;
+  paymentProofId?: string | null;
   product: { id: string; name: string; type: string };
   user: { id: string; name: string; email: string } | null;
 };
@@ -384,6 +385,26 @@ export default function OrdersPage() {
                       {(selectedOrder.amount / 100).toLocaleString()} {selectedOrder.currency}
                     </span>
                   </div>
+                  {selectedOrder.paymentProofId ? (
+                    <a
+                      href={`/api/media/${selectedOrder.paymentProofId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block mt-2 rounded-sm overflow-hidden border border-[var(--border)] hover:border-[var(--border-accent)] transition-colors"
+                      title={isArabic ? "اضغط لتكبير الصورة" : "Click to enlarge"}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/api/media/${selectedOrder.paymentProofId}`}
+                        alt={isArabic ? "صورة إثبات الدفع" : "Payment proof"}
+                        className="w-full max-h-56 object-contain bg-[var(--bg-base)]"
+                      />
+                    </a>
+                  ) : selectedOrder.paymentMethod !== "PAYPAL" ? (
+                    <p className="text-xs text-[var(--text-muted)] italic mt-1">
+                      {isArabic ? "العميل لسه ما رفعش صورة التحويل" : "Customer hasn't uploaded a proof screenshot yet"}
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
