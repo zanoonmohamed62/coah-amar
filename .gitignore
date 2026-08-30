@@ -41,6 +41,9 @@ yarn-error.log*
 /private_media/
 /assets/AMARX SPLIT.pdf
 
+# persistent upload storage on the VPS (symlink target, see deploy.yml)
+/.persist/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

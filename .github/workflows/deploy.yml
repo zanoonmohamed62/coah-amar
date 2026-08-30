@@ -35,14 +35,14 @@ jobs:
 
             # Persistent storage — public/uploads and private_media are runtime-written
             # (Site Editor image uploads, protected media library) and are NOT tracked in
-            # git, so `git reset --hard` above never touches them directly. But a fresh
-            # `git pull` recreates `public/` from the repo, which previously left uploaded
-            # files orphaned on disk with nothing pointing at them after certain deploys.
-            # Fix: keep the real files in a persistent directory OUTSIDE the git-managed
-            # app folder, and symlink them in. This block is idempotent — once the symlink
-            # exists, every future deploy just no-ops here.
+            # git. `git reset --hard`/`git pull` only touch tracked files, so these paths
+            # survive deploys as long as they stay untracked and don't get otherwise wiped.
+            # Kept as a hidden, untracked, gitignored subfolder of the app directory itself
+            # (not a sibling of /var/www/amarel7ewety) since the deploy user only owns this
+            # directory, not its parent. This block is idempotent — once the symlink exists,
+            # every future deploy just no-ops here.
             echo "🗂️  Ensuring persistent upload storage..."
-            PERSIST_DIR="/var/www/amarel7ewety-persistent"
+            PERSIST_DIR="/var/www/amarel7ewety/.persist"
             mkdir -p "$PERSIST_DIR/uploads" "$PERSIST_DIR/private_media"
             for pair in "public/uploads:$PERSIST_DIR/uploads" "private_media:$PERSIST_DIR/private_media"; do
               LOCAL_PATH="${pair%%:*}"
