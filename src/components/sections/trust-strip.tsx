@@ -3,6 +3,7 @@
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
 import { Dumbbell, ShieldCheck, Flame, MessageCircle } from "lucide-react";
+import { EditableText } from "@/components/cms/EditableText";
 
 export function TrustStrip() {
   const { isArabic } = useLanguage();
@@ -10,25 +11,33 @@ export function TrustStrip() {
   const get = useSiteContent();
 
   const pillars = [
-    { 
-      title: get("trustStrip", "value1_title", isArabic ? "هايبرد تريننج" : "Hybrid Training"), 
-      sub: get("trustStrip", "value1_sub", isArabic ? "أسلوب تقليدي بتطور علمي حديث" : "Old school training Modern progression."), 
-      icon: Dumbbell 
+    {
+      titleField: "value1_title",
+      title: get("trustStrip", "value1_title", isArabic ? "هايبرد تريننج" : "Hybrid Training"),
+      subField: "value1_sub",
+      sub: get("trustStrip", "value1_sub", isArabic ? "أسلوب تقليدي بتطور علمي حديث" : "Old school training Modern progression."),
+      icon: Dumbbell
     },
-    { 
-      title: get("trustStrip", "value2_title", isArabic ? "تغذية دقيقة بدون حرمان" : "Precision Nutrition"), 
-      sub: get("trustStrip", "value2_sub", isArabic ? "حساب السعرات والماكروز" : "Targeted macro calibration"), 
-      icon: Flame 
+    {
+      titleField: "value2_title",
+      title: get("trustStrip", "value2_title", isArabic ? "تغذية دقيقة بدون حرمان" : "Precision Nutrition"),
+      subField: "value2_sub",
+      sub: get("trustStrip", "value2_sub", isArabic ? "حساب السعرات والماكروز" : "Targeted macro calibration"),
+      icon: Flame
     },
-    { 
-      title: get("trustStrip", "value3_title", isArabic ? "متابعة مباشرة عبر واتساب" : "Direct WhatsApp Support"), 
-      sub: get("trustStrip", "value3_sub", isArabic ? "تواصل مع الكوتش شخصياً" : "Direct 1-on-1 coach access"), 
-      icon: MessageCircle 
+    {
+      titleField: "value3_title",
+      title: get("trustStrip", "value3_title", isArabic ? "متابعة مباشرة عبر واتساب" : "Direct WhatsApp Support"),
+      subField: "value3_sub",
+      sub: get("trustStrip", "value3_sub", isArabic ? "تواصل مع الكوتش شخصياً" : "Direct 1-on-1 coach access"),
+      icon: MessageCircle
     },
-    { 
-      title: get("trustStrip", "value4_title", isArabic ? "ضمان تطور مستمر" : "Progressive Results"), 
-      sub: get("trustStrip", "value4_sub", isArabic ? "تعديلات أسبوعية دقيقة" : "Weekly data adjustments"), 
-      icon: ShieldCheck 
+    {
+      titleField: "value4_title",
+      title: get("trustStrip", "value4_title", isArabic ? "ضمان تطور مستمر" : "Progressive Results"),
+      subField: "value4_sub",
+      sub: get("trustStrip", "value4_sub", isArabic ? "تعديلات أسبوعية دقيقة" : "Weekly data adjustments"),
+      icon: ShieldCheck
     },
   ];
 
@@ -44,8 +53,12 @@ export function TrustStrip() {
                   <Icon size={18} className="text-blue-400" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-white leading-tight">{p.title}</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">{p.sub}</p>
+                  <h4 className="text-sm font-bold text-white leading-tight">
+                    <EditableText sectionId="trustStrip" fieldId={p.titleField} value={p.title} />
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    <EditableText sectionId="trustStrip" fieldId={p.subField} value={p.sub} />
+                  </p>
                 </div>
               </div>
             );

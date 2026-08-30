@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
+import { EditableText } from "@/components/cms/EditableText";
 
 export function FinalCTASection() {
   const { t, isArabic } = useLanguage();
@@ -33,32 +34,34 @@ export function FinalCTASection() {
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         >
-          <span className="label-badge mb-8 inline-block">{get("finalCta", "badge", t.finalCta.badge)}</span>
+          <span className="label-badge mb-8 inline-block">
+            <EditableText sectionId="finalCta" fieldId="badge" value={get("finalCta", "badge", t.finalCta.badge)} />
+          </span>
 
           <h2
             className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight mb-8"
           >
-            <span className="text-gradient-white block">{get("finalCta", "titleLine1", t.finalCta.titleLine1)}</span>
-            <span className="text-gradient block">{get("finalCta", "titleLine2", t.finalCta.titleLine2)}</span>
-            <span className="text-gradient-white block">{get("finalCta", "titleLine3", t.finalCta.titleLine3)}</span>
+            <EditableText as="span" className="text-gradient-white block" sectionId="finalCta" fieldId="titleLine1" value={get("finalCta", "titleLine1", t.finalCta.titleLine1)} />
+            <EditableText as="span" className="text-gradient block" sectionId="finalCta" fieldId="titleLine2" value={get("finalCta", "titleLine2", t.finalCta.titleLine2)} />
+            <EditableText as="span" className="text-gradient-white block" sectionId="finalCta" fieldId="titleLine3" value={get("finalCta", "titleLine3", t.finalCta.titleLine3)} />
           </h2>
 
           <p className="text-[var(--text-secondary)] text-base sm:text-lg leading-relaxed mb-12 max-w-xl mx-auto whitespace-pre-wrap">
-            {get("finalCta", "subtitle", t.finalCta.subtitle)}
+            <EditableText multiline sectionId="finalCta" fieldId="subtitle" value={get("finalCta", "subtitle", t.finalCta.subtitle)} />
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/checkout/split" className="btn-secondary flex items-center justify-center gap-2">
-              {get("finalCta", "planBtn", t.finalCta.planBtn)}
+              <EditableText sectionId="finalCta" fieldId="planBtn" value={get("finalCta", "planBtn", t.finalCta.planBtn)} />
             </Link>
             <Link href="/checkout/coaching" className="btn-primary flex items-center justify-center gap-2 group">
-              <span>{get("finalCta", "coachingBtn", t.finalCta.coachingBtn)}</span>
+              <EditableText as="span" sectionId="finalCta" fieldId="coachingBtn" value={get("finalCta", "coachingBtn", t.finalCta.coachingBtn)} />
               <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
           </div>
 
           <p className="text-xs text-[var(--text-muted)] mt-8 tracking-wide">
-            {get("finalCta", "footerTag", t.finalCta.footerTag)}
+            <EditableText sectionId="finalCta" fieldId="footerTag" value={get("finalCta", "footerTag", t.finalCta.footerTag)} />
           </p>
         </motion.div>
       </div>

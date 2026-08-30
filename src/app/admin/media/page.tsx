@@ -35,8 +35,16 @@ export default function MediaPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">Media Library</h1>
-        <button onClick={() => inputRef.current?.click()} disabled={uploading} className="btn-primary flex items-center gap-2 px-4 py-2 text-sm disabled:opacity-50">
+        <div>
+          <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">Media Library</h1>
+          <p className="text-xs text-[var(--text-muted)] mt-1 max-w-lg">
+            For protected files only (e.g. the training plan PDF, exercise media) — every file here requires
+            a logged-in customer with an active entitlement to view. For homepage images (hero photo, coach
+            photo, etc.), upload directly in the <a href="/admin/cms" className="text-[var(--accent)] hover:underline">Site Editor</a> instead,
+            which stores them publicly so visitors who aren&apos;t logged in can actually see them.
+          </p>
+        </div>
+        <button onClick={() => inputRef.current?.click()} disabled={uploading} className="btn-primary flex items-center gap-2 px-4 py-2 text-sm disabled:opacity-50 shrink-0">
           <Upload size={15} /> {uploading ? "Uploading…" : "Upload"}
         </button>
         <input ref={inputRef} type="file" multiple accept="image/*,video/*" className="hidden" onChange={e => handleUpload(e.target.files)} />

@@ -81,10 +81,17 @@ deliberately easy to reach from the nav — intentional for now, not a bug.
 ### Admin panel (`/admin`, requires ADMIN)
 `orders`, `customers` (+ `[id]` detail), `products`, `programs` (TrainingProgram/Day/Exercise
 builder — real CRUD, kept as admin-only backend; not the customer-facing delivery mechanism, see
-Known gaps), `media` (file uploads → `MediaAsset`, local disk `private_media/`), `cms` (site copy,
-correctly wired to the public homepage), `settings` (`Setting` key-value store, now the real
-source of truth for WhatsApp/payment contact info — also hosts the "Training Plan File" PDF
-uploader), `preview` (CMS live preview iframe).
+Known gaps), `media` (file uploads → `MediaAsset`, local disk `private_media/`, protected by
+default — for entitlement-gated files like the split PDF, not public homepage images), `cms`
+("Site Editor" — the real homepage rendered full-size in an iframe; clicking Edit makes every
+CMS-linked text directly editable in place and every CMS-linked image show a hover "Change Image"
+overlay, no separate form — see "The CMS / Site Editor" below), `settings` (`Setting` key-value
+store, the real source of truth for WhatsApp/payment contact info and social links — also hosts
+the "Training Plan File" PDF uploader).
+
+The old form-based CMS editor (a ~150-field form next to a scaled-down iframe preview) and its
+separate `/admin/preview` page were removed — see "The CMS / Site Editor" below for what replaced
+them and why.
 
 ### API surface, grouped
 - **Auth**: `/api/auth/[...nextauth]`.
@@ -103,7 +110,59 @@ uploader), `preview` (CMS live preview iframe).
   checkout-initiation code, no merchant account. Out of scope, see Known gaps.
 - **Customer** (`requireCustomer`): `/api/customer/orders`, `/api/customer/entitlements`.
 - **Admin** (`requireAdmin`): `/api/admin/{products,orders,customers,programs,exercises,media,
-  cms,settings,stats,payments}`.
+  cms,settings,stats,payments}`. `/api/admin/cms/batch` (bulk upsert, always publishes
+  immediately) and `/api/admin/cms/upload` (public `public/uploads/` image upload) are the only
+  CMS write routes now — the old single-field `/api/admin/cms` route and the unused
+  draft/publish flow (`/api/admin/cms/publish`) were dead code and were deleted.
+
+---
+
+## The CMS / Site Editor
+
+`/admin/cms` is the real homepage (`/`) rendered at full size inside an iframe — not a form next
+to a shrunken preview. Clicking **Edit** loads the iframe with `?cms_edit=1&cms_lang=en|ar`, which:
+
+- Activates `CmsEditModeProvider` (`src/components/cms/CmsEditModeProvider.tsx`), wrapped around
+  the site tree in `layout-shell.tsx`. Every section component wraps its CMS-linked text in
+  `<EditableText sectionId fieldId value>` (`src/components/cms/EditableText.tsx`) and every
+  CMS-linked image in `<EditableImage sectionId fieldId value alt>`
+  (`src/components/cms/EditableImage.tsx`) instead of rendering the raw string/`<img>` directly.
+  Outside edit mode both are zero-overhead passthroughs — same DOM, same behavior as before this
+  existed.
+- In edit mode, `EditableText` becomes `contentEditable` (click to edit, blur/Enter to commit,
+  Escape to revert) and `EditableImage` shows a "Change Image" overlay on hover that uploads
+  through `/api/admin/cms/upload`. Edits are posted up to the parent `/admin/cms` page via
+  `postMessage` (same-origin only) rather than calling the save API directly, so the toolbar owns
+  one unified dirty-state/save button across the whole page.
+- `?cms_lang=ar` also forces `LanguageProvider` (`src/lib/language-context.tsx`) to display Arabic
+  content for editing, overriding the visitor's own saved language preference for the duration of
+  that iframe load — this is what lets the admin actually edit the Arabic strings, not just tag
+  edits with `lang: "ar"` while still looking at English copy.
+- Saving calls the same `/api/admin/cms/batch` endpoint the old editor used — the `SiteContent`
+  data model, the public `/api/site-content` read path, and `useSiteContent()`'s DB-first/
+  translations-fallback behavior are all unchanged. Only the editing UI and which fields are
+  reachable changed.
+
+**Why the rebuild happened**: the old editor was a hardcoded ~150-field `SECTIONS[]` array in
+`admin/cms/page.tsx` that had to be manually kept in sync with every section component — it had
+drifted in several concrete, confirmed ways before the rebuild: 3 whole CMS sections
+(`trainingDetail`, `coachingDetail`, `experience`) edited content for components that were never
+rendered on the homepage at all; the `footer` section had no editor UI despite the footer reading
+from the same CMS system; `faq`'s badge/title/subtitle were rendered as bare hardcoded strings
+that bypassed `get()` entirely, so editing them did nothing; and the CMS pricing fields
+(`offer1_price`/`offer2_price`) were free text fully independent of `Product.price`, so an admin
+editing one had no effect on the other (see "Pricing" below — this one is now structurally fixed,
+not just documented). Because the new editor **is** the real homepage, a component not rendered on
+the page simply can't appear in the editor either — that whole class of drift is no longer
+possible by construction, not just by discipline.
+
+Media note: `/admin/media` (protected `MediaAsset` uploads, `isProtected: true` by default,served via the entitlement-gated `/api/media/[id]`) is for files that require a logged-in,
+entitled customer — the split PDF, exercise media. It is **not** for homepage images: an
+`EditableImage` upload goes through `/api/admin/cms/upload` instead, which stores the file
+unauthenticated in `public/uploads/` so anonymous visitors can actually see it. Pasting a
+protected media-library asset's id into a public-facing image field was a real, confirmed way to
+end up with a broken image for every logged-out visitor — the Site Editor's image overlay only
+ever uses the public upload path, so this can't happen through it anymore.
 
 ---
 
@@ -212,14 +271,20 @@ string) is still hardcoded in various places — low-value to chase further righ
 
 ## Pricing — single source of truth
 
-`Product.price` (piastres, in Postgres) is the only real price. The public `GET /api/products`
-endpoint returns it; `checkout/split/page.tsx` and `checkout/coaching/page.tsx` fetch it and
-display/charge exactly that number — no more separate hardcoded "sale price" consts. The old
-"-40% OFF" discount framing (a different displayed price than what was actually charged) was
-removed for this reason; the scarcity/spots-remaining UI was kept but reworded to not claim a
-discount that no longer exists. `src/app/checkout/page.tsx` (a third, broken checkout page with a
-stale product slug) was deleted; its one inbound link (`coaching-detail.tsx`) now points to
-`/checkout/coaching`.
+`Product.price` (piastres, in Postgres) is the only real price, edited only from
+`/admin/products`. The public `GET /api/products` endpoint returns it; `checkout/split/page.tsx`,
+`checkout/coaching/page.tsx`, **and now `two-paths.tsx`'s homepage pricing cards** all fetch it
+(by product `slug`: `training-split`, `personal-coaching`) and display/charge exactly that number.
+The CMS no longer has editable `offer1_price`/`offer2_price` text fields at all — that was the
+previous drift vector (a free-text CMS field with no connection to what checkout actually
+charged) and it's now closed structurally rather than merely documented: the price number on the
+homepage literally cannot diverge from `Product.price` because there's nowhere else to type a
+different one. Everything else around the price (badge, subtitle, feature bullets, button text)
+is still CMS-editable as normal. The old "-40% OFF" discount framing (a different displayed price
+than what was actually charged) was removed for this reason; the scarcity/spots-remaining UI was
+kept but reworded to not claim a discount that no longer exists. `src/app/checkout/page.tsx` (a
+third, broken checkout page with a stale product slug) was deleted; its one inbound link
+(`coaching-detail.tsx`) now points to `/checkout/coaching`.
 
 ---
 
@@ -253,14 +318,19 @@ stale product slug) was deleted; its one inbound link (`coaching-detail.tsx`) no
 - **Renewal price mismatch**: `translations.ts`'s coaching "renewal" copy still says "1,999 EGP /
   99 €" while CLAUDE.md historically claimed 999 LE — this wasn't part of the confirmed 499/2,499
   price reconciliation (only the two main offer prices were confirmed with the user) and needs a
-  real number before it's trustworthy.
-- **CMS pricing fields** (`SiteContent` `pricing.offer1_price`/`offer2_price`) can still
-  theoretically be hand-typed to a number that doesn't match `Product.price` — the fallback
-  defaults were corrected to 499/2,499, but nothing enforces they can't drift again if an admin
-  types a different number into the CMS pricing editor.
+  real number before it's trustworthy. This one field (`pricing.offer2_renewal`) is still free
+  CMS text (unlike the main offer prices, a "renewal" isn't tied to a `Product` row), so it's
+  editable directly in the Site Editor once a real number is confirmed.
 - **No live push when the admin uploads a new PDF** — already-open tabs pick up the change on
   their next natural reload (via the `/api/split/version` check), not instantly. Real-time push
   would need Web Push/WebSocket infrastructure this app doesn't have; judged disproportionate for
   now.
 - **Media storage is local disk** (`private_media/`) — verify this survives the actual deployment
-  target's filesystem lifecycle (ephemeral serverless hosts lose local files on redeploy).
+  target's filesystem lifecycle (ephemeral serverless hosts lose local files on redeploy). Note
+  this also now applies to `public/uploads/` (the Site Editor's public image uploads), which has
+  the same local-disk lifecycle risk.
+- **`TrainingProgram`/`TrainingDay`/`Exercise` admin builder (`/admin/programs`) has no consumer**
+  — real, working CRUD, but nothing in the customer portal reads it; customers only ever get the
+  static PDF via `/app/my-split`. Left as-is (admin-only backend, harmless if unused) — a decision
+  on whether to delete it or eventually build a real per-exercise portal view is still open and
+  deliberately not made as part of the CMS rebuild.

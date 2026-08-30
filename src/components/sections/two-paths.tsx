@@ -1,10 +1,35 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Check, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
+import { useCmsEditMode } from "@/components/cms/CmsEditModeProvider";
+import { EditableText } from "@/components/cms/EditableText";
+
+type ProductPrice = { slug: string; price: number; currency: string };
+
+// Prices are the real source of truth (Product.price in the DB, edited from
+// /admin/products) — the CMS only controls surrounding copy (badge, features,
+// button text), never the number itself, so the two can't drift apart anymore.
+function useProductPrices() {
+  const [prices, setPrices] = useState<Record<string, ProductPrice>>({});
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((d) => {
+        const map: Record<string, ProductPrice> = {};
+        for (const p of d.products || []) map[p.slug] = p;
+        setPrices(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  return prices;
+}
 
 // Spot counters out of 100 total spots
 const SPLIT_TAKEN = 56;
@@ -75,7 +100,12 @@ function SpotCounter({
 export function TwoPathsSection() {
   const { t, isArabic } = useLanguage();
   const get = useSiteContent();
+  const { active: cmsEditing } = useCmsEditMode();
+  const prices = useProductPrices();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+
+  const offer1Price = prices["training-split"];
+  const offer2Price = prices["personal-coaching"];
 
   return (
     <section id="plans" className="section-padding px-6">
@@ -88,12 +118,12 @@ export function TwoPathsSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="label-badge mb-4 inline-block">{get("pricing", "badge", t.twoPaths.badge)}</span>
+          <span className="label-badge mb-4 inline-block"><EditableText sectionId="pricing" fieldId="badge" value={get("pricing", "badge", t.twoPaths.badge)} /></span>
           <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight whitespace-pre-wrap">
-            {get("pricing", "title", t.twoPaths.title)}
+            <EditableText sectionId="pricing" fieldId="title" value={get("pricing", "title", t.twoPaths.title)} />
           </h2>
           <p className="text-slate-400 mt-4 max-w-xl mx-auto leading-relaxed whitespace-pre-wrap">
-            {get("pricing", "subtitle", t.twoPaths.subtitle)}
+            <EditableText multiline sectionId="pricing" fieldId="subtitle" value={get("pricing", "subtitle", t.twoPaths.subtitle)} />
           </p>
         </motion.div>
 
@@ -113,17 +143,22 @@ export function TwoPathsSection() {
                     {t.twoPaths.offer1.badge}
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
-                    {get("pricing", "offer1_title", t.twoPaths.offer1.title)}
+                    <EditableText sectionId="pricing" fieldId="offer1_title" value={get("pricing", "offer1_title", t.twoPaths.offer1.title)} />
                   </h3>
-                  <p className="text-slate-400 text-sm mt-1">{get("pricing", "offer1_sub", t.twoPaths.offer1.sub)}</p>
+                  <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer1_sub" value={get("pricing", "offer1_sub", t.twoPaths.offer1.sub)} /></p>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-2 justify-end">
                     <p className="text-3xl font-extrabold text-white">
-                      {get("pricing", "offer1_price", t.twoPaths.offer1.price)}
-                      <span className="text-sm font-normal text-slate-400 mx-1">{get("pricing", "offer1_currency", t.twoPaths.offer1.currency)}</span>
+                      {offer1Price ? (offer1Price.price / 100).toLocaleString() : "…"}
+                      <span className="text-sm font-normal text-slate-400 mx-1">{offer1Price?.currency || "EGP"}</span>
                     </p>
                   </div>
+                  {cmsEditing && (
+                    <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
+                      Price comes from Products — edit it in /admin/products
+                    </p>
+                  )}
                   <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-slate-400 border border-slate-700/80 px-2 py-0.5 rounded-sm inline-block mt-1">
                     {t.twoPaths.offer1.type}
                   </span>
@@ -135,14 +170,27 @@ export function TwoPathsSection() {
 
               <div className="h-px bg-slate-800 my-6" />
 
-              <ul className="space-y-3 mb-8">
-                {get("pricing", "offer1_features", t.twoPaths.offer1.features.join("\n")).split("\n").map(s => s.trim()).filter(Boolean).map((f, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
-                    <Check size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span>{f}</span>
+              {cmsEditing ? (
+                <ul className="space-y-3 mb-8">
+                  <li className="text-sm text-slate-300">
+                    <EditableText
+                      multiline
+                      sectionId="pricing"
+                      fieldId="offer1_features"
+                      value={get("pricing", "offer1_features", t.twoPaths.offer1.features.join("\n"))}
+                    />
                   </li>
-                ))}
-              </ul>
+                </ul>
+              ) : (
+                <ul className="space-y-3 mb-8">
+                  {get("pricing", "offer1_features", t.twoPaths.offer1.features.join("\n")).split("\n").map(s => s.trim()).filter(Boolean).map((f, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
+                      <Check size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="mt-4 pt-4 border-t border-slate-800/60">
@@ -150,7 +198,7 @@ export function TwoPathsSection() {
                 href="/checkout/split"
                 className="btn-secondary w-full flex items-center justify-center gap-2 text-center group py-3"
               >
-                <span>{get("pricing", "offer1_btn", t.twoPaths.offer1.btn)}</span>
+                <EditableText as="span" sectionId="pricing" fieldId="offer1_btn" value={get("pricing", "offer1_btn", t.twoPaths.offer1.btn)} />
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
               </Link>
               <p className="text-center text-xs text-slate-400 mt-2.5">
@@ -180,17 +228,22 @@ export function TwoPathsSection() {
                     {t.twoPaths.offer2.badge}
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
-                    {get("pricing", "offer2_title", t.twoPaths.offer2.title)}
+                    <EditableText sectionId="pricing" fieldId="offer2_title" value={get("pricing", "offer2_title", t.twoPaths.offer2.title)} />
                   </h3>
-                  <p className="text-slate-400 text-sm mt-1">{get("pricing", "offer2_sub", t.twoPaths.offer2.sub)}</p>
+                  <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer2_sub" value={get("pricing", "offer2_sub", t.twoPaths.offer2.sub)} /></p>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-2 justify-end">
                     <p className="text-3xl font-extrabold text-blue-400">
-                      {get("pricing", "offer2_price", t.twoPaths.offer2.price)}
-                      <span className="text-sm font-normal text-slate-400 mx-1">{get("pricing", "offer2_currency", t.twoPaths.offer2.currency)}</span>
+                      {offer2Price ? (offer2Price.price / 100).toLocaleString() : "…"}
+                      <span className="text-sm font-normal text-slate-400 mx-1">{offer2Price?.currency || "EGP"}</span>
                     </p>
                   </div>
+                  {cmsEditing && (
+                    <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
+                      Price comes from Products — edit it in /admin/products
+                    </p>
+                  )}
                   <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-sm inline-block mt-1">
                     {t.twoPaths.offer2.type}
                   </span>
@@ -202,14 +255,27 @@ export function TwoPathsSection() {
 
               <div className="h-px bg-slate-800 my-6" />
 
-              <ul className="space-y-3 mb-8">
-                {get("pricing", "offer2_features", t.twoPaths.offer2.features.join("\n")).split("\n").map(s => s.trim()).filter(Boolean).map((f, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-slate-200 font-medium">
-                    <Check size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span>{f}</span>
+              {cmsEditing ? (
+                <ul className="space-y-3 mb-8">
+                  <li className="text-sm text-slate-200 font-medium">
+                    <EditableText
+                      multiline
+                      sectionId="pricing"
+                      fieldId="offer2_features"
+                      value={get("pricing", "offer2_features", t.twoPaths.offer2.features.join("\n"))}
+                    />
                   </li>
-                ))}
-              </ul>
+                </ul>
+              ) : (
+                <ul className="space-y-3 mb-8">
+                  {get("pricing", "offer2_features", t.twoPaths.offer2.features.join("\n")).split("\n").map(s => s.trim()).filter(Boolean).map((f, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm text-slate-200 font-medium">
+                      <Check size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="mt-4 pt-4 border-t border-slate-800/60">
@@ -217,11 +283,11 @@ export function TwoPathsSection() {
                 href="/checkout/coaching"
                 className="btn-primary w-full flex items-center justify-center gap-2 group py-3"
               >
-                <span>{get("pricing", "offer2_btn", t.twoPaths.offer2.btn)}</span>
+                <EditableText as="span" sectionId="pricing" fieldId="offer2_btn" value={get("pricing", "offer2_btn", t.twoPaths.offer2.btn)} />
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
               </Link>
               <p className="text-center text-xs text-slate-400 mt-2.5">
-                {get("pricing", "offer2_renewal", t.twoPaths.offer2.renewal)}
+                <EditableText sectionId="pricing" fieldId="offer2_renewal" value={get("pricing", "offer2_renewal", t.twoPaths.offer2.renewal)} />
               </p>
             </div>
           </motion.div>

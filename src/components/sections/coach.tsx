@@ -6,11 +6,15 @@ import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
+import { useSettings } from "@/lib/use-settings";
+import { EditableText } from "@/components/cms/EditableText";
+import { EditableImage } from "@/components/cms/EditableImage";
 
 export function CoachSection() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const get = useSiteContent();
+  const getSetting = useSettings();
 
   return (
     <section id="coach" className="section-padding px-6 border-t border-slate-800/80 bg-[#07090e] relative overflow-hidden">
@@ -25,13 +29,14 @@ export function CoachSection() {
         >
           {/* Main portrait */}
           <div className="relative aspect-[3/4] rounded-sm overflow-hidden border border-slate-800 shadow-2xl bg-[#0b0f19]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={get("coach", "portraitImage", "/assets/coach-about-new.jpg")}
+            <EditableImage
+              sectionId="coach"
+              fieldId="portraitImage"
+              value={get("coach", "portraitImage", "/assets/coach-about-new.jpg")}
               alt="Coach Amar"
               className="object-cover object-center w-full h-full"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-60" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-60 pointer-events-none" />
           </div>
 
           {/* Decorative corner accent */}
@@ -47,23 +52,24 @@ export function CoachSection() {
           transition={{ duration: 0.8, delay: 0.2 }}
         >
           <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-sm inline-block mb-4">
-            {t.coach.badge}
+            <EditableText sectionId="coach" fieldId="badge" value={get("coach", "badge", t.coach.badge)} />
           </span>
 
           <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-2">
-            {t.coach.titleLine1} {t.coach.titleLine2}
+            <EditableText as="span" sectionId="coach" fieldId="titleLine1" value={get("coach", "titleLine1", t.coach.titleLine1)} />{" "}
+            <EditableText as="span" sectionId="coach" fieldId="titleLine2" value={get("coach", "titleLine2", t.coach.titleLine2)} />
           </h2>
 
           <div className="space-y-1 my-4">
             <p className="text-xl font-bold text-white">
-              {get("coach", "name", t.coach.name)}
+              <EditableText sectionId="coach" fieldId="name" value={get("coach", "name", t.coach.name)} />
             </p>
             <p className="text-xs text-slate-400 font-medium">
-              {get("coach", "sub", t.coach.sub)}
+              <EditableText sectionId="coach" fieldId="sub" value={get("coach", "sub", t.coach.sub)} />
             </p>
             <div className="flex flex-wrap items-center gap-4 mt-2">
               <a
-                href={get("coach", "igUrl", "https://www.instagram.com/amar.el.7ewety/")}
+                href={getSetting("instagram_url")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-semibold"
@@ -72,7 +78,7 @@ export function CoachSection() {
                 amar.el.7ewety@
               </a>
               <a
-                href={get("coach", "ytUrl", "https://youtube.com/@amar.el.7ewety?si=crwo5B3iAO_C1ufW")}
+                href={getSetting("youtube_url")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors font-semibold"
@@ -86,25 +92,29 @@ export function CoachSection() {
           <div className="w-12 h-0.5 bg-blue-500/50 my-6" />
 
           <p className="text-slate-300 leading-relaxed mb-6 text-sm">
-            {get("coach", "bio", t.coach.bio)}
+            <EditableText multiline sectionId="coach" fieldId="bio" value={get("coach", "bio", t.coach.bio)} />
           </p>
 
           <ul className="space-y-3 mb-8">
-            {[get("coach", "point1", t.coach.points[0]), get("coach", "point2", t.coach.points[1]), get("coach", "point3", t.coach.points[2])].filter(Boolean).map((pt, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-slate-300">
-                <span className="text-blue-400 font-bold">•</span>
-                <span>{pt}</span>
-              </li>
-            ))}
+            {(["point1", "point2", "point3"] as const).map((fieldId, i) => {
+              const val = get("coach", fieldId, t.coach.points[i]);
+              if (!val) return null;
+              return (
+                <li key={fieldId} className="flex items-start gap-2.5 text-sm text-slate-300">
+                  <span className="text-blue-400 font-bold">•</span>
+                  <EditableText as="span" sectionId="coach" fieldId={fieldId} value={val} />
+                </li>
+              );
+            })}
           </ul>
 
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/checkout/coaching" className="btn-primary flex items-center gap-2 group py-3 px-6">
-              <span>{get("coach", "btn", t.coach.btn)}</span>
+              <EditableText as="span" sectionId="coach" fieldId="btn" value={get("coach", "btn", t.coach.btn)} />
               <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
             <a
-              href={get("coach", "igUrl", "https://www.instagram.com/amar.el.7ewety/")}
+              href={getSetting("instagram_url")}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary flex items-center gap-2 py-3 px-5"
@@ -113,13 +123,13 @@ export function CoachSection() {
               <span>{t.coach.igBtn}</span>
             </a>
             <a
-              href={get("coach", "ytUrl", "https://youtube.com/@amar.el.7ewety?si=crwo5B3iAO_C1ufW")}
+              href={getSetting("youtube_url")}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary flex items-center gap-2 py-3 px-5 hover:border-red-500/40 hover:text-red-400 transition-colors"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-              <span>{get("coach", "ytBtn", t.coach.ytBtn || (isArabic ? "قناة اليوتيوب" : "YouTube"))}</span>
+              <EditableText as="span" sectionId="coach" fieldId="ytBtn" value={get("coach", "ytBtn", t.coach.ytBtn || (isArabic ? "قناة اليوتيوب" : "YouTube"))} />
             </a>
           </div>
         </motion.div>

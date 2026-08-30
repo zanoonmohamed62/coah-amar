@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Language, TranslationSchema, translations } from "./translations";
 
 interface LanguageContextType {
@@ -14,13 +15,29 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
+// Reads ?cms_edit=1&cms_lang=ar in its own Suspense boundary (useSearchParams
+// requires one) without ever blocking LanguageProvider's own context value —
+// children always see a valid context immediately, CMS-forced lang or not.
+function CmsLangReader({ onChange }: { onChange: (lang: "ar" | "en" | null) => void }) {
+  const searchParams = useSearchParams();
+  const cmsLang = searchParams.get("cms_edit") === "1" ? searchParams.get("cms_lang") : null;
+  const forced = cmsLang === "ar" || cmsLang === "en" ? cmsLang : null;
+
+  useEffect(() => {
+    onChange(forced);
+  }, [forced, onChange]);
+
+  return null;
+}
+
+function LanguageProviderInner({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Language>("en");
   const [mounted, setMounted] = useState(false);
+  const [cmsLang, setCmsLang] = useState<"ar" | "en" | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("coach_amar_lang") as Language;
+    const saved = cmsLang || (localStorage.getItem("coach_amar_lang") as Language);
     if (saved === "ar" || saved === "en") {
       setLangState(saved);
       document.documentElement.lang = saved;
@@ -31,9 +48,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         document.documentElement.classList.remove("arabic-mode");
       }
     }
-  }, []);
+  }, [cmsLang]);
 
   const setLang = (newLang: Language) => {
+    // While the CMS toolbar is forcing a language for editing, the page's own
+    // language switch is disabled so the two controls can't fight each other.
+    if (cmsLang) return;
     setLangState(newLang);
     localStorage.setItem("coach_amar_lang", newLang);
     document.documentElement.lang = newLang;
@@ -65,9 +85,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         t,
       }}
     >
+      <Suspense fallback={null}>
+        <CmsLangReader onChange={setCmsLang} />
+      </Suspense>
       {children}
     </LanguageContext.Provider>
   );
+}
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  return <LanguageProviderInner>{children}</LanguageProviderInner>;
 }
 
 export function useLanguage() {

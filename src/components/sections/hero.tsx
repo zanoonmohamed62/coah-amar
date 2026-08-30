@@ -9,6 +9,8 @@ import { useSiteContent } from "@/lib/use-site-content";
 import { useSettings } from "@/lib/use-settings";
 import { usePWAInstall } from "@/lib/pwa-install-context";
 import { Smartphone } from "lucide-react";
+import { EditableText } from "@/components/cms/EditableText";
+import { EditableImage } from "@/components/cms/EditableImage";
 
 export function HeroSection() {
   const { t, isArabic } = useLanguage();
@@ -29,7 +31,7 @@ export function HeroSection() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-sm mb-6"
           >
-            {get("hero", "badge", t.hero.badge)}
+            <EditableText sectionId="hero" fieldId="badge" value={get("hero", "badge", t.hero.badge)} />
           </motion.div>
 
           <motion.h1
@@ -38,9 +40,9 @@ export function HeroSection() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-[1.15] tracking-tight mb-6 text-white"
           >
-            <span className="block">{get("hero", "titleLine1", t.hero.titleLine1)}</span>
-            <span className="text-blue-500 block">{get("hero", "titleLine2", t.hero.titleLine2)}</span>
-            {get("hero", "titleLine3", t.hero.titleLine3 || "") && <span className="block text-slate-200">{get("hero", "titleLine3", t.hero.titleLine3 || "")}</span>}
+            <EditableText as="span" className="block" sectionId="hero" fieldId="titleLine1" value={get("hero", "titleLine1", t.hero.titleLine1)} />
+            <EditableText as="span" className="text-blue-500 block" sectionId="hero" fieldId="titleLine2" value={get("hero", "titleLine2", t.hero.titleLine2)} />
+            {get("hero", "titleLine3", t.hero.titleLine3 || "") && <EditableText as="span" className="block text-slate-200" sectionId="hero" fieldId="titleLine3" value={get("hero", "titleLine3", t.hero.titleLine3 || "")} />}
           </motion.h1>
 
           <motion.p
@@ -49,7 +51,7 @@ export function HeroSection() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="text-base sm:text-lg text-slate-300 mb-8 max-w-lg leading-relaxed font-normal"
           >
-            {get("hero", "description", t.hero.description)}
+            <EditableText multiline sectionId="hero" fieldId="description" value={get("hero", "description", t.hero.description)} />
           </motion.p>
 
           <motion.div
@@ -59,7 +61,7 @@ export function HeroSection() {
             className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3.5 mb-12"
           >
             <Link href="#plans" className="btn-primary flex items-center justify-center gap-2 group py-3.5 px-6">
-              <span>{get("hero", "startBtn", t.hero.startBtn)}</span>
+              <EditableText as="span" sectionId="hero" fieldId="startBtn" value={get("hero", "startBtn", t.hero.startBtn)} />
               <ArrowIcon size={15} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
 
@@ -90,7 +92,7 @@ export function HeroSection() {
               rel="noopener noreferrer"
               className="btn-secondary flex items-center justify-center py-3.5 px-5 hover:border-blue-500/40 transition-colors text-sm"
             >
-              {get("hero", "meetBtn", t.hero.meetBtn)}
+              <EditableText sectionId="hero" fieldId="meetBtn" value={get("hero", "meetBtn", t.hero.meetBtn)} />
             </a>
           </motion.div>
 
@@ -103,23 +105,23 @@ export function HeroSection() {
           >
             <div>
               <p className="text-2xl font-bold text-white tracking-tight">
-                {get("hero", "stat1Value", t.hero.stat1Value)}
+                <EditableText sectionId="hero" fieldId="stat1Value" value={get("hero", "stat1Value", t.hero.stat1Value)} />
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{get("hero", "stat1Label", t.hero.stat1Label)}</p>
+              <p className="text-xs text-slate-400 mt-0.5"><EditableText sectionId="hero" fieldId="stat1Label" value={get("hero", "stat1Label", t.hero.stat1Label)} /></p>
             </div>
             <div className="w-px h-8 bg-slate-800" />
             <div>
               <p className="text-2xl font-bold text-white tracking-tight">
-                {get("hero", "stat2Value", t.hero.stat2Value)}
+                <EditableText sectionId="hero" fieldId="stat2Value" value={get("hero", "stat2Value", t.hero.stat2Value)} />
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{get("hero", "stat2Label", t.hero.stat2Label)}</p>
+              <p className="text-xs text-slate-400 mt-0.5"><EditableText sectionId="hero" fieldId="stat2Label" value={get("hero", "stat2Label", t.hero.stat2Label)} /></p>
             </div>
             <div className="w-px h-8 bg-slate-800" />
             <div>
               <p className="text-2xl font-bold text-blue-400 tracking-tight">
-                {get("hero", "stat3Value", t.hero.stat3Value)}
+                <EditableText sectionId="hero" fieldId="stat3Value" value={get("hero", "stat3Value", t.hero.stat3Value)} />
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{get("hero", "stat3Label", t.hero.stat3Label)}</p>
+              <p className="text-xs text-slate-400 mt-0.5"><EditableText sectionId="hero" fieldId="stat3Label" value={get("hero", "stat3Label", t.hero.stat3Label)} /></p>
             </div>
           </motion.div>
         </div>
@@ -133,21 +135,22 @@ export function HeroSection() {
             className="relative w-full max-w-md mx-auto"
           >
             <div className="relative rounded-sm overflow-hidden border border-slate-800 bg-[#0d121c] aspect-[3/4] w-full shadow-2xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={get("hero", "heroImage", "/assets/coach-header-new.jpg")}
+              <EditableImage
+                sectionId="hero"
+                fieldId="heroImage"
+                value={get("hero", "heroImage", "/assets/coach-header-new.jpg")}
                 alt="Coach Amar"
                 className="object-cover object-center w-full h-full"
               />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-80 pointer-events-none" />
 
               <div className="absolute bottom-6 left-6 right-6">
                 <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-sm inline-block mb-1.5">
-                  {get("hero", "cardBadge", t.hero.cardBadge)}
+                  <EditableText sectionId="hero" fieldId="cardBadge" value={get("hero", "cardBadge", t.hero.cardBadge)} />
                 </span>
                 <p className="text-white text-lg font-bold leading-tight">
-                  {get("hero", "cardTitle", t.hero.cardTitle)}
+                  <EditableText sectionId="hero" fieldId="cardTitle" value={get("hero", "cardTitle", t.hero.cardTitle)} />
                 </p>
               </div>
             </div>

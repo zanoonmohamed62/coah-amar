@@ -5,27 +5,53 @@ import { MessageSquarePlus, Star } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
 import { useSettings } from "@/lib/use-settings";
+import { EditableText } from "@/components/cms/EditableText";
+import { useCmsEditMode } from "@/components/cms/CmsEditModeProvider";
 
 export function TestimonialsSection() {
   const { t, isArabic } = useLanguage();
   const get = useSiteContent();
   const getSetting = useSettings();
+  const { active: cmsEditing } = useCmsEditMode();
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
-  const reviews = [
+  const allReviews = [
     {
+      nameField: "t1_name",
       name: get("testimonials", "t1_name", ""),
+      durationField: "t1_duration",
       duration: get("testimonials", "t1_duration", ""),
+      resultField: "t1_result",
       result: get("testimonials", "t1_result", ""),
+      textField: "t1_text",
       text: get("testimonials", "t1_text", ""),
     },
     {
+      nameField: "t2_name",
       name: get("testimonials", "t2_name", ""),
+      durationField: "t2_duration",
       duration: get("testimonials", "t2_duration", ""),
+      resultField: "t2_result",
       result: get("testimonials", "t2_result", ""),
+      textField: "t2_text",
       text: get("testimonials", "t2_text", ""),
     },
-  ].filter(r => r.name && r.text);
+    {
+      nameField: "t3_name",
+      name: get("testimonials", "t3_name", ""),
+      durationField: "t3_duration",
+      duration: get("testimonials", "t3_duration", ""),
+      resultField: "t3_result",
+      result: get("testimonials", "t3_result", ""),
+      textField: "t3_text",
+      text: get("testimonials", "t3_text", ""),
+    },
+  ];
+
+  // In edit mode, keep every slot visible (even empty ones) so the admin has
+  // something to click into — otherwise an admin starting from zero reviews
+  // would see only placeholder cards with nothing editable.
+  const reviews = cmsEditing ? allReviews : allReviews.filter(r => r.name && r.text);
 
   return (
     <section id="results" className="section-padding px-6 border-t border-[var(--border)]">
@@ -37,15 +63,15 @@ export function TestimonialsSection() {
           transition={{ duration: 0.6 }}
         >
           <span className="label-badge mb-4 inline-block">
-            {get("testimonials", "badge", t.testimonials.badge)}
+            <EditableText sectionId="testimonials" fieldId="badge" value={get("testimonials", "badge", t.testimonials.badge)} />
           </span>
           <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-6">
-            {get("testimonials", "titleLine1", t.testimonials.titleLine1)}
+            <EditableText sectionId="testimonials" fieldId="titleLine1" value={get("testimonials", "titleLine1", t.testimonials.titleLine1)} />
             <br />
-            <span className="text-blue-400">{get("testimonials", "titleLine2", t.testimonials.titleLine2)}</span>
+            <EditableText as="span" className="text-blue-400" sectionId="testimonials" fieldId="titleLine2" value={get("testimonials", "titleLine2", t.testimonials.titleLine2)} />
           </h2>
           <p className="text-slate-400 mt-4 max-w-md mx-auto leading-relaxed mb-12 whitespace-pre-wrap">
-            {get("testimonials", "subtitle", t.testimonials.subtitle)}
+            <EditableText multiline sectionId="testimonials" fieldId="subtitle" value={get("testimonials", "subtitle", t.testimonials.subtitle)} />
           </p>
 
           {/* Placeholder cards */}
@@ -63,11 +89,15 @@ export function TestimonialsSection() {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-white font-bold">{r.name}</p>
-                      <p className="text-xs text-slate-400">{r.duration}</p>
+                      <p className="text-white font-bold">
+                        <EditableText sectionId="testimonials" fieldId={r.nameField} value={r.name} />
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        <EditableText sectionId="testimonials" fieldId={r.durationField} value={r.duration} />
+                      </p>
                     </div>
                     <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-1 rounded">
-                      {r.result}
+                      <EditableText sectionId="testimonials" fieldId={r.resultField} value={r.result} />
                     </span>
                   </div>
                   <div className="flex gap-1 mb-2">
@@ -76,7 +106,7 @@ export function TestimonialsSection() {
                     ))}
                   </div>
                   <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                    "{r.text}"
+                    "<EditableText multiline sectionId="testimonials" fieldId={r.textField} value={r.text} />"
                   </p>
                 </motion.div>
               ))

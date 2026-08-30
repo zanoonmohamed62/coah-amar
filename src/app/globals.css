@@ -90,6 +90,14 @@
   }
 }
 
+/* CMS inline edit mode: shows a hint inside empty editable text fields */
+[data-cms-placeholder]:empty::before {
+  content: attr(data-cms-placeholder);
+  color: rgba(59, 130, 246, 0.7);
+  font-style: italic;
+  pointer-events: none;
+}
+
 @layer utilities {
   /* Premium Crisp Surfaces */
   .glass {

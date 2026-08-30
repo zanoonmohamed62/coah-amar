@@ -1,27 +1,7 @@
 "use client";
 
 import { useSiteContent } from "@/lib/use-site-content";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-
-function SectionWrapperInner({ sectionId, children }: { sectionId: string, children: React.ReactNode }) {
-  const get = useSiteContent();
-  const searchParams = useSearchParams();
-  const previewSection = searchParams.get("preview_section");
-
-  const isHidden = get(sectionId, "_hidden", "0") === "1";
-  
-  // If we are in section preview mode, ONLY show the active section
-  if (previewSection) {
-    if (previewSection !== sectionId) return null;
-    // We show it even if isHidden is true, so the admin can edit and preview hidden sections!
-    return <div id={sectionId} className={isHidden ? "opacity-50" : ""}>{children}</div>;
-  }
-
-  if (isHidden) return null;
-  
-  return <div id={sectionId}>{children}</div>;
-}
+import { useCmsEditMode } from "@/components/cms/CmsEditModeProvider";
 
 export function SectionWrapper({
   sectionId,
@@ -30,9 +10,17 @@ export function SectionWrapper({
   sectionId: string;
   children: React.ReactNode;
 }) {
+  const get = useSiteContent();
+  const { active } = useCmsEditMode();
+  const isHidden = get(sectionId, "_hidden", "0") === "1";
+
+  // In CMS edit mode, still show hidden sections (dimmed) so the admin can edit them
+  // before re-enabling — everywhere else, a hidden section renders nothing at all.
+  if (isHidden && !active) return null;
+
   return (
-    <Suspense fallback={<div id={sectionId}>{children}</div>}>
-      <SectionWrapperInner sectionId={sectionId}>{children}</SectionWrapperInner>
-    </Suspense>
+    <div id={sectionId} style={isHidden ? { opacity: 0.45 } : undefined}>
+      {children}
+    </div>
   );
 }

@@ -74,8 +74,10 @@ amar-site/
 
 ## 💰 Current Pricing & Offers
 
-Prices live in `Product.price` in the database (piastres) — see `ENGINEERING.md`'s "Known gaps"
-section for the in-progress work unifying every display of these prices onto that single source.
+Prices live in `Product.price` in the database (piastres), edited only from `/admin/products`.
+Every display of a price — both checkout pages and the homepage pricing cards — reads this same
+value by product slug; there is no other place a price can be typed, so the two can't drift apart.
+See `ENGINEERING.md`'s "Pricing" and "The CMS / Site Editor" sections for how this is wired.
 
 1. **Training Plan (Offer 01)**: `499 LE`. One-time payment, lifetime access to the PDF.
 2. **Personal Coaching (Offer 02 - 3 Months)**: `2,499 LE`. PDF + 3 months of WhatsApp coaching.
@@ -89,8 +91,10 @@ section for the in-progress work unifying every display of these prices onto tha
 - **Telda**: `@amar.fitness` (manual, same flow as InstaPay)
 - **PayPal**: `amar.fitness@paypal.me` (automated via webhook — see `ENGINEERING.md`)
 
-These are being migrated to read from the `Setting` table instead of being hardcoded — see
-`ENGINEERING.md`'s "Known gaps" section.
+These values above are just the current defaults for reference — the real, live values are read
+from the `Setting` table everywhere (checkout pages, login, the portal, transactional emails, the
+footer, and the coach section) via `getSetting()`/`useSettings()`, editable from `/admin/settings`.
+Only `site_name` is still hardcoded in a few places — see `ENGINEERING.md`'s "Known gaps".
 
 ---
 

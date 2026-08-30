@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Globe, LayoutDashboard, Users } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
+import { EditableText } from "@/components/cms/EditableText";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -27,10 +28,10 @@ export function Navbar() {
   }, []);
 
   const navLinks = [
-    { href: "#plans", label: get("nav", "plans", t.nav.plans) },
-    { href: "#coach", label: get("nav", "coach", t.nav.coach) },
-    { href: "#results", label: get("nav", "results", t.nav.results) },
-    { href: "#faq", label: get("nav", "faq", t.nav.faq) },
+    { href: "#plans", fieldId: "plans", label: get("nav", "plans", t.nav.plans) },
+    { href: "#coach", fieldId: "coach", label: get("nav", "coach", t.nav.coach) },
+    { href: "#results", fieldId: "results", label: get("nav", "results", t.nav.results) },
+    { href: "#faq", fieldId: "faq", label: get("nav", "faq", t.nav.faq) },
   ];
 
   return (
@@ -56,7 +57,7 @@ export function Navbar() {
               className="font-bold tracking-wider uppercase text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors hidden sm:inline"
               style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}
             >
-              {get("nav", "brand", t.nav.brand)}
+              <EditableText sectionId="nav" fieldId="brand" value={get("nav", "brand", t.nav.brand)} />
             </span>
           </Link>
 
@@ -68,7 +69,7 @@ export function Navbar() {
                 href={link.href}
                 className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors text-xs font-semibold tracking-wider uppercase"
               >
-                {link.label}
+                <EditableText sectionId="nav" fieldId={link.fieldId} value={link.label} />
               </Link>
             ))}
           </div>
@@ -102,7 +103,7 @@ export function Navbar() {
             </Link>
 
             <Link href="#plans" className="btn-primary text-xs relative z-10">
-              {get("nav", "startNow", t.nav.startNow)}
+              <EditableText sectionId="nav" fieldId="startNow" value={get("nav", "startNow", t.nav.startNow)} />
             </Link>
           </div>
 
@@ -149,7 +150,7 @@ export function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className="text-2xl font-bold tracking-wide uppercase text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
                 >
-                  {link.label}
+                  <EditableText sectionId="nav" fieldId={link.fieldId} value={link.label} />
                 </Link>
               </motion.div>
             ))}
@@ -192,7 +193,7 @@ export function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className="btn-primary w-full text-center"
               >
-                {get("nav", "startNow", t.nav.startNow)}
+                <EditableText sectionId="nav" fieldId="startNow" value={get("nav", "startNow", t.nav.startNow)} />
               </Link>
             </motion.div>
           </motion.div>

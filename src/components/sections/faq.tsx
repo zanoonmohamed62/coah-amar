@@ -5,8 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
+import { EditableText } from "@/components/cms/EditableText";
 
-function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
+function FAQItem({ sectionId, qFieldId, q, aFieldId, a, index }: {
+  sectionId: string;
+  qFieldId: string;
+  q: string;
+  aFieldId: string;
+  a: string;
+  index: number;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -23,7 +31,7 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
         aria-expanded={open}
       >
         <span className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors leading-relaxed">
-          {q}
+          <EditableText sectionId={sectionId} fieldId={qFieldId} value={q} />
         </span>
         <ChevronDown
           size={16}
@@ -41,7 +49,7 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
             className="overflow-hidden"
           >
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed pb-5 pr-4 rtl:pr-0 rtl:pl-4">
-              {a}
+              <EditableText multiline sectionId={sectionId} fieldId={aFieldId} value={a} />
             </p>
           </motion.div>
         )}
@@ -56,11 +64,11 @@ export function FAQSection() {
 
   // Build FAQ items: use CMS first, fall back to translations array
   const faqItems = [
-    { q: get("faq", "q1", t.faq.items[0]?.q || ""), a: get("faq", "a1", t.faq.items[0]?.a || "") },
-    { q: get("faq", "q2", t.faq.items[1]?.q || ""), a: get("faq", "a2", t.faq.items[1]?.a || "") },
-    { q: get("faq", "q3", t.faq.items[2]?.q || ""), a: get("faq", "a3", t.faq.items[2]?.a || "") },
-    { q: get("faq", "q4", t.faq.items[3]?.q || ""), a: get("faq", "a4", t.faq.items[3]?.a || "") },
-    { q: get("faq", "q5", t.faq.items[4]?.q || ""), a: get("faq", "a5", t.faq.items[4]?.a || "") },
+    { qField: "q1", q: get("faq", "q1", t.faq.items[0]?.q || ""), aField: "a1", a: get("faq", "a1", t.faq.items[0]?.a || "") },
+    { qField: "q2", q: get("faq", "q2", t.faq.items[1]?.q || ""), aField: "a2", a: get("faq", "a2", t.faq.items[1]?.a || "") },
+    { qField: "q3", q: get("faq", "q3", t.faq.items[2]?.q || ""), aField: "a3", a: get("faq", "a3", t.faq.items[2]?.a || "") },
+    { qField: "q4", q: get("faq", "q4", t.faq.items[3]?.q || ""), aField: "a4", a: get("faq", "a4", t.faq.items[3]?.a || "") },
+    { qField: "q5", q: get("faq", "q5", t.faq.items[4]?.q || ""), aField: "a5", a: get("faq", "a5", t.faq.items[4]?.a || "") },
   ].filter((item) => item.q);
 
   return (
@@ -73,20 +81,22 @@ export function FAQSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-14"
         >
-          <span className="label-badge mb-4 inline-block">{t.faq.badge}</span>
+          <span className="label-badge mb-4 inline-block">
+            <EditableText sectionId="faq" fieldId="badge" value={get("faq", "badge", t.faq.badge)} />
+          </span>
           <h2
             className="text-3xl md:text-5xl font-bold text-gradient-white leading-tight"
           >
-            {t.faq.title}
+            <EditableText sectionId="faq" fieldId="titleLine1" value={get("faq", "titleLine1", t.faq.title)} />
           </h2>
           <p className="text-[var(--text-secondary)] mt-4 max-w-md mx-auto leading-relaxed">
-            {t.faq.subtitle}
+            <EditableText multiline sectionId="faq" fieldId="subtitle" value={get("faq", "subtitle", t.faq.subtitle)} />
           </p>
         </motion.div>
 
         <div>
           {faqItems.map((faq, i) => (
-            <FAQItem key={i} q={faq.q} a={faq.a} index={i} />
+            <FAQItem key={i} sectionId="faq" qFieldId={faq.qField} q={faq.q} aFieldId={faq.aField} a={faq.a} index={i} />
           ))}
         </div>
       </div>
