@@ -1,11 +1,11 @@
 import { ProductType } from "@prisma/client";
 
 // PayPal does not settle in EGP. Charge in EUR using the same conversion already
-// advertised on the site (499 EGP -> 19 EUR, 2,499 EGP -> 119 EUR) rather than a
+// advertised on the site (299 EGP -> 11 EUR, 1,499 EGP -> 71 EUR) rather than a
 // live FX rate — these are the two only products and the numbers are fixed.
 const EUR_PRICE_BY_PRODUCT_TYPE: Record<ProductType, number> = {
-  TRAINING_PLAN: 19,
-  PERSONAL_COACHING: 119,
+  TRAINING_PLAN: 11,
+  PERSONAL_COACHING: 71,
 };
 
 export function isPayPalConfigured(): boolean {

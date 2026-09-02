@@ -9,7 +9,7 @@ import { useSiteContent } from "@/lib/use-site-content";
 import { useCmsEditMode } from "@/components/cms/CmsEditModeProvider";
 import { EditableText } from "@/components/cms/EditableText";
 
-type ProductPrice = { slug: string; price: number; currency: string };
+type ProductPrice = { slug: string; price: number; currency: string; spotsTaken?: number; totalSpots?: number };
 
 // Prices are the real source of truth (Product.price in the DB, edited from
 // /admin/products) — the CMS only controls surrounding copy (badge, features,
@@ -49,11 +49,11 @@ function SpotCounter({
   fieldPrefix: string;
   get: (sectionId: string, fieldId: string, fallback: string) => string;
 }) {
-  const remaining = total - taken;
+  const remaining = Math.max(0, total - taken);
   const pct = Math.round((taken / total) * 100);
-  const badgeLabel = get("pricing", `${fieldPrefix}_spotBadge`, isArabic ? "دفعة محدودة (أول 100 مشترك)" : "Limited Batch (First 100)");
+  const badgeLabel = get("pricing", `${fieldPrefix}_spotBadge`, isArabic ? "دفعة الخصم (أول 100 مشترك)" : "Discount Batch (First 100)");
   const claimedLabel = get("pricing", `${fieldPrefix}_spotClaimed`, isArabic ? "مشترك" : "claimed");
-  const filledLabel = get("pricing", `${fieldPrefix}_spotFilled`, isArabic ? "مكتمل" : "filled");
+  const filledLabel = get("pricing", `${fieldPrefix}_spotFilled`, isArabic ? "مكتمل" : "completed");
 
   return (
     <div className="mt-5 p-3.5 rounded-sm bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/20 shadow-inner">
@@ -64,7 +64,7 @@ function SpotCounter({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
           </span>
-          <span className="text-[11px] font-bold tracking-wider uppercase text-blue-300">
+          <span className="text-[11px] font-bold tracking-wider text-blue-300">
             <EditableText sectionId="pricing" fieldId={`${fieldPrefix}_spotBadge`} value={badgeLabel} />
           </span>
         </div>
@@ -89,13 +89,12 @@ function SpotCounter({
         />
       </div>
 
-      {/* Bottom Info: Remaining count & percent badge — the count itself is
-          computed (not CMS content), but the number is still shown live */}
+      {/* Bottom Info: Remaining count & percent badge */}
       <div className="flex items-center justify-between mt-2 text-[11px]">
         <span className="font-semibold text-slate-200">
           {isArabic
-            ? `متبقي ${remaining} مقعد فقط في هذه الدفعة`
-            : `${remaining} spots remaining in this batch`}
+            ? `متبقي ${remaining} مقعد فقط بهذا السعر`
+            : `Only ${remaining} spots left at this price`}
         </span>
         <span className="text-blue-400 font-bold text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
           {pct}% <EditableText as="span" sectionId="pricing" fieldId={`${fieldPrefix}_spotFilled`} value={filledLabel} />
@@ -114,6 +113,8 @@ export function TwoPathsSection() {
 
   const offer1Price = prices["training-split"];
   const offer2Price = prices["personal-coaching"];
+  const splitTaken = offer1Price?.spotsTaken ?? SPLIT_TAKEN;
+  const coachingTaken = offer2Price?.spotsTaken ?? COACHING_TAKEN;
 
   return (
     <section id="plans" className="section-padding px-6">
@@ -156,11 +157,19 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer1_sub" value={get("pricing", "offer1_sub", t.twoPaths.offer1.sub)} /></p>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-2 justify-end">
+                  <div className="flex items-center gap-2 justify-end mb-1">
+                    <span className="text-xs text-slate-400 line-through">
+                      {isArabic ? "19€ / 499 EGP" : "499 EGP / 19 €"}
+                    </span>
+                    <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded">
+                      -40%
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 justify-end">
                     <p className="text-3xl font-extrabold text-white">
-                      {offer1Price ? (offer1Price.price / 100).toLocaleString() : "…"}
-                      <span className="text-sm font-normal text-slate-400 mx-1">{offer1Price?.currency || "EGP"}</span>
+                      {isArabic ? "٢٩٩ ج.م" : "299 EGP"}
                     </p>
+                    <span className="text-sm font-normal text-slate-400">/ 11 €</span>
                   </div>
                   {cmsEditing && (
                     <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
@@ -174,7 +183,7 @@ export function TwoPathsSection() {
               </div>
 
               {/* Spot counter (56 / 100) */}
-              <SpotCounter taken={SPLIT_TAKEN} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer1" get={get} />
+              <SpotCounter taken={splitTaken} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer1" get={get} />
 
               <div className="h-px bg-slate-800 my-6" />
 
@@ -241,11 +250,19 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer2_sub" value={get("pricing", "offer2_sub", t.twoPaths.offer2.sub)} /></p>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-2 justify-end">
+                  <div className="flex items-center gap-2 justify-end mb-1">
+                    <span className="text-xs text-slate-400 line-through">
+                      {isArabic ? "119€ / 2,499 EGP" : "2,499 EGP / 119 €"}
+                    </span>
+                    <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded">
+                      -40%
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 justify-end">
                     <p className="text-3xl font-extrabold text-blue-400">
-                      {offer2Price ? (offer2Price.price / 100).toLocaleString() : "…"}
-                      <span className="text-sm font-normal text-slate-400 mx-1">{offer2Price?.currency || "EGP"}</span>
+                      {isArabic ? "١,٤٩٩ ج.م" : "1,499 EGP"}
                     </p>
+                    <span className="text-sm font-normal text-slate-400">/ 71 €</span>
                   </div>
                   {cmsEditing && (
                     <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
@@ -259,7 +276,7 @@ export function TwoPathsSection() {
               </div>
 
               {/* Spot counter (16 / 100) */}
-              <SpotCounter taken={COACHING_TAKEN} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer2" get={get} />
+              <SpotCounter taken={coachingTaken} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer2" get={get} />
 
               <div className="h-px bg-slate-800 my-6" />
 
