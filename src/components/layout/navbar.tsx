@@ -110,7 +110,7 @@ export function Navbar() {
               </Link>
             ) : null}
 
-            <Link href="#plans" className="btn-primary text-xs relative z-10">
+            <Link href="#plans" className="btn-primary text-xs py-2 px-5 relative z-10 font-bold tracking-wide">
               <EditableText sectionId="nav" fieldId="startNow" value={get("nav", "startNow", t.nav.startNow)} />
             </Link>
           </div>
