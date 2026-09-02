@@ -23,13 +23,13 @@ async function main() {
   // Products
   const trainingPlan = await db.product.upsert({
     where: { slug: "training-split" },
-    create: { name: "Amar X Split", slug: "training-split", type: "TRAINING_PLAN", price: 49900, currency: "EGP", description: "Your complete 7-day structured training split.", features: JSON.stringify(["Complete 7-day training structure", "Sets & rep ranges", "Weak-point priority system", "Rest time rules", "Progressive overload rule", "Training log & progress tracking"]), isActive: true, sortOrder: 1 },
-    update: { name: "Amar X Split", price: 49900 },
+    create: { name: "Amar X Split", slug: "training-split", type: "TRAINING_PLAN", price: 29900, currency: "EGP", description: "Your complete 7-day structured training split.", features: JSON.stringify(["Complete 7-day training structure", "Sets & rep ranges", "Weak-point priority system", "Rest time rules", "Progressive overload rule", "Training log & progress tracking"]), isActive: true, sortOrder: 1 },
+    update: { name: "Amar X Split", price: 29900 },
   });
   const coaching = await db.product.upsert({
     where: { slug: "personal-coaching" },
-    create: { name: "Personal Coaching", slug: "personal-coaching", type: "PERSONAL_COACHING", price: 249900, currency: "EGP", description: "3 months of personal coaching + training split.", features: JSON.stringify(["Everything in Amar X Split", "WhatsApp coaching access", "3-month access period", "Renewal available"]), isActive: true, sortOrder: 2 },
-    update: { price: 249900 },
+    create: { name: "Personal Coaching", slug: "personal-coaching", type: "PERSONAL_COACHING", price: 149900, currency: "EGP", description: "3 months of personal coaching + training split.", features: JSON.stringify(["Everything in Amar X Split", "WhatsApp coaching access", "3-month access period", "Renewal available"]), isActive: true, sortOrder: 2 },
+    update: { price: 149900 },
   });
   console.log("✅ Products seeded");
 

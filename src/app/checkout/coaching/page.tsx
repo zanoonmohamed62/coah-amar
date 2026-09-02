@@ -28,7 +28,7 @@ import { PaymentProofUpload } from "@/components/checkout/PaymentProofUpload";
 
 const COACHING_TAKEN = 16;
 const TOTAL_SPOTS = 100;
-const COACHING_PRICE_EUR = 119;
+const COACHING_PRICE_EUR = 71;
 
 const pillarIcons = [Dumbbell, Apple, Pill, Heart];
 
@@ -161,7 +161,7 @@ export default function CoachingCheckoutPage() {
             </div>
             <div className="flex justify-between">
               <span>{isArabic ? "المبلغ:" : "Amount:"}</span>
-              <span className="text-white font-semibold">{priceEGP ?? 2499} LE / {COACHING_PRICE_EUR} €</span>
+              <span className="text-white font-semibold">{priceEGP ?? 1499} LE / {COACHING_PRICE_EUR} €</span>
             </div>
           </div>
 
@@ -366,14 +366,14 @@ export default function CoachingCheckoutPage() {
                     <p className="text-xs text-slate-400 mt-0.5">{isArabic ? "نظام متكامل لمدة ٣ شهور كاملة" : "3-Month Full Transformation System"}</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-blue-400 font-bold">{priceEGP ?? 2499} LE</span>
+                    <span className="text-blue-400 font-bold">{priceEGP ?? 1499} LE</span>
                   </div>
                 </div>
 
                 <div className="flex items-baseline justify-between pt-2">
                   <span className="text-slate-400 text-xs">{isArabic ? "الإجمالي المطلوب" : "Total Amount"}</span>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-white">{priceEGP ?? 2499} LE</span>
+                    <span className="text-2xl font-black text-white">{priceEGP ?? 1499} LE</span>
                     <span className="text-xs text-slate-400 ml-1.5">({COACHING_PRICE_EUR} €)</span>
                   </div>
                 </div>
@@ -575,8 +575,8 @@ export default function CoachingCheckoutPage() {
                       {isSubmitting
                         ? isArabic ? "جاري تسجيل الطلب..." : "Processing..."
                         : isArabic
-                        ? `اشترك في التدريب الشخصي الآن — ${(priceEGP ?? 2499).toLocaleString()} ج.م`
-                        : `Start Personal Coaching — ${(priceEGP ?? 2499).toLocaleString()} EGP`}
+                        ? `اشترك في التدريب الشخصي الآن — ${(priceEGP ?? 1499).toLocaleString()} ج.م`
+                        : `Start Personal Coaching — ${(priceEGP ?? 1499).toLocaleString()} EGP`}
                     </span>
                     {!isSubmitting && (
                       <ArrowIcon

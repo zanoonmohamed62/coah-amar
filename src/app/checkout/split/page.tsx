@@ -22,7 +22,7 @@ import { PaymentProofUpload } from "@/components/checkout/PaymentProofUpload";
 
 const SPLIT_TAKEN = 56;
 const TOTAL_SPOTS = 100;
-const SPLIT_PRICE_EUR = 19;
+const SPLIT_PRICE_EUR = 11;
 
 const highlightIcons = [Dumbbell, ListChecks, Timer, TrendingUp];
 
@@ -243,7 +243,7 @@ export default function SplitCheckoutPage() {
                       {isArabic ? "دفع مرة واحدة" : "ONE-TIME"}
                     </span>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-black text-white">{priceEGP ?? 499}</span>
+                      <span className="text-2xl font-black text-white">{priceEGP ?? 299}</span>
                       <span className="text-xs text-slate-400">LE / {SPLIT_PRICE_EUR} €</span>
                     </div>
                   </div>
@@ -306,14 +306,14 @@ export default function SplitCheckoutPage() {
                 <div className="flex items-center justify-between py-2 border-b border-slate-800 text-sm">
                   <span className="text-slate-300 font-medium">Amar X Split (7-Day Program)</span>
                   <div className="text-right">
-                    <span className="text-white font-bold">{priceEGP ?? 499} LE</span>
+                    <span className="text-white font-bold">{priceEGP ?? 299} LE</span>
                   </div>
                 </div>
 
                 <div className="flex items-baseline justify-between pt-2">
                   <span className="text-slate-400 text-xs">{isArabic ? "الإجمالي المطلوب" : "Total Amount"}</span>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-blue-400">{priceEGP ?? 499} LE</span>
+                    <span className="text-2xl font-black text-blue-400">{priceEGP ?? 299} LE</span>
                     <span className="text-xs text-slate-400 ml-1.5">({SPLIT_PRICE_EUR} €)</span>
                   </div>
                 </div>
@@ -454,8 +454,8 @@ export default function SplitCheckoutPage() {
                       {isSubmitting
                         ? isArabic ? "جاري تسجيل الطلب..." : "Processing..."
                         : isArabic
-                        ? `احصل على الـ Split الآن — ${priceEGP ?? 499} ج.م`
-                        : `Get The Split Now — ${priceEGP ?? 499} EGP`}
+                        ? `احصل على الـ Split الآن — ${priceEGP ?? 299} ج.م`
+                        : `Get The Split Now — ${priceEGP ?? 299} EGP`}
                     </span>
                     {!isSubmitting && (
                       <ArrowIcon

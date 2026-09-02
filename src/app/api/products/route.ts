@@ -33,6 +33,22 @@ export async function GET() {
       countMap[item.productId] = item._count.id;
     }
 
+    const targetPrices: Record<string, number> = {
+      'training-split': 29900,
+      'personal-coaching': 149900,
+    };
+
+    for (const p of products) {
+      const expectedPrice = targetPrices[p.slug];
+      if (expectedPrice && p.price !== expectedPrice) {
+        p.price = expectedPrice;
+        db.product.update({
+          where: { id: p.id },
+          data: { price: expectedPrice },
+        }).catch(() => {});
+      }
+    }
+
     const baseSpots: Record<string, { base: number; originalPrice: number }> = {
       'training-split': { base: 56, originalPrice: 49900 },
       'personal-coaching': { base: 16, originalPrice: 249900 },

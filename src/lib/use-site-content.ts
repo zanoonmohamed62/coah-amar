@@ -61,7 +61,11 @@ export function useSiteContent() {
   }, [lang]);
 
   function get(sectionId: string, fieldId: string, fallback: string): string {
-    return content[sectionId]?.[fieldId] || fallback;
+    const val = content[sectionId]?.[fieldId];
+    if (typeof val === "string" && val.trim().length > 0) {
+      return val;
+    }
+    return fallback;
   }
 
   return get;

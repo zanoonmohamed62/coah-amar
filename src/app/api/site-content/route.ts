@@ -18,6 +18,33 @@ export async function GET(req: NextRequest) {
       map[row.sectionId][row.fieldId] = row.value;
     }
 
+    const arHeroDesc = "مش مجرد ملف PDF عادي. نظام تدريب وتغذية متكامل مصمم خصيصاً لجسمك، جدول يومك، وأهدافك الرياضية.";
+    const enHeroDesc = "Not just an ordinary PDF. A complete training and nutrition system custom-designed for your body, daily schedule, and fitness goals.";
+
+    if (lang === "ar") {
+      const current = map.hero?.description?.trim();
+      if (!current || /^[A-Za-z]/.test(current)) {
+        if (!map.hero) map.hero = {};
+        map.hero.description = arHeroDesc;
+        db.siteContent.upsert({
+          where: { sectionId_fieldId_lang: { sectionId: "hero", fieldId: "description", lang: "ar" } },
+          create: { sectionId: "hero", fieldId: "description", lang: "ar", value: arHeroDesc },
+          update: { value: arHeroDesc },
+        }).catch(() => {});
+      }
+    } else if (lang === "en") {
+      const current = map.hero?.description?.trim();
+      if (!current) {
+        if (!map.hero) map.hero = {};
+        map.hero.description = enHeroDesc;
+        db.siteContent.upsert({
+          where: { sectionId_fieldId_lang: { sectionId: "hero", fieldId: "description", lang: "en" } },
+          create: { sectionId: "hero", fieldId: "description", lang: "en", value: enHeroDesc },
+          update: { value: enHeroDesc },
+        }).catch(() => {});
+      }
+    }
+
     return NextResponse.json({ content: map, lang });
   } catch {
     return NextResponse.json({ content: {}, lang: "en" });

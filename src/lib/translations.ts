@@ -245,7 +245,7 @@ export const translations: Record<Language, TranslationSchema> = {
       titleLine1: "THE AMAR",
       titleLine2: '"X SPLIT"',
       titleLine3: "BUILD DIFFERENT",
-      description: "Not just an ordinary PDF. A complete, integrated training and nutrition system custom-designed for your body, daily schedule, and fitness goals.",
+      description: "Not just an ordinary PDF. A complete training and nutrition system custom-designed for your body, daily schedule, and fitness goals.",
       startBtn: "Start Your Transformation",
       meetBtn: "Let's Talk",
       appBtn: "Open Customer App",
