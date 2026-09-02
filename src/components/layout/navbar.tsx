@@ -34,10 +34,10 @@ export function Navbar() {
   }, []);
 
   const navLinks = [
-    { href: "#plans", fieldId: "plans", label: get("nav", "plans", t.nav.plans) },
-    { href: "#coach", fieldId: "coach", label: get("nav", "coach", t.nav.coach) },
-    { href: "#results", fieldId: "results", label: get("nav", "results", t.nav.results) },
-    { href: "#faq", fieldId: "faq", label: get("nav", "faq", t.nav.faq) },
+    { href: "/#plans", fieldId: "plans", label: get("nav", "plans", t.nav.plans) },
+    { href: "/#coach", fieldId: "coach", label: get("nav", "coach", t.nav.coach) },
+    { href: "/#results", fieldId: "results", label: get("nav", "results", t.nav.results) },
+    { href: "/#faq", fieldId: "faq", label: get("nav", "faq", t.nav.faq) },
   ];
 
   return (
@@ -110,7 +110,7 @@ export function Navbar() {
               </Link>
             ) : null}
 
-            <Link href="#plans" className="btn-primary text-xs py-2 px-5 rounded-xl font-bold tracking-wide relative z-10">
+            <Link href="/#plans" className="btn-primary text-xs py-2 px-5 rounded-xl font-bold tracking-wide relative z-10">
               <EditableText sectionId="nav" fieldId="startNow" value={get("nav", "startNow", t.nav.startNow)} />
             </Link>
           </div>
@@ -201,7 +201,7 @@ export function Navbar() {
               ) : null}
 
               <Link
-                href="#plans"
+                href="/#plans"
                 onClick={() => setMobileOpen(false)}
                 className="btn-primary w-full text-center"
               >
