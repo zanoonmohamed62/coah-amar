@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     }
 
     const arHeroDesc = "مش مجرد ملف PDF عادي. نظام تدريب وتغذية متكامل مصمم خصيصاً لجسمك، جدول يومك، وأهدافك الرياضية.";
-    const enHeroDesc = "Not just an ordinary PDF. A complete training and nutrition system custom-designed for your body, daily schedule, and fitness goals.";
+    const enHeroDesc = "Not a generic PDF. A personalized coaching system built around your body, schedule, and goals.";
 
     if (lang === "ar") {
       const current = map.hero?.description?.trim();
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       }
     } else if (lang === "en") {
       const current = map.hero?.description?.trim();
-      if (!current) {
+      if (!current || current !== enHeroDesc) {
         if (!map.hero) map.hero = {};
         map.hero.description = enHeroDesc;
         db.siteContent.upsert({
