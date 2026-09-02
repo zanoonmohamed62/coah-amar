@@ -22,21 +22,23 @@ function FAQItem({ sectionId, qFieldId, q, aFieldId, a, index }: {
       initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
-      className="border-b border-[var(--border)]"
+      transition={{ duration: 0.35, delay: index * 0.04 }}
+      className="mb-3 rounded-sm bg-[#0b0f19] border border-white/[0.07] overflow-hidden hover:border-blue-500/30 transition-colors"
     >
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-5 text-left rtl:text-right gap-4 group cursor-pointer"
+        className="w-full flex items-center justify-between p-5 text-left rtl:text-right gap-4 group cursor-pointer"
         aria-expanded={open}
       >
-        <span className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors leading-relaxed">
+        <span className="text-sm sm:text-base font-bold text-white group-hover:text-blue-400 transition-colors leading-relaxed">
           <EditableText sectionId={sectionId} fieldId={qFieldId} value={q} />
         </span>
-        <ChevronDown
-          size={16}
-          className={`text-[var(--text-muted)] flex-shrink-0 transition-transform duration-300 ${open ? "rotate-180 text-[var(--accent)]" : ""}`}
-        />
+        <div className="w-7 h-7 rounded-sm bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0">
+          <ChevronDown
+            size={15}
+            className={`text-slate-400 transition-transform duration-250 ${open ? "rotate-180 text-blue-400" : ""}`}
+          />
+        </div>
       </button>
 
       <AnimatePresence>

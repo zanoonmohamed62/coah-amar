@@ -41,20 +41,20 @@ export function FinalCTASection() {
           <h2
             className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight mb-8"
           >
-            <EditableText as="span" className="text-gradient-white block" sectionId="finalCta" fieldId="titleLine1" value={get("finalCta", "titleLine1", t.finalCta.titleLine1)} />
-            <EditableText as="span" className="text-gradient block" sectionId="finalCta" fieldId="titleLine2" value={get("finalCta", "titleLine2", t.finalCta.titleLine2)} />
-            <EditableText as="span" className="text-gradient-white block" sectionId="finalCta" fieldId="titleLine3" value={get("finalCta", "titleLine3", t.finalCta.titleLine3)} />
+            <EditableText as="span" className="text-white block" sectionId="finalCta" fieldId="titleLine1" value={get("finalCta", "titleLine1", t.finalCta.titleLine1)} />
+            <EditableText as="span" className="text-blue-500 block drop-shadow-[0_0_25px_rgba(59,130,246,0.35)]" sectionId="finalCta" fieldId="titleLine2" value={get("finalCta", "titleLine2", t.finalCta.titleLine2)} />
+            <EditableText as="span" className="text-white block" sectionId="finalCta" fieldId="titleLine3" value={get("finalCta", "titleLine3", t.finalCta.titleLine3)} />
           </h2>
 
-          <p className="text-[var(--text-secondary)] text-base sm:text-lg leading-relaxed mb-12 max-w-xl mx-auto whitespace-pre-wrap">
+          <p className="text-slate-300 text-base sm:text-lg leading-relaxed mb-12 max-w-xl mx-auto whitespace-pre-wrap">
             <EditableText multiline sectionId="finalCta" fieldId="subtitle" value={get("finalCta", "subtitle", t.finalCta.subtitle)} />
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/checkout/split" className="btn-secondary flex items-center justify-center gap-2">
+            <Link href="/checkout/split" className="btn-secondary flex items-center justify-center gap-2 py-3.5 px-8">
               <EditableText sectionId="finalCta" fieldId="planBtn" value={get("finalCta", "planBtn", t.finalCta.planBtn)} />
             </Link>
-            <Link href="/checkout/coaching" className="btn-primary flex items-center justify-center gap-2 group">
+            <Link href="/checkout/coaching" className="btn-primary flex items-center justify-center gap-2 group py-3.5 px-8">
               <EditableText as="span" sectionId="finalCta" fieldId="coachingBtn" value={get("finalCta", "coachingBtn", t.finalCta.coachingBtn)} />
               <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>

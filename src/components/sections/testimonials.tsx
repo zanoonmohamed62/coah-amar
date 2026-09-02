@@ -84,7 +84,7 @@ export function TestimonialsSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 flex flex-col gap-4 text-left"
+                  className="athletic-card p-6 flex flex-col gap-4 text-left"
                   style={{ textAlign: isArabic ? 'right' : 'left' }}
                 >
                   <div className="flex justify-between items-start">

@@ -20,14 +20,17 @@ export function CoachSection() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         {/* Visual Column */}
         <motion.div
-          initial={{ opacity: 0, x: isArabic ? 30 : -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="relative"
+          transition={{ duration: 0.6 }}
+          className="relative max-w-md mx-auto lg:max-w-none w-full"
         >
+          {/* Ambient Glow */}
+          <div className="absolute -inset-3 bg-blue-600/15 rounded-xl filter blur-2xl opacity-60 pointer-events-none" />
+
           {/* Main portrait */}
-          <div className="relative aspect-[3/4] rounded-sm overflow-hidden border border-slate-800 shadow-2xl bg-[#0b0f19]">
+          <div className="relative aspect-[3/4] rounded-sm overflow-hidden border border-slate-800/90 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] bg-[#0b0f19]">
             <EditableImage
               sectionId="coach"
               fieldId="portraitImage"
@@ -35,20 +38,20 @@ export function CoachSection() {
               alt="Coach Amar"
               className="object-cover object-center w-full h-full"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-60 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-65 pointer-events-none" />
           </div>
 
           {/* Decorative corner accent */}
-          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-blue-500/60" />
-          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-blue-500/60" />
+          <div className="absolute -top-1.5 -left-1.5 w-6 h-6 border-t-2 border-l-2 border-blue-500/80 pointer-events-none" />
+          <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 border-b-2 border-r-2 border-blue-500/80 pointer-events-none" />
         </motion.div>
 
         {/* Content Column */}
         <motion.div
-          initial={{ opacity: 0, x: isArabic ? -30 : 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
         >
           <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-sm inline-block mb-4">
             <EditableText sectionId="coach" fieldId="badge" value={get("coach", "badge", t.coach.badge)} />

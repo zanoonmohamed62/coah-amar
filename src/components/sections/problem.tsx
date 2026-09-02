@@ -50,17 +50,17 @@ export function ProblemSection() {
         </motion.div>
 
         {/* Comparison Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-stretch">
           {/* Left: Random Workouts (The Problem) */}
           <motion.div
-            initial={{ opacity: 0, x: isArabic ? 30 : -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="bg-[#0b0f19] border border-slate-800/80 rounded-sm p-8 flex flex-col justify-between"
+            transition={{ duration: 0.5 }}
+            className="athletic-card p-7 sm:p-8 flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800/80">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/[0.07]">
                 <div className="w-10 h-10 rounded-sm bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
                   <X size={18} className="text-red-400" />
                 </div>
@@ -105,11 +105,11 @@ export function ProblemSection() {
 
           {/* Right: The Amar Performance System (The Solution) */}
           <motion.div
-            initial={{ opacity: 0, x: isArabic ? -30 : 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.12 }}
-            className="bg-[#0f1626] border-2 border-blue-500/40 rounded-sm p-8 relative overflow-hidden shadow-xl shadow-blue-950/20 flex flex-col justify-between"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="athletic-card-featured p-7 sm:p-8 relative overflow-hidden flex flex-col justify-between"
           >
             {/* Background Glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />

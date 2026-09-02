@@ -21,25 +21,25 @@ function StepCard({ step, icon: Icon, sectionId, titleFieldId, title, descFieldI
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay }}
-      className="flex items-start gap-4"
+      transition={{ duration: 0.4, delay }}
+      className="p-4 rounded-sm bg-[#0b0f19] border border-white/[0.06] hover:border-blue-500/30 hover:bg-white/[0.03] transition-all flex items-start gap-4 group"
     >
       <div className="flex-shrink-0 relative">
-        <div className="w-10 h-10 rounded-sm glass-accent border border-[var(--border-accent)] flex items-center justify-center">
-          <Icon size={16} className="text-[var(--accent)]" />
+        <div className="w-10 h-10 rounded-sm bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(37,99,235,0.15)] group-hover:scale-105 transition-transform">
+          <Icon size={18} />
         </div>
-        <span className="absolute -top-2 -right-2 text-[0.6rem] font-bold text-[var(--accent)] bg-[var(--bg-primary)] px-1 rounded border border-[var(--border-accent)]">
+        <span className="absolute -top-1.5 -right-1.5 text-[0.6rem] font-black text-blue-300 bg-[#07090e] px-1.5 py-0.5 rounded border border-blue-500/30">
           {step}
         </span>
       </div>
       <div>
-        <p className="text-sm font-bold text-[var(--text-primary)] mb-0.5">
+        <p className="text-sm font-bold text-white mb-1">
           <EditableText sectionId={sectionId} fieldId={titleFieldId} value={title} />
         </p>
-        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+        <p className="text-xs text-slate-400 leading-relaxed font-normal">
           <EditableText multiline sectionId={sectionId} fieldId={descFieldId} value={desc} />
         </p>
       </div>

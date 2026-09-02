@@ -137,13 +137,13 @@ export function TwoPathsSection() {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-          {/* OFFER 01 — Ammar X Split */}
+          {/* OFFER 01 — Amar X Split */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="bg-[#0b0f19] border border-slate-800 rounded-sm p-8 flex flex-col justify-between"
+            transition={{ duration: 0.5 }}
+            className="athletic-card p-7 sm:p-8 flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between mb-6">
@@ -226,11 +226,11 @@ export function TwoPathsSection() {
 
           {/* OFFER 02 — Personal Coaching */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.15 }}
-            className="bg-[#0f1626] border-2 border-blue-500/40 rounded-sm p-8 flex flex-col justify-between relative shadow-xl shadow-blue-950/30"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="athletic-card-featured p-7 sm:p-8 flex flex-col justify-between relative"
           >
             {/* Top badge */}
             <div className={`absolute -top-3 ${isArabic ? "left-6" : "right-6"} bg-blue-600 text-white text-[0.65rem] font-extrabold tracking-wider uppercase px-3 py-1 rounded-sm shadow-md flex items-center gap-1`}>
