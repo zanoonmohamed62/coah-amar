@@ -171,26 +171,23 @@
     padding-bottom: 6.5rem;
   }
 
-  /* Tactile Buttons with Specular Edge & Premium iOS Smooth Geometry */
+  /* Eye-Comfortable Apple iOS Primary Button — Crisp, Calm & Glare-Free */
   .btn-primary {
-    background: linear-gradient(180deg, #1e6af7 0%, #1554e0 50%, #0d3db8 100%);
+    background: linear-gradient(180deg, #1a73e8 0%, #1256be 100%);
     color: #ffffff;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
     font-size: 0.875rem;
     padding: 0.85rem 1.85rem;
     border-radius: 12px;
-    border: 1px solid rgba(191, 219, 254, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 
-      0 2px 4px rgba(0, 0, 0, 0.25),
-      0 6px 20px -2px rgba(21, 84, 224, 0.45),
-      0 14px 32px -4px rgba(13, 61, 184, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.25);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      0 2px 8px -1px rgba(0, 0, 0, 0.5),
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -199,22 +196,20 @@
   }
 
   .btn-primary:hover {
-    background: linear-gradient(180deg, #2773f9 0%, #1c5ee8 50%, #1144c4 100%);
-    border-color: rgba(219, 234, 254, 0.52);
+    background: linear-gradient(180deg, #247df0 0%, #1660d1 100%);
+    border-color: rgba(255, 255, 255, 0.32);
     box-shadow: 
-      0 3px 8px rgba(0, 0, 0, 0.25),
-      0 10px 28px -2px rgba(28, 94, 232, 0.65),
-      0 20px 42px -4px rgba(17, 68, 196, 0.4),
-      inset 0 1px 0.5px rgba(255, 255, 255, 0.5);
-    transform: translateY(-2px);
+      0 4px 14px -2px rgba(0, 0, 0, 0.6),
+      0 2px 6px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transform: translateY(-1.5px);
   }
 
   .btn-primary:active {
     transform: scale(0.985) translateY(1px);
     box-shadow: 
-      0 1px 2px rgba(0, 0, 0, 0.35),
-      0 2px 8px rgba(21, 84, 224, 0.35),
-      inset 0 1px 2px rgba(0, 0, 0, 0.3);
+      0 1px 3px rgba(0, 0, 0, 0.5),
+      inset 0 1px 2px rgba(0, 0, 0, 0.25);
   }
 
   /* iOS Frosted Glass Button */
