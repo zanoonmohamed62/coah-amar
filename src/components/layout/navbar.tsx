@@ -55,7 +55,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-[0_2px_10px_rgba(37,99,235,0.25)] border border-white/10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/icon.svg" alt="Amar X Split" className="w-full h-full object-contain" />
             </div>
@@ -73,7 +73,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors text-xs font-semibold tracking-wider uppercase"
+                className="text-[var(--text-secondary)] hover:text-white transition-colors text-xs font-semibold tracking-wider uppercase"
               >
                 <EditableText sectionId="nav" fieldId={link.fieldId} value={link.label} />
               </Link>
@@ -85,32 +85,32 @@ export function Navbar() {
             {/* Language Switch Button */}
             <button
               onClick={toggleLang}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-sm border border-[var(--border)] glass hover:border-[var(--border-accent)] hover:bg-[var(--accent-glow)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer shadow-sm"
               title={lang === "en" ? "تبديل إلى اللغة العربية" : "Switch to English"}
             >
-              <Globe size={13} className="text-[var(--accent)]" />
+              <Globe size={13} className="text-blue-400" />
               <span>{t.nav.langSwitch}</span>
             </button>
 
             {status === "authenticated" ? (
               <Link
                 href={accountHref}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--border)] glass hover:border-[var(--border-accent)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-semibold text-[var(--text-secondary)] hover:text-white transition-all shadow-sm"
               >
-                <AccountIcon size={13} />
+                <AccountIcon size={13} className="text-blue-400" />
                 <span>{accountLabel}</span>
               </Link>
             ) : status !== "loading" ? (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--border)] glass hover:border-[var(--border-accent)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-semibold text-[var(--text-secondary)] hover:text-white transition-all shadow-sm"
               >
-                <LogIn size={13} />
+                <LogIn size={13} className="text-blue-400" />
                 <span>{isArabic ? "تسجيل الدخول" : "Login"}</span>
               </Link>
             ) : null}
 
-            <Link href="#plans" className="btn-primary text-xs py-2 px-5 relative z-10 font-bold tracking-wide">
+            <Link href="#plans" className="btn-primary text-xs py-2 px-5 rounded-xl font-bold tracking-wide relative z-10">
               <EditableText sectionId="nav" fieldId="startNow" value={get("nav", "startNow", t.nav.startNow)} />
             </Link>
           </div>
