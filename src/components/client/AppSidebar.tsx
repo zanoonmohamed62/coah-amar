@@ -15,7 +15,8 @@ import {
   RefreshCw,
   PanelLeftClose,
   PanelRightClose,
-  X
+  X,
+  ExternalLink
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
@@ -192,6 +193,17 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
         >
           <MessageCircle size={16} /> 
           {!isCollapsed && (isArabic ? "واتساب الكوتش" : "WhatsApp Coach")}
+        </a>
+
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title={isCollapsed ? (isArabic ? "الموقع الرسمي" : "Visit Website") : undefined}
+          className={`flex items-center gap-3 py-2.5 rounded-sm text-xs font-bold text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+        >
+          <ExternalLink size={16} />
+          {!isCollapsed && (isArabic ? "الموقع الرسمي" : "Visit Website")}
         </a>
 
         <button

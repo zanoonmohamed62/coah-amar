@@ -369,26 +369,36 @@ export default function PdfCanvas({ isArabic }: Props) {
           )}
 
           {status === "no-access" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6 text-center">
-              <Lock size={36} className="text-amber-400" />
-              <p className="text-sm font-semibold text-[var(--text-primary)]">
-                {isArabic ? "لسه معندكش وصول لهذا الجدول" : "You don't have access to this split yet"}
-              </p>
-              <p className="text-xs text-[var(--text-muted)] max-w-xs leading-relaxed">
-                {isArabic
-                  ? "لو دفعت بالفعل، الطلب لسه بيتراجع. تواصل معانا على الواتساب لو محتاج مساعدة."
-                  : "If you've already paid, your order may still be under review. Contact us on WhatsApp if you need help."}
-              </p>
-              {waNumber && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#070a0f] z-10 px-6 text-center">
+              <Lock size={40} className="text-amber-400" />
+              <div className="flex flex-col gap-1.5">
+                <p className="text-base font-bold text-[var(--text-primary)]">
+                  {isArabic ? "لسه معندكش وصول لهذا الجدول" : "You don't have access to this split yet"}
+                </p>
+                <p className="text-xs text-[var(--text-muted)] max-w-xs leading-relaxed mx-auto">
+                  {isArabic
+                    ? "لو دفعت بالفعل، الطلب لسه بيتراجع. لو لسه معنديش اشتريه دلوقتي."
+                    : "If you've already paid, your order may still be under review. Otherwise, get it now."}
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
                 <a
-                  href={`https://wa.me/${waNumber}?text=${encodeURIComponent(isArabic ? "مرحباً، مش قادر أشوف الجدول بتاعي" : "Hi, I can't see my split")}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm flex items-center gap-1.5"
+                  href="/#split"
+                  className="px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-black rounded-sm flex items-center gap-2 hover:opacity-90 transition-opacity"
                 >
-                  <MessageCircle size={13} />
-                  {isArabic ? "تواصل عبر واتساب" : "Contact on WhatsApp"}
+                  {isArabic ? "اشتري الجدول" : "Buy the Split"}
                 </a>
-              )}
+                {waNumber && (
+                  <a
+                    href={`https://wa.me/${waNumber}?text=${encodeURIComponent(isArabic ? "مرحباً، مش قادر أشوف الجدول بتاعي" : "Hi, I can't see my split")}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="px-5 py-2.5 bg-white/5 border border-white/10 text-[var(--text-secondary)] text-sm font-bold rounded-sm flex items-center gap-2 hover:bg-white/10 transition-colors"
+                  >
+                    <MessageCircle size={14} />
+                    {isArabic ? "تواصل عبر واتساب" : "Contact on WhatsApp"}
+                  </a>
+                )}
+              </div>
             </div>
           )}
 
