@@ -6,11 +6,15 @@ import { useLanguage } from "@/lib/language-context";
 import { PWAProvider } from "@/components/PWAProvider";
 import { SplitPrefetcher } from "@/components/client/SplitPrefetcher";
 import { Menu, X } from "lucide-react";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { isArabic, dir } = useLanguage();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
+
+  // Auto sign-out after 15 minutes of inactivity
+  useSessionTimeout();
 
   // ── Anti-screenshot / anti-share hardening ──────────────────────────────
   useEffect(() => {
