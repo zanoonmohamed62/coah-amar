@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2, WifiOff, CheckCircle2, ZoomIn, ZoomOut, RotateCcw, Lock, MessageCircle } from "lucide-react";
+import { Loader2, WifiOff, ZoomIn, ZoomOut, RotateCcw, Lock, MessageCircle } from "lucide-react";
 import { useSettings } from "@/lib/use-settings";
 import {
   getCachedPdf,
@@ -64,7 +64,6 @@ export default function PdfCanvas({ isArabic }: Props) {
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "no-access">("loading");
   const [errMsg, setErrMsg] = useState("");
   const [numPages, setNumPages] = useState(0);
-  const [isOfflineCached, setIsOfflineCached] = useState(false);
   const [scaleMultiplier, setScaleMultiplier] = useState(1);
   const [isBlurred, setIsBlurred] = useState(false);
 
@@ -241,9 +240,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       const cacheIsStale = currentVersion !== null && cachedVersion !== null && currentVersion !== cachedVersion;
 
       let buf = cachedBuf && !cacheIsStale ? cachedBuf : null;
-      if (buf) {
-        setIsOfflineCached(true);
-      } else {
+      if (!buf) {
         const res = await fetch("/api/split", { cache: "no-store" });
         if (res.status === 403) {
           setStatus("no-access");
@@ -252,7 +249,6 @@ export default function PdfCanvas({ isArabic }: Props) {
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         buf = await res.arrayBuffer();
         await savePdfToCache(buf, currentVersion ?? "legacy");
-        setIsOfflineCached(true);
       }
 
       const loadingTask = pdfjsLib.getDocument({
@@ -312,14 +308,9 @@ export default function PdfCanvas({ isArabic }: Props) {
     <div className="flex flex-col flex-1 h-full min-h-0 relative">
       {/* Toolbar */}
       <div className="px-4 py-2 border-b border-[var(--border)] bg-[#0b0f17] flex items-center justify-between text-xs shrink-0 z-20 select-none">
-        <div className="flex items-center gap-2">
-          {isOfflineCached && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
-              <CheckCircle2 size={13} />
-              {isArabic ? "متاح بدون إنترنت" : "Offline Ready"}
-            </span>
-          )}
-        </div>
+        {/* Offline caching is deliberately silent — the customer shouldn't have
+            to think about downloads, so no status badge is shown here. */}
+        <div className="flex items-center gap-2" />
         <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-sm border border-white/10">
           <button onClick={() => handleZoom(-0.15)} className="p-1 hover:bg-white/10 rounded-sm text-[var(--text-muted)] hover:text-white transition-colors">
             <ZoomOut size={14} />

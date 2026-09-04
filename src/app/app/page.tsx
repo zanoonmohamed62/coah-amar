@@ -1,38 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, MessageCircle, CheckCircle2, Download, Loader2 } from "lucide-react";
+import { FileText, MessageCircle, CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
-import { getCachedPdf } from "@/lib/split-cache";
 
 export default function AppHome() {
   const { isArabic } = useLanguage();
   const getSetting = useSettings();
   const WA_NUMBER = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
-  // Reflects the background prefetch (SplitPrefetcher) so the customer can see
-  // their plan is genuinely saved on the device, not just streamed on demand.
-  const [offlineReady, setOfflineReady] = useState<boolean | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    const check = async () => {
-      const cached = await getCachedPdf();
-      if (!cancelled) setOfflineReady(!!cached);
-    };
-    check();
-    // The prefetch lands a couple of seconds after mount; re-check while it's
-    // still pending so the badge flips without needing a manual refresh.
-    const interval = setInterval(async () => {
-      const cached = await getCachedPdf();
-      if (!cancelled && cached) {
-        setOfflineReady(true);
-        clearInterval(interval);
-      }
-    }, 3000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, []);
+  // The split PDF is cached for offline use silently by SplitPrefetcher —
+  // deliberately with no progress UI, so the customer never has to think
+  // about downloads.
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] max-w-2xl mx-auto text-center space-y-10">
@@ -63,37 +43,6 @@ export default function AppHome() {
           <span className="tracking-wide drop-shadow-md">{isArabic ? "فتح جدول التمرين" : "Open My Split"}</span>
         </Link>
 
-        {/* Offline availability status */}
-        {offlineReady !== null && (
-          <div
-            className={`flex items-center justify-center gap-2 text-xs font-semibold px-4 py-2.5 rounded-xl border ${
-              offlineReady
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                : "bg-[#0d121c] border-[var(--border)] text-[var(--text-muted)]"
-            }`}
-          >
-            {offlineReady ? (
-              <>
-                <Download size={14} />
-                <span>
-                  {isArabic
-                    ? "جدولك محفوظ على جهازك — يشتغل بدون إنترنت"
-                    : "Your plan is saved on this device — works offline"}
-                </span>
-              </>
-            ) : (
-              <>
-                <Loader2 size={14} className="animate-spin" />
-                <span>
-                  {isArabic
-                    ? "جاري حفظ الجدول للاستخدام بدون إنترنت..."
-                    : "Saving your plan for offline use…"}
-                </span>
-              </>
-            )}
-          </div>
-        )}
-        
         {/* Premium WhatsApp Button */}
         <a
           href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(

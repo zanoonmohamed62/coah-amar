@@ -74,13 +74,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         dir={dir}
         className={`app-shell min-h-screen flex flex-col md:flex-row bg-[var(--bg-base)] text-[var(--text-primary)] ${isArabic ? "font-cairo" : ""}`}
       >
-        {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-[var(--bg-card)] border-b border-[var(--border)] z-50">
+        {/* Mobile Header — sits below the drawer (z-50) and its scrim (z-40)
+            so an open sidebar covers it instead of bleeding through. */}
+        <header className="md:hidden flex items-center justify-between p-4 bg-[var(--bg-card)] border-b border-[var(--border)] z-30">
           <div className="font-extrabold tracking-tight text-[var(--text-primary)]">
             COACH <span className="text-[var(--accent)]">AMAR</span>
           </div>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-label={isArabic ? "القائمة" : "Menu"}
             className="p-2 bg-[var(--bg-elevated)] rounded-sm text-[var(--text-primary)]"
           >
             {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -89,8 +91,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Sidebar Overlay */}
         {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          <div
+            className="fixed inset-0 bg-black/60 z-40 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}

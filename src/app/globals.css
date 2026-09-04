@@ -8,6 +8,13 @@
     --bg-elevated: #121824;
     --bg-glass: rgba(18, 24, 36, 0.7);
     --bg-glass-hover: rgba(37, 99, 235, 0.08);
+    /* Aliases used throughout the admin panel and customer portal. These were
+       referenced in ~16 files but never defined, so every surface using them
+       rendered with no background at all — panels and sidebars showed the page
+       content straight through them. Opaque by design: these are solid
+       surfaces, not glass. */
+    --bg-base: #07090e;
+    --bg-card: #0d121c;
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;

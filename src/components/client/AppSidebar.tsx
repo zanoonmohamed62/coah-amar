@@ -14,7 +14,8 @@ import {
   Globe,
   RefreshCw,
   PanelLeftClose,
-  PanelRightClose
+  PanelRightClose,
+  X
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
@@ -83,7 +84,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
 
   return (
     <aside
-      className={`fixed top-0 ${isArabic ? "right-0 border-l" : "left-0 border-r"} h-full flex flex-col bg-[var(--bg-card)] border-[var(--border)] z-50 py-6 transition-all duration-300 md:translate-x-0 ${
+      className={`fixed top-0 ${isArabic ? "right-0 border-l" : "left-0 border-r"} h-full flex flex-col bg-[var(--bg-card)] border-[var(--border)] shadow-2xl z-50 py-6 pt-16 md:pt-6 transition-all duration-300 md:translate-x-0 ${
         isOpen
           ? "translate-x-0"
           : isArabic
@@ -91,6 +92,16 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           : "-translate-x-full"
       } ${isCollapsed ? "w-64 md:w-20" : "w-64"}`}
     >
+      {/* Mobile close button — the drawer covers the header on mobile, so it
+          needs its own way out. */}
+      <button
+        onClick={() => setIsOpen(false)}
+        aria-label={isArabic ? "إغلاق القائمة" : "Close menu"}
+        className={`md:hidden absolute top-4 ${isArabic ? "left-4" : "right-4"} p-2 rounded-sm bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)]`}
+      >
+        <X size={18} />
+      </button>
+
       {/* Brand */}
       <div className={`px-5 mb-6 flex items-center ${isCollapsed ? "justify-center md:flex-col gap-4" : "justify-between"}`}>
         {!isCollapsed && (
