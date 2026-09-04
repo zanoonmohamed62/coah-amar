@@ -181,6 +181,7 @@ export function TwoPathsSection() {
                     <p className="text-3xl font-extrabold text-white">
                       {offer1Price ? `${offer1Price.price / 100} ${offer1Price.currency}` : (isArabic ? "٢٩٩ ج.م" : "299 EGP")}
                     </p>
+                    <span className="text-sm font-normal text-slate-400">/ 11 €</span>
                   </div>
                   {cmsEditing && (
                     <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
@@ -283,6 +284,7 @@ export function TwoPathsSection() {
                     <p className="text-3xl font-extrabold text-blue-400">
                       {offer2Price ? `${offer2Price.price / 100} ${offer2Price.currency}` : (isArabic ? "١,٤٩٩ ج.م" : "1,499 EGP")}
                     </p>
+                    <span className="text-sm font-normal text-slate-400">/ 71 €</span>
                   </div>
                   {cmsEditing && (
                     <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
