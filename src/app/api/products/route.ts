@@ -47,8 +47,10 @@ export async function GET() {
       const ordersCount = countMap[p.id] || 0;
       const spotsTaken = Math.min(p.promoCounterLimit, p.promoCounterBase + ordersCount);
       const promoActive = p.discountPercent > 0 && p.originalPrice > 0 && spotsTaken < p.promoCounterLimit;
+      // Round to a whole pound (100 piastres) so a percentage discount can't
+      // produce an odd advertised price like 299.40 LE.
       const price = promoActive
-        ? Math.round(p.originalPrice * (1 - p.discountPercent / 100))
+        ? Math.round((p.originalPrice * (1 - p.discountPercent / 100)) / 100) * 100
         : (p.originalPrice || p.price);
 
       return {

@@ -15,6 +15,20 @@ import {
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
 
+// Prisma returns `features` as a Json column, which arrives over the wire as
+// either a real array or a JSON-encoded string depending on how it was written.
+// Treating a string as "no features" silently wiped them on every product save.
+function parseFeatures(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.filter((f): f is string => typeof f === "string");
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter((f): f is string => typeof f === "string");
+    } catch { /* fall through */ }
+  }
+  return [];
+}
+
 type Product = {
   id: string;
   name: string;
@@ -23,7 +37,7 @@ type Product = {
   price: number;
   currency: string;
   description: string | null;
-  features: string[] | null;
+  features: string[] | string | null;
   isActive: boolean;
   originalPrice: number;
   discountPercent: number;
@@ -57,6 +71,12 @@ export default function ProductsPage() {
   });
 
   const [saving, setSaving] = useState(false);
+
+  // Mirrors the rounding in GET /api/products so the admin preview and the
+  // public price can't disagree.
+  const previewPrice = form.discountPercent > 0
+    ? Math.round(form.originalPrice * (1 - form.discountPercent / 100))
+    : form.originalPrice;
 
   const fetchProducts = () => {
     fetch("/api/admin/products")
@@ -101,7 +121,7 @@ export default function ProductsPage() {
       price: Math.round(p.price / 100),
       currency: p.currency,
       description: p.description || "",
-      features: Array.isArray(p.features) ? p.features.join("\n") : "",
+      features: parseFeatures(p.features).join("\n"),
       originalPrice: Math.round((p.originalPrice || p.price) / 100),
       discountPercent: p.discountPercent || 0,
       promoCounterBase: p.promoCounterBase || 0,
@@ -117,7 +137,7 @@ export default function ProductsPage() {
 
     const originalPricePiastres = Math.round(form.originalPrice * 100);
     const livePrice = form.discountPercent > 0
-      ? Math.round(originalPricePiastres * (1 - form.discountPercent / 100))
+      ? Math.round((originalPricePiastres * (1 - form.discountPercent / 100)) / 100) * 100
       : originalPricePiastres;
 
     const payload = {
@@ -185,7 +205,7 @@ export default function ProductsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {products.map((p) => {
-            const features = Array.isArray(p.features) ? p.features : [];
+            const features = parseFeatures(p.features);
 
             return (
               <div
@@ -392,8 +412,8 @@ export default function ProductsPage() {
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                   {isArabic
-                    ? `السعر الحالي المعروض للعملاء: ${form.discountPercent > 0 ? Math.round(form.originalPrice * (1 - form.discountPercent / 100)) : form.originalPrice} ${form.currency}. الخصم بيتوقف تلقائيًا لما العداد يوصل للحد الأقصى.`
-                    : `Live price shown to customers right now: ${form.discountPercent > 0 ? Math.round(form.originalPrice * (1 - form.discountPercent / 100)) : form.originalPrice} ${form.currency}. The discount turns off automatically once the counter reaches the limit.`}
+                    ? `السعر الحالي المعروض للعملاء: ${previewPrice} ${form.currency}. الخصم بيتوقف تلقائيًا لما العداد يوصل للحد الأقصى.`
+                    : `Live price shown to customers right now: ${previewPrice} ${form.currency}. The discount turns off automatically once the counter reaches the limit.`}
                 </p>
               </div>
 
