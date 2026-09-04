@@ -262,7 +262,10 @@ export default function PdfCanvas({ isArabic }: Props) {
         cMapPacked: true,
         standardFontDataUrl: "/pdfjs/standard_fonts/standard_fonts/",
         enableXfa: true,
-        disableFontFace: false,
+        // Render fonts directly onto canvas instead of CSS @font-face.
+        // Fixes glyph width mismatches that cause garbled letter spacing.
+        disableFontFace: true,
+        useSystemFonts: false,
       });
 
       const pdf = await loadingTask.promise;
