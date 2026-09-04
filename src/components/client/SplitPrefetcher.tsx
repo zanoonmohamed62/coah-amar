@@ -41,17 +41,30 @@ export function SplitPrefetcher() {
 
 async function prefetch() {
   try {
+    console.log("[SplitPrefetcher] Starting prefetch...");
+
     // 1. Only proceed for a customer who actually has active access.
     const entRes = await fetch("/api/customer/entitlements", { cache: "no-store" });
-    if (!entRes.ok) return;
+    if (!entRes.ok) {
+      console.log("[SplitPrefetcher] Entitlements fetch failed:", entRes.status);
+      return;
+    }
     const { entitlements } = await entRes.json();
+    console.log("[SplitPrefetcher] Entitlements received:", entitlements?.length, "items");
+
     const hasActive =
       Array.isArray(entitlements) &&
       entitlements.some(
         (e: { status?: string; isExpired?: boolean }) =>
           e?.status === "ACTIVE" && !e?.isExpired
       );
-    if (!hasActive) return;
+    if (!hasActive) {
+      console.log("[SplitPrefetcher] No active entitlement found. Statuses:", 
+        entitlements?.map((e: { status?: string; isExpired?: boolean }) => `${e?.status}(expired:${e?.isExpired})`)
+      );
+      return;
+    }
+    console.log("[SplitPrefetcher] Active entitlement found, checking cache...");
 
     // 2. Skip the download when the cached copy is already current.
     const [cached, cachedVersion, currentVersion] = await Promise.all([
@@ -61,18 +74,37 @@ async function prefetch() {
     ]);
     const isStale =
       currentVersion !== null && cachedVersion !== null && currentVersion !== cachedVersion;
-    if (cached && !isStale) return;
+    
+    console.log("[SplitPrefetcher] Cache state:", {
+      hasCached: !!cached,
+      cachedSize: cached?.byteLength ?? 0,
+      cachedVersion,
+      currentVersion,
+      isStale,
+    });
+
+    if (cached && !isStale) {
+      console.log("[SplitPrefetcher] Cache is current, skipping download.");
+      return;
+    }
 
     // 3. Fetch and store. A 403 here (entitlement revoked between the two
     //    calls, say) simply means nothing gets cached.
+    console.log("[SplitPrefetcher] Downloading PDF from /api/split...");
     const res = await fetch("/api/split", { cache: "no-store" });
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.log("[SplitPrefetcher] PDF fetch failed:", res.status);
+      return;
+    }
     const buf = await res.arrayBuffer();
-    if (buf.byteLength === 0) return;
+    if (buf.byteLength === 0) {
+      console.log("[SplitPrefetcher] PDF response was empty.");
+      return;
+    }
 
     await savePdfToCache(buf, currentVersion ?? "legacy");
-  } catch {
-    /* Offline, revoked access, quota exceeded — all non-fatal. The viewer
-       falls back to its own fetch-on-open path exactly as before. */
+    console.log("[SplitPrefetcher] ✅ PDF cached successfully!", buf.byteLength, "bytes");
+  } catch (err) {
+    console.error("[SplitPrefetcher] Error:", err);
   }
 }
