@@ -3,7 +3,7 @@
 //  Strategy: App shell cache-first, PDF network-first
 // ═══════════════════════════════════════════════════════
 
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const SHELL_CACHE = `amar-shell-${CACHE_VERSION}`;
 const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 
@@ -57,6 +57,20 @@ self.addEventListener("fetch", (event) => {
   // navigations outright.
   if (event.request.method !== "GET" || url.origin !== self.location.origin) return;
 
+  // pdfjs static assets (worker, cmaps, fonts) — cache-first.
+  // These were pre-cached during install but the old handler never served them.
+  if (url.pathname.startsWith("/pdfjs/")) {
+    event.respondWith(handleShellFetch(event.request));
+    return;
+  }
+
+  // Next.js build assets (/_next/static/) — immutable, content-hashed.
+  // Cache-first is safe; includes pdfjs-dist chunks needed for offline PDF.
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(handleStaticFetch(event.request));
+    return;
+  }
+
   // App shell pages — cache-first with network fallback. API routes under
   // /api are never cached: they are auth/entitlement gated and must always
   // hit the network (see the note on SHELL_URLS above re: /api/split).
@@ -88,6 +102,21 @@ async function handleShellFetch(request) {
   } catch {
     // If everything fails, return the cached /app shell
     return cache.match("/app") || new Response("Offline", { status: 503 });
+  }
+}
+
+// ── Static assets: Cache-first (immutable, content-hashed) ───
+async function handleStaticFetch(request) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  } catch {
+    return new Response("Offline", { status: 503 });
   }
 }
 

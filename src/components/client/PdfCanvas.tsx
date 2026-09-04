@@ -253,9 +253,9 @@ export default function PdfCanvas({ isArabic }: Props) {
 
       const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(buf.slice(0)),
-        cMapUrl: "/pdfjs/cmaps/",
+        cMapUrl: "/pdfjs/cmaps/cmaps/",
         cMapPacked: true,
-        standardFontDataUrl: "/pdfjs/standard_fonts/",
+        standardFontDataUrl: "/pdfjs/standard_fonts/standard_fonts/",
         enableXfa: true,
         disableFontFace: false,
       });
