@@ -138,27 +138,32 @@ export default function PdfCanvas({ isArabic }: Props) {
 
       const targetWidth = Math.max((containerWidth - 32) * zoom, 280);
       const computedScale = targetWidth / baseViewport.width;
-      const viewport = page.getViewport({ scale: computedScale });
-      const dpr = Math.min(window.devicePixelRatio || 2, 2.5);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-      // Set canvas dimensions
-      canvas.width  = Math.floor(viewport.width * dpr);
-      canvas.height = Math.floor(viewport.height * dpr);
+      // Bake DPR into the viewport so pdfjs handles all scaling internally.
+      // Never call ctx.setTransform(dpr) separately — that causes double-scaling
+      // which garbles glyph advances (letter spacing).
+      const viewport = page.getViewport({ scale: computedScale });
+      const dprViewport = page.getViewport({ scale: computedScale * dpr });
+
+      // Physical canvas pixels = dpr * CSS pixels
+      canvas.width  = Math.floor(dprViewport.width);
+      canvas.height = Math.floor(dprViewport.height);
       canvas.style.width  = `${Math.floor(viewport.width)}px`;
       canvas.style.height = `${Math.floor(viewport.height)}px`;
 
-      // Match overlay to canvas
+      // Match overlay to CSS size
       overlay.style.width  = `${Math.floor(viewport.width)}px`;
       overlay.style.height = `${Math.floor(viewport.height)}px`;
       overlay.innerHTML = "";
 
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // No manual ctx.setTransform — pdfjs owns the transform
 
       const task = page.render({
         canvasContext: ctx,
-        viewport,
+        viewport: dprViewport,
         intent: "display",
       });
 
@@ -166,9 +171,9 @@ export default function PdfCanvas({ isArabic }: Props) {
       await task.promise;
       renderTasks.current[pageIndex] = null;
 
-      drawWatermark(ctx, viewport.width, viewport.height, watermarkText);
+      drawWatermark(ctx, dprViewport.width, dprViewport.height, watermarkText);
 
-      // Build annotation (link) overlay
+      // Build annotation (link) overlay (use CSS-sized viewport for positions)
       const annotations = await page.getAnnotations();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       annotations.forEach((anno: any) => {
