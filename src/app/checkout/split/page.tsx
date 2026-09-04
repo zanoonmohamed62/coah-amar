@@ -18,10 +18,10 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
+import { useSiteContent } from "@/lib/use-site-content";
+import { EditableText } from "@/components/cms/EditableText";
 import { PaymentProofUpload } from "@/components/checkout/PaymentProofUpload";
 
-const SPLIT_TAKEN = 56;
-const TOTAL_SPOTS = 100;
 const SPLIT_PRICE_EUR = 11;
 
 const highlightIcons = [Dumbbell, ListChecks, Timer, TrendingUp];
@@ -31,6 +31,7 @@ export default function SplitCheckoutPage() {
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const getSetting = useSettings();
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
+  const get = useSiteContent();
 
   const [paymentMethod, setPaymentMethod] = useState<"instapay" | "paypal" | "telda">("instapay");
   const [formData, setFormData] = useState({ name: "", phone: "", email: "" });
@@ -40,15 +41,21 @@ export default function SplitCheckoutPage() {
   const [error, setError] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
   const [priceEGP, setPriceEGP] = useState<number | null>(null);
+  const [spotsTaken, setSpotsTaken] = useState(0);
+  const [totalSpots, setTotalSpots] = useState(100);
+  const [promoActive, setPromoActive] = useState(false);
 
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
-      .then((data: { products?: { id: string; slug: string; price: number }[] }) => {
+      .then((data: { products?: { id: string; slug: string; price: number; spotsTaken?: number; totalSpots?: number; promoActive?: boolean }[] }) => {
         const p = (data.products || []).find((p) => p.slug === "training-split" || p.slug === "training-plan" || p.slug === "ammar-x-split" || p.slug === "amar-x-split");
         if (p) {
           setProductId(p.id);
           setPriceEGP(p.price / 100);
+          setSpotsTaken(p.spotsTaken ?? 0);
+          setTotalSpots(p.totalSpots ?? 100);
+          setPromoActive(p.promoActive ?? false);
         }
       })
       .catch(() => {});
@@ -166,7 +173,7 @@ export default function SplitCheckoutPage() {
               className="lg:col-span-7"
             >
               <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-sm mb-4">
-                {t.trainingDetail.badge}
+                <EditableText sectionId="trainingDetail" fieldId="badge" value={get("trainingDetail", "badge", t.trainingDetail.badge)} />
               </span>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight mb-4 tracking-tight">
@@ -176,7 +183,7 @@ export default function SplitCheckoutPage() {
               </h1>
 
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-8 max-w-xl">
-                {t.trainingDetail.desc}
+                <EditableText multiline sectionId="trainingDetail" fieldId="desc" value={get("trainingDetail", "desc", t.trainingDetail.desc)} />
               </p>
 
               {/* 4 Feature Highlights Grid */}
@@ -191,8 +198,12 @@ export default function SplitCheckoutPage() {
                       <div className="w-8 h-8 rounded-sm bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
                         <IconComponent size={16} className="text-blue-400" />
                       </div>
-                      <p className="text-sm font-bold text-white mb-1">{item.title}</p>
-                      <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+                      <p className="text-sm font-bold text-white mb-1">
+                        <EditableText sectionId="trainingDetail" fieldId={`highlight${i + 1}_title`} value={get("trainingDetail", `highlight${i + 1}_title`, item.title)} />
+                      </p>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        <EditableText multiline sectionId="trainingDetail" fieldId={`highlight${i + 1}_desc`} value={get("trainingDetail", `highlight${i + 1}_desc`, item.desc)} />
+                      </p>
                     </div>
                   );
                 })}
@@ -261,40 +272,42 @@ export default function SplitCheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             {/* Left: Spots & Pricing summary */}
             <div className="lg:col-span-5 space-y-6">
-              {/* Discount Offer Banner */}
-              <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-sm p-5 shadow-inner">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-sm bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
-                    <Sparkles size={16} className="text-blue-400" />
+              {/* Discount Offer Banner — only shown while the launch promo is still active */}
+              {promoActive && (
+                <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-sm p-5 shadow-inner">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-sm bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
+                      <Sparkles size={16} className="text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">
+                        {isArabic ? `دفعة محدودة — أول ${totalSpots} مشترك` : `Limited Batch — First ${totalSpots} buyers`}
+                      </p>
+                      <p className="text-slate-300 text-xs mt-1">
+                        {isArabic
+                          ? `متبقي ${totalSpots - spotsTaken} مقعداً فقط في هذه الدفعة`
+                          : `${totalSpots - spotsTaken} spots remaining in this batch`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white font-bold text-sm">
-                      {isArabic ? "دفعة محدودة — أول 100 مشترك" : "Limited Batch — First 100 buyers"}
-                    </p>
-                    <p className="text-slate-300 text-xs mt-1">
-                      {isArabic
-                        ? `متبقي ${TOTAL_SPOTS - SPLIT_TAKEN} مقعداً فقط في هذه الدفعة`
-                        : `${TOTAL_SPOTS - SPLIT_TAKEN} spots remaining in this batch`}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Progress bar */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1.5 font-semibold">
-                    <span>{SPLIT_TAKEN}/{TOTAL_SPOTS} {isArabic ? "مشترك" : "claimed"}</span>
-                    <span className="text-blue-400">{TOTAL_SPOTS - SPLIT_TAKEN} {isArabic ? "متبقي" : "left"}</span>
-                  </div>
-                  <div className="h-2 bg-slate-900 rounded-full p-[1px] border border-slate-800 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(SPLIT_TAKEN / TOTAL_SPOTS) * 100}%` }}
-                      transition={{ duration: 1.2, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-                    />
+                  {/* Progress bar */}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1.5 font-semibold">
+                      <span>{spotsTaken}/{totalSpots} {isArabic ? "مشترك" : "claimed"}</span>
+                      <span className="text-blue-400">{totalSpots - spotsTaken} {isArabic ? "متبقي" : "left"}</span>
+                    </div>
+                    <div className="h-2 bg-slate-900 rounded-full p-[1px] border border-slate-800 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(spotsTaken / totalSpots) * 100}%` }}
+                        transition={{ duration: 1.2, ease: "easeOut" }}
+                        className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Order Summary Box */}
               <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 space-y-4">

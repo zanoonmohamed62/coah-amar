@@ -24,10 +24,10 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
+import { useSiteContent } from "@/lib/use-site-content";
+import { EditableText } from "@/components/cms/EditableText";
 import { PaymentProofUpload } from "@/components/checkout/PaymentProofUpload";
 
-const COACHING_TAKEN = 16;
-const TOTAL_SPOTS = 100;
 const COACHING_PRICE_EUR = 71;
 
 const pillarIcons = [Dumbbell, Apple, Pill, Heart];
@@ -37,6 +37,7 @@ export default function CoachingCheckoutPage() {
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const getSetting = useSettings();
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
+  const get = useSiteContent();
 
   const [paymentMethod, setPaymentMethod] = useState<"instapay" | "paypal" | "telda">("instapay");
   const [formData, setFormData] = useState({
@@ -54,14 +55,21 @@ export default function CoachingCheckoutPage() {
   const [productId, setProductId] = useState<string | null>(null);
   const [priceEGP, setPriceEGP] = useState<number | null>(null);
 
+  const [spotsTaken, setSpotsTaken] = useState(0);
+  const [totalSpots, setTotalSpots] = useState(100);
+  const [promoActive, setPromoActive] = useState(false);
+
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
-      .then((data: { products?: { id: string; slug: string; price: number }[] }) => {
+      .then((data: { products?: { id: string; slug: string; price: number; spotsTaken?: number; totalSpots?: number; promoActive?: boolean }[] }) => {
         const p = (data.products || []).find((p) => p.slug === "personal-coaching" || p.slug === "coaching-3months" || p.slug === "coaching");
         if (p) {
           setProductId(p.id);
           setPriceEGP(p.price / 100);
+          setSpotsTaken(p.spotsTaken ?? 0);
+          setTotalSpots(p.totalSpots ?? 100);
+          setPromoActive(p.promoActive ?? false);
         }
       })
       .catch(() => {});
@@ -209,14 +217,14 @@ export default function CoachingCheckoutPage() {
             className="text-center mb-12"
           >
             <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-sm mb-4">
-              {t.coachingDetail.badge}
+              <EditableText sectionId="coachingDetail" fieldId="badge" value={get("coachingDetail", "badge", t.coachingDetail.badge)} />
             </span>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight mb-4">
-              {t.coachingDetail.titleLine1}{" "}
-              <span className="text-blue-500">{t.coachingDetail.titleLine2}</span>
+              <EditableText sectionId="coachingDetail" fieldId="titleLine1" value={get("coachingDetail", "titleLine1", t.coachingDetail.titleLine1)} />{" "}
+              <span className="text-blue-500"><EditableText sectionId="coachingDetail" fieldId="titleLine2" value={get("coachingDetail", "titleLine2", t.coachingDetail.titleLine2)} /></span>
             </h1>
             <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed text-sm sm:text-base">
-              {t.coachingDetail.desc}
+              <EditableText multiline sectionId="coachingDetail" fieldId="desc" value={get("coachingDetail", "desc", t.coachingDetail.desc)} />
             </p>
           </motion.div>
 
@@ -289,23 +297,25 @@ export default function CoachingCheckoutPage() {
               className="lg:col-span-6 space-y-4"
             >
               <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-                {t.coachingDetail.visualTitle}
+                <EditableText sectionId="coachingDetail" fieldId="visualTitle" value={get("coachingDetail", "visualTitle", t.coachingDetail.visualTitle)} />
               </h3>
               <p className="text-slate-300 text-sm leading-relaxed">
-                {t.coachingDetail.visualDesc}
+                <EditableText multiline sectionId="coachingDetail" fieldId="visualDesc" value={get("coachingDetail", "visualDesc", t.coachingDetail.visualDesc)} />
               </p>
 
               <div className="space-y-3 pt-2">
                 {[
-                  { icon: BarChart3, text: t.coachingDetail.feature1 },
-                  { icon: MessageCircle, text: t.coachingDetail.feature2 },
-                  { icon: Heart, text: t.coachingDetail.feature3 },
+                  { icon: BarChart3, key: "feature1", fallback: t.coachingDetail.feature1 },
+                  { icon: MessageCircle, key: "feature2", fallback: t.coachingDetail.feature2 },
+                  { icon: Heart, key: "feature3", fallback: t.coachingDetail.feature3 },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-7 h-7 rounded-sm bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
                       <item.icon size={14} className="text-blue-400" />
                     </div>
-                    <p className="text-xs sm:text-sm text-slate-300">{item.text}</p>
+                    <p className="text-xs sm:text-sm text-slate-300">
+                      <EditableText sectionId="coachingDetail" fieldId={item.key} value={get("coachingDetail", item.key, item.fallback)} />
+                    </p>
                   </div>
                 ))}
               </div>
@@ -318,40 +328,42 @@ export default function CoachingCheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             {/* Left: Spots & Pricing summary */}
             <div className="lg:col-span-5 space-y-6">
-              {/* Discount Offer Banner */}
-              <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-sm p-5 shadow-inner">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-sm bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
-                    <Sparkles size={16} className="text-blue-400" />
+              {/* Discount Offer Banner — only shown while the launch promo is still active */}
+              {promoActive && (
+                <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-sm p-5 shadow-inner">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-sm bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
+                      <Sparkles size={16} className="text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">
+                        {isArabic ? "دفعة محدودة — الأكثر طلباً" : "Limited Batch — Most Popular"}
+                      </p>
+                      <p className="text-slate-300 text-xs mt-1">
+                        {isArabic
+                          ? `متبقي ${totalSpots - spotsTaken} مقعداً فقط في هذه الدفعة`
+                          : `${totalSpots - spotsTaken} spots remaining in this batch`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white font-bold text-sm">
-                      {isArabic ? "دفعة محدودة — الأكثر طلباً" : "Limited Batch — Most Popular"}
-                    </p>
-                    <p className="text-slate-300 text-xs mt-1">
-                      {isArabic
-                        ? `متبقي ${TOTAL_SPOTS - COACHING_TAKEN} مقعداً فقط في هذه الدفعة`
-                        : `${TOTAL_SPOTS - COACHING_TAKEN} spots remaining in this batch`}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Progress bar */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1.5 font-semibold">
-                    <span>{COACHING_TAKEN}/{TOTAL_SPOTS} {isArabic ? "مشترك" : "claimed"}</span>
-                    <span className="text-blue-400">{TOTAL_SPOTS - COACHING_TAKEN} {isArabic ? "متبقي" : "left"}</span>
-                  </div>
-                  <div className="h-2 bg-slate-900 rounded-full p-[1px] border border-slate-800 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(COACHING_TAKEN / TOTAL_SPOTS) * 100}%` }}
-                      transition={{ duration: 1.2, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-                    />
+                  {/* Progress bar */}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1.5 font-semibold">
+                      <span>{spotsTaken}/{totalSpots} {isArabic ? "مشترك" : "claimed"}</span>
+                      <span className="text-blue-400">{totalSpots - spotsTaken} {isArabic ? "متبقي" : "left"}</span>
+                    </div>
+                    <div className="h-2 bg-slate-900 rounded-full p-[1px] border border-slate-800 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(spotsTaken / totalSpots) * 100}%` }}
+                        transition={{ duration: 1.2, ease: "easeOut" }}
+                        className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Order Summary Box */}
               <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 space-y-4">

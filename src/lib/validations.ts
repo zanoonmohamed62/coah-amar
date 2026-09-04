@@ -45,6 +45,11 @@ export const createProductSchema = z.object({
   features: z.array(z.string()).optional(),
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
+  // Launch-promo mechanic — see prisma/schema.prisma's Product model comment.
+  originalPrice: z.number().int().min(0).default(0),
+  discountPercent: z.number().int().min(0).max(100).default(0),
+  promoCounterBase: z.number().int().min(0).default(0),
+  promoCounterLimit: z.number().int().min(1).default(100),
 });
 
 export const updateProductSchema = createProductSchema.partial();

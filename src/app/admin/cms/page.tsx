@@ -15,8 +15,15 @@ type PendingEdit = { sectionId: string; fieldId: string; lang: "en" | "ar"; valu
  * here via postMessage and saved through the same /api/admin/cms/batch endpoint the
  * old form-based editor used, so the data model and publish path are unchanged.
  */
+const EDITABLE_PAGES = [
+  { path: "/", label: "Home" },
+  { path: "/checkout/split", label: "Split Checkout" },
+  { path: "/checkout/coaching", label: "Coaching Checkout" },
+] as const;
+
 export default function CMSPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [page, setPage] = useState<string>(EDITABLE_PAGES[0].path);
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [editMode, setEditMode] = useState(true);
   const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop");
@@ -38,7 +45,7 @@ export default function CMSPage() {
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   }, []);
 
-  const iframeSrc = `/?cms_edit=${editMode ? "1" : "0"}&cms_lang=${lang}`;
+  const iframeSrc = `${page}?cms_edit=${editMode ? "1" : "0"}&cms_lang=${lang}`;
 
   // Listen for edits posted up from the page running inside the iframe.
   useEffect(() => {
@@ -58,7 +65,7 @@ export default function CMSPage() {
 
   useEffect(() => {
     setIframeReady(false);
-  }, [lang, editMode]);
+  }, [lang, editMode, page]);
 
   // Ask the iframe to blur whatever's currently focused (forcing its onBlur
   // commit to fire) and wait for its ack before reading pending edits — this
@@ -160,6 +167,24 @@ export default function CMSPage() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* Page selector */}
+            <select
+              value={page}
+              onChange={(e) => {
+                if (dirtyCount > 0 && !confirm("You have unsaved changes that will be lost. Switch page anyway?")) return;
+                setPending({});
+                setPage(e.target.value);
+              }}
+              style={{
+                padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.04)", color: "#f1f5f9", fontSize: 11, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              {EDITABLE_PAGES.map((p) => (
+                <option key={p.path} value={p.path} style={{ background: "#0a0c10" }}>{p.label}</option>
+              ))}
+            </select>
+
             {/* Edit / Preview toggle */}
             <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, overflow: "hidden", fontSize: 11 }}>
               <button
@@ -224,7 +249,7 @@ export default function CMSPage() {
             </button>
 
             <a
-              href="/"
+              href={page}
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, textDecoration: "none" }}

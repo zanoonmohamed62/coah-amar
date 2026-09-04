@@ -9,7 +9,7 @@ import { useSiteContent } from "@/lib/use-site-content";
 import { useCmsEditMode } from "@/components/cms/CmsEditModeProvider";
 import { EditableText } from "@/components/cms/EditableText";
 
-type ProductPrice = { slug: string; price: number; currency: string; spotsTaken?: number; totalSpots?: number };
+type ProductPrice = { slug: string; price: number; originalPrice?: number; currency: string; spotsTaken?: number; totalSpots?: number; promoActive?: boolean };
 
 // Prices are the real source of truth (Product.price in the DB, edited from
 // /admin/products) — the CMS only controls surrounding copy (badge, features,
@@ -115,6 +115,10 @@ export function TwoPathsSection() {
   const offer2Price = prices["personal-coaching"];
   const splitTaken = offer1Price?.spotsTaken ?? SPLIT_TAKEN;
   const coachingTaken = offer2Price?.spotsTaken ?? COACHING_TAKEN;
+  // Default true until the fetch resolves, so the banner doesn't flash away
+  // then back on. Once resolved, only shows while the promo is actually active.
+  const splitPromoActive = offer1Price?.promoActive ?? true;
+  const coachingPromoActive = offer2Price?.promoActive ?? true;
 
   return (
     <section id="plans" className="section-padding px-6">
@@ -157,19 +161,26 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer1_sub" value={get("pricing", "offer1_sub", t.twoPaths.offer1.sub)} /></p>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-2 justify-end mb-1">
-                    <span className="text-xs text-slate-400 line-through">
-                      {isArabic ? "19€ / 499 EGP" : "499 EGP / 19 €"}
-                    </span>
-                    <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-lg">
-                      -40%
-                    </span>
-                  </div>
+                  {splitPromoActive && offer1Price && (
+                    <div className="flex items-center gap-2 justify-end mb-1">
+                      <span className="text-xs text-slate-400 line-through">
+                        {(offer1Price.originalPrice ?? offer1Price.price) / 100} {offer1Price.currency}
+                      </span>
+                      {(() => {
+                        const orig = offer1Price.originalPrice ?? offer1Price.price;
+                        const pct = orig > 0 ? Math.round((1 - offer1Price.price / orig) * 100) : 0;
+                        return pct > 0 ? (
+                          <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-lg">
+                            -{pct}%
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
                   <div className="flex items-baseline gap-1.5 justify-end">
                     <p className="text-3xl font-extrabold text-white">
-                      {isArabic ? "٢٩٩ ج.م" : "299 EGP"}
+                      {offer1Price ? `${offer1Price.price / 100} ${offer1Price.currency}` : (isArabic ? "٢٩٩ ج.م" : "299 EGP")}
                     </p>
-                    <span className="text-sm font-normal text-slate-400">/ 11 €</span>
                   </div>
                   {cmsEditing && (
                     <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
@@ -183,7 +194,7 @@ export function TwoPathsSection() {
               </div>
 
               {/* Spot counter (56 / 100) */}
-              <SpotCounter taken={splitTaken} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer1" get={get} />
+              {splitPromoActive && <SpotCounter taken={splitTaken} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer1" get={get} />}
 
               <div className="h-px bg-slate-800/80 my-6" />
 
@@ -252,19 +263,26 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer2_sub" value={get("pricing", "offer2_sub", t.twoPaths.offer2.sub)} /></p>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-2 justify-end mb-1">
-                    <span className="text-xs text-slate-400 line-through">
-                      {isArabic ? "119€ / 2,499 EGP" : "2,499 EGP / 119 €"}
-                    </span>
-                    <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-lg">
-                      -40%
-                    </span>
-                  </div>
+                  {coachingPromoActive && offer2Price && (
+                    <div className="flex items-center gap-2 justify-end mb-1">
+                      <span className="text-xs text-slate-400 line-through">
+                        {(offer2Price.originalPrice ?? offer2Price.price) / 100} {offer2Price.currency}
+                      </span>
+                      {(() => {
+                        const orig = offer2Price.originalPrice ?? offer2Price.price;
+                        const pct = orig > 0 ? Math.round((1 - offer2Price.price / orig) * 100) : 0;
+                        return pct > 0 ? (
+                          <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-lg">
+                            -{pct}%
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
                   <div className="flex items-baseline gap-1.5 justify-end">
                     <p className="text-3xl font-extrabold text-blue-400">
-                      {isArabic ? "١,٤٩٩ ج.م" : "1,499 EGP"}
+                      {offer2Price ? `${offer2Price.price / 100} ${offer2Price.currency}` : (isArabic ? "١,٤٩٩ ج.م" : "1,499 EGP")}
                     </p>
-                    <span className="text-sm font-normal text-slate-400">/ 71 €</span>
                   </div>
                   {cmsEditing && (
                     <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
@@ -278,7 +296,7 @@ export function TwoPathsSection() {
               </div>
 
               {/* Spot counter (16 / 100) */}
-              <SpotCounter taken={coachingTaken} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer2" get={get} />
+              {coachingPromoActive && <SpotCounter taken={coachingTaken} total={TOTAL_SPOTS} isArabic={isArabic} fieldPrefix="offer2" get={get} />}
 
               <div className="h-px bg-slate-800/80 my-6" />
 

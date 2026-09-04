@@ -85,6 +85,18 @@ model Product {
   features    Json?       // string[] of feature bullets
   isActive    Boolean     @default(true)
   sortOrder   Int         @default(0)
+
+  // Launch-promo mechanic: first `promoCounterLimit` buyers (starting the count
+  // at `promoCounterBase`, before this system existed) get `discountPercent` off
+  // `originalPrice`. `price` above is always what checkout actually charges —
+  // derived from these fields by GET /api/products, never edited directly while
+  // a promo is active. Once the real order count pushes the counter to the
+  // limit, the discount turns off automatically and `originalPrice` is charged.
+  originalPrice     Int  @default(0) // pre-discount price in piastres; 0 = same as `price`, no promo
+  discountPercent   Int  @default(0) // 0 = no active discount
+  promoCounterBase  Int  @default(0) // starting count before this product had real orders
+  promoCounterLimit Int  @default(100)
+
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

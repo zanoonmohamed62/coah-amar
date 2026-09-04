@@ -16,15 +16,18 @@ import {
   ChevronLeft,
   Sparkles,
   ShieldCheck,
+  X,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
+import { useAdminSidebar } from "./AdminSidebarContext";
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const [pendingOrders, setPendingOrders] = useState(0);
   const { lang, isArabic } = useLanguage();
   const t = adminTranslations[lang].sidebar;
+  const { mobileOpen, closeMobile } = useAdminSidebar();
 
   const links = [
     { href: "/admin", label: t.overview, icon: LayoutDashboard, exact: true },
@@ -46,14 +49,25 @@ export function AdminSidebar() {
   const ArrowIcon = isArabic ? ChevronLeft : ChevronRight;
 
   return (
-    <aside
-      className={`fixed top-0 ${
-        isArabic ? "right-0 border-l" : "left-0 border-r"
-      } h-full w-64 flex flex-col bg-[var(--bg-card)] border-[var(--border)] z-40`}
-    >
+    <>
+      {/* Mobile scrim, tap to close */}
+      {mobileOpen && (
+        <div
+          onClick={closeMobile}
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed top-0 ${
+          isArabic ? "right-0 border-l" : "left-0 border-r"
+        } h-full w-64 flex flex-col bg-[var(--bg-card)] border-[var(--border)] z-50 transition-transform duration-200 md:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : isArabic ? "translate-x-full" : "-translate-x-full"
+        }`}
+      >
       {/* Brand Header */}
-      <div className="p-6 border-b border-[var(--border)]">
-        <Link href="/admin" className="flex items-center gap-2.5 group">
+      <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
+        <Link href="/admin" className="flex items-center gap-2.5 group" onClick={closeMobile}>
           <div className="w-8 h-8 rounded-sm bg-[var(--accent)] flex items-center justify-center font-black text-black text-sm tracking-wider group-hover:scale-105 transition-transform">
             AM
           </div>
@@ -66,6 +80,9 @@ export function AdminSidebar() {
             </span>
           </div>
         </Link>
+        <button onClick={closeMobile} className="md:hidden text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+          <X size={18} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -82,6 +99,7 @@ export function AdminSidebar() {
             <Link
               key={href}
               href={href}
+              onClick={closeMobile}
               className={`flex items-center justify-between px-3 py-2.5 rounded-sm text-sm font-medium transition-all ${
                 active
                   ? "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 shadow-[0_0_15px_rgba(202,240,43,0.1)] font-semibold"
@@ -126,6 +144,7 @@ export function AdminSidebar() {
           <LogOut size={14} /> {t.signOut}
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -59,7 +59,7 @@ export default function MediaPage() {
         <p className="text-xs text-[var(--text-muted)] mt-1">All media is protected by default (requires entitlement)</p>
       </div>
 
-      {loading ? <div className="grid grid-cols-4 gap-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="glass border border-[var(--border)] rounded-sm aspect-square animate-pulse" />)}</div> :
+      {loading ? <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="glass border border-[var(--border)] rounded-sm aspect-square animate-pulse" />)}</div> :
         assets.length === 0 ? <div className="text-center py-16 text-[var(--text-muted)]">No media uploaded yet.</div> :
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
           {assets.map(a => (

@@ -10,6 +10,7 @@ import {
   X,
   Copy,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
@@ -26,6 +27,7 @@ type Customer = {
     status: string;
     amount: number;
     confirmedAt: string | null;
+    customerEmail: string;
     product: { name: string };
   }[];
   entitlements: {
@@ -229,6 +231,25 @@ export default function CustomersPage() {
                     <td className="px-5 py-3.5">
                       <p className="text-[var(--text-primary)] font-medium">{cust.email}</p>
                       {cust.phone && <p className="text-[11px] text-[var(--text-muted)] font-mono">{cust.phone}</p>}
+                      {(() => {
+                        const mismatched = [...new Set(
+                          cust.orders
+                            .map((o) => o.customerEmail?.toLowerCase())
+                            .filter((e) => e && e !== cust.email.toLowerCase())
+                        )];
+                        if (mismatched.length === 0) return null;
+                        return (
+                          <p
+                            className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-amber-400"
+                            title={isArabic
+                              ? `الطلب اتعمل بإيميل مختلف: ${mismatched.join(", ")}`
+                              : `Order was placed with a different email: ${mismatched.join(", ")}`}
+                          >
+                            <AlertTriangle size={10} />
+                            {isArabic ? "إيميل الطلب مختلف" : "Order email mismatch"}
+                          </p>
+                        );
+                      })()}
                     </td>
                     <td className="px-5 py-3.5">
                       {cust.entitlements.length > 0 ? (

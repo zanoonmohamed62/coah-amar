@@ -20,16 +20,18 @@ async function main() {
   });
   console.log(`✅ Admin: ${email} / ${password}`);
 
-  // Products
+  // Products — price is the live checkout price, derived by GET /api/products
+  // from originalPrice/discountPercent/promoCounterBase/promoCounterLimit.
+  // Current launch promo: 40% off the first 100 buyers of each product.
   const trainingPlan = await db.product.upsert({
     where: { slug: "training-split" },
-    create: { name: "Amar X Split", slug: "training-split", type: "TRAINING_PLAN", price: 29900, currency: "EGP", description: "Your complete 7-day structured training split.", features: JSON.stringify(["Complete 7-day training structure", "Sets & rep ranges", "Weak-point priority system", "Rest time rules", "Progressive overload rule", "Training log & progress tracking"]), isActive: true, sortOrder: 1 },
-    update: { name: "Amar X Split", price: 29900 },
+    create: { name: "Amar X Split", slug: "training-split", type: "TRAINING_PLAN", price: 29900, originalPrice: 49900, discountPercent: 40, promoCounterBase: 56, promoCounterLimit: 100, currency: "EGP", description: "Your complete 7-day structured training split.", features: JSON.stringify(["Complete 7-day training structure", "Sets & rep ranges", "Weak-point priority system", "Rest time rules", "Progressive overload rule", "Training log & progress tracking"]), isActive: true, sortOrder: 1 },
+    update: { name: "Amar X Split", price: 29900, originalPrice: 49900, discountPercent: 40, promoCounterBase: 56, promoCounterLimit: 100 },
   });
   const coaching = await db.product.upsert({
     where: { slug: "personal-coaching" },
-    create: { name: "Personal Coaching", slug: "personal-coaching", type: "PERSONAL_COACHING", price: 149900, currency: "EGP", description: "3 months of personal coaching + training split.", features: JSON.stringify(["Everything in Amar X Split", "WhatsApp coaching access", "3-month access period", "Renewal available"]), isActive: true, sortOrder: 2 },
-    update: { price: 149900 },
+    create: { name: "Personal Coaching", slug: "personal-coaching", type: "PERSONAL_COACHING", price: 149900, originalPrice: 249900, discountPercent: 40, promoCounterBase: 16, promoCounterLimit: 100, currency: "EGP", description: "3 months of personal coaching + training split.", features: JSON.stringify(["Everything in Amar X Split", "WhatsApp coaching access", "3-month access period", "Renewal available"]), isActive: true, sortOrder: 2 },
+    update: { price: 149900, originalPrice: 249900, discountPercent: 40, promoCounterBase: 16, promoCounterLimit: 100 },
   });
   console.log("✅ Products seeded");
 

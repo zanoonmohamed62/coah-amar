@@ -25,6 +25,10 @@ type Product = {
   description: string | null;
   features: string[] | null;
   isActive: boolean;
+  originalPrice: number;
+  discountPercent: number;
+  promoCounterBase: number;
+  promoCounterLimit: number;
   _count: { orders: number; entitlements: number };
 };
 
@@ -46,6 +50,10 @@ export default function ProductsPage() {
     currency: "EGP",
     description: "",
     features: "",
+    originalPrice: 499,
+    discountPercent: 0,
+    promoCounterBase: 0,
+    promoCounterLimit: 100,
   });
 
   const [saving, setSaving] = useState(false);
@@ -76,6 +84,10 @@ export default function ProductsPage() {
       features: isArabic
         ? "جدول تدريب كامل 12 أسبوع\nشرح تكنيك التمارين والبدائل\nنظام تتبع الأوزان والزيادة التدريجية\nدخول دائم للبوابة"
         : "Complete 12-Week Split Breakdown\nExercise Execution & Technique Guidance\nProgressive Overload Tracking\nLifetime Dashboard Access",
+      originalPrice: 499,
+      discountPercent: 0,
+      promoCounterBase: 0,
+      promoCounterLimit: 100,
     });
     setShowModal(true);
   };
@@ -90,6 +102,10 @@ export default function ProductsPage() {
       currency: p.currency,
       description: p.description || "",
       features: Array.isArray(p.features) ? p.features.join("\n") : "",
+      originalPrice: Math.round((p.originalPrice || p.price) / 100),
+      discountPercent: p.discountPercent || 0,
+      promoCounterBase: p.promoCounterBase || 0,
+      promoCounterLimit: p.promoCounterLimit || 100,
     });
     setShowModal(true);
   };
@@ -99,9 +115,15 @@ export default function ProductsPage() {
     if (!form.name || !form.slug) return;
     setSaving(true);
 
+    const originalPricePiastres = Math.round(form.originalPrice * 100);
+    const livePrice = form.discountPercent > 0
+      ? Math.round(originalPricePiastres * (1 - form.discountPercent / 100))
+      : originalPricePiastres;
+
     const payload = {
       ...form,
-      price: Math.round(form.price * 100),
+      price: livePrice,
+      originalPrice: originalPricePiastres,
       features: form.features.split("\n").map((f) => f.trim()).filter(Boolean),
     };
 
@@ -220,6 +242,16 @@ export default function ProductsPage() {
                       {(p.price / 100).toLocaleString()}{" "}
                       <span className="text-sm font-bold text-[var(--text-secondary)]">{p.currency}</span>
                     </p>
+                    {p.discountPercent > 0 && p.originalPrice > p.price && (
+                      <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                        {isArabic ? "بدلاً من" : "was"}{" "}
+                        <span className="line-through">{(p.originalPrice / 100).toLocaleString()} {p.currency}</span>
+                        {" · "}
+                        {isArabic
+                          ? `العداد: ${p.promoCounterBase}/${p.promoCounterLimit}`
+                          : `counter: ${p.promoCounterBase}/${p.promoCounterLimit}`}
+                      </p>
+                    )}
                   </div>
 
                   {features.length > 0 && (
@@ -307,16 +339,62 @@ export default function ProductsPage() {
 
                 <div>
                   <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">
-                    {t.priceLabel}
+                    {isArabic ? "السعر الأصلي (قبل الخصم)" : "Original Price (before discount)"}
                   </label>
                   <input
                     required
                     type="number"
-                    value={form.price}
-                    onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
+                    value={form.originalPrice}
+                    onChange={(e) => setForm((f) => ({ ...f, originalPrice: Number(e.target.value), price: Number(e.target.value) }))}
                     className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] font-bold"
                   />
                 </div>
+              </div>
+
+              <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm space-y-3">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block">
+                  {isArabic ? "عرض الإطلاق (خصم أول مشتركين)" : "Launch Promo (early-buyer discount)"}
+                </span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">
+                      {isArabic ? "نسبة الخصم %" : "Discount %"}
+                    </label>
+                    <input
+                      type="number" min={0} max={100}
+                      value={form.discountPercent}
+                      onChange={(e) => setForm((f) => ({ ...f, discountPercent: Number(e.target.value) }))}
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">
+                      {isArabic ? "بداية العداد" : "Counter Starts At"}
+                    </label>
+                    <input
+                      type="number" min={0}
+                      value={form.promoCounterBase}
+                      onChange={(e) => setForm((f) => ({ ...f, promoCounterBase: Number(e.target.value) }))}
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">
+                      {isArabic ? "الحد الأقصى" : "Ends At"}
+                    </label>
+                    <input
+                      type="number" min={1}
+                      value={form.promoCounterLimit}
+                      onChange={(e) => setForm((f) => ({ ...f, promoCounterLimit: Number(e.target.value) }))}
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                  {isArabic
+                    ? `السعر الحالي المعروض للعملاء: ${form.discountPercent > 0 ? Math.round(form.originalPrice * (1 - form.discountPercent / 100)) : form.originalPrice} ${form.currency}. الخصم بيتوقف تلقائيًا لما العداد يوصل للحد الأقصى.`
+                    : `Live price shown to customers right now: ${form.discountPercent > 0 ? Math.round(form.originalPrice * (1 - form.discountPercent / 100)) : form.originalPrice} ${form.currency}. The discount turns off automatically once the counter reaches the limit.`}
+                </p>
               </div>
 
               <div>

@@ -11,6 +11,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q") || "";
 
+  // Search matches both the User row itself and any Order placed under a
+  // different email (e.g. checkout email vs. the Google account the customer
+  // later logs in with) — a real, seen mismatch that otherwise makes a paid
+  // customer's account invisible to a search on the email they actually used
+  // at checkout. Matching via `orders.some` surfaces the linked User even when
+  // the match came through an order, not the User row's own email.
   const customers = await db.user.findMany({
     where: {
       role: "CUSTOMER",
@@ -20,6 +26,12 @@ export async function GET(req: NextRequest) {
               { name: { contains: q, mode: "insensitive" } },
               { email: { contains: q, mode: "insensitive" } },
               { phone: { contains: q, mode: "insensitive" } },
+              { orders: { some: { OR: [
+                { customerEmail: { contains: q, mode: "insensitive" } },
+                { customerName: { contains: q, mode: "insensitive" } },
+                { customerPhone: { contains: q, mode: "insensitive" } },
+                { orderRef: { contains: q, mode: "insensitive" } },
+              ] } } },
             ],
           }
         : {}),
@@ -27,13 +39,13 @@ export async function GET(req: NextRequest) {
     include: {
       orders: {
         orderBy: { createdAt: "desc" },
-        take: 1,
         select: {
           id: true,
           orderRef: true,
           status: true,
           amount: true,
           confirmedAt: true,
+          customerEmail: true,
           product: { select: { name: true } },
         },
       },

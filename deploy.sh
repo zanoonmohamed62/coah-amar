@@ -17,8 +17,8 @@ npm ci --omit=dev
 echo "==> Generating Prisma client..."
 npx prisma generate
 
-echo "==> Running database migrations..."
-npx prisma migrate deploy
+echo "==> Syncing database schema..."
+npx prisma db push
 
 echo "==> Building Next.js..."
 npm run build

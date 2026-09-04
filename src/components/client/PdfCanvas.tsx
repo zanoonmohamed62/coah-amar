@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2, WifiOff, CheckCircle2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Loader2, WifiOff, CheckCircle2, ZoomIn, ZoomOut, RotateCcw, Lock, MessageCircle } from "lucide-react";
+import { useSettings } from "@/lib/use-settings";
 
 const IDB_DB      = "amar-split-cache";
 const IDB_STORE   = "pdf-blobs";
@@ -107,6 +108,8 @@ export default function PdfCanvas({ isArabic }: Props) {
   const session = useSession()?.data;
   const user = session?.user as { name?: string; email?: string } | undefined;
   const watermarkText = user?.email || user?.name || "";
+  const getSetting = useSettings();
+  const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
   const viewerRef   = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfRef      = useRef<any>(null);
@@ -116,7 +119,7 @@ export default function PdfCanvas({ isArabic }: Props) {
   const renderTasks = useRef<{ [key: number]: any }>({});
   const resizeTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "error" | "no-access">("loading");
   const [errMsg, setErrMsg] = useState("");
   const [numPages, setNumPages] = useState(0);
   const [isOfflineCached, setIsOfflineCached] = useState(false);
@@ -300,6 +303,10 @@ export default function PdfCanvas({ isArabic }: Props) {
         setIsOfflineCached(true);
       } else {
         const res = await fetch("/api/split", { cache: "no-store" });
+        if (res.status === 403) {
+          setStatus("no-access");
+          return;
+        }
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         buf = await res.arrayBuffer();
         await saveToCache(buf, currentVersion ?? "legacy");
@@ -428,12 +435,39 @@ export default function PdfCanvas({ isArabic }: Props) {
             </div>
           )}
 
+          {status === "no-access" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6 text-center">
+              <Lock size={36} className="text-amber-400" />
+              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                {isArabic ? "لسه معندكش وصول لهذا الجدول" : "You don't have access to this split yet"}
+              </p>
+              <p className="text-xs text-[var(--text-muted)] max-w-xs leading-relaxed">
+                {isArabic
+                  ? "لو دفعت بالفعل، الطلب لسه بيتراجع. تواصل معانا على الواتساب لو محتاج مساعدة."
+                  : "If you've already paid, your order may still be under review. Contact us on WhatsApp if you need help."}
+              </p>
+              {waNumber && (
+                <a
+                  href={`https://wa.me/${waNumber}?text=${encodeURIComponent(isArabic ? "مرحباً، مش قادر أشوف الجدول بتاعي" : "Hi, I can't see my split")}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm flex items-center gap-1.5"
+                >
+                  <MessageCircle size={13} />
+                  {isArabic ? "تواصل عبر واتساب" : "Contact on WhatsApp"}
+                </a>
+              )}
+            </div>
+          )}
+
           {status === "error" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6 text-center">
               <WifiOff size={36} className="text-red-400" />
               <p className="text-sm font-semibold text-[var(--text-primary)]">
                 {isArabic ? "تعذر تحميل الجدول" : "Failed to load"}
               </p>
+              {errMsg && (
+                <p className="text-[11px] text-[var(--text-muted)] font-mono max-w-xs break-words">{errMsg}</p>
+              )}
               <button onClick={loadDocument} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm">
                 {isArabic ? "إعادة المحاولة" : "Retry"}
               </button>

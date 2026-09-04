@@ -13,11 +13,15 @@ export async function GET() {
         price: true,
         currency: true,
         features: true,
+        originalPrice: true,
+        discountPercent: true,
+        promoCounterBase: true,
+        promoCounterLimit: true,
       },
       orderBy: { sortOrder: 'asc' },
     });
 
-    // Count non-failed orders per product to increment dynamic counter
+    // Count non-failed orders per product to increment the live promo counter
     const orderCounts = await db.order.groupBy({
       by: ['productId'],
       where: {
@@ -33,41 +37,34 @@ export async function GET() {
       countMap[item.productId] = item._count.id;
     }
 
-    const targetPrices: Record<string, number> = {
-      'training-split': 29900,
-      'personal-coaching': 149900,
-    };
-
-    for (const p of products) {
-      const expectedPrice = targetPrices[p.slug];
-      if (expectedPrice && p.price !== expectedPrice) {
-        p.price = expectedPrice;
-        db.product.update({
-          where: { id: p.id },
-          data: { price: expectedPrice },
-        }).catch(() => {});
-      }
-    }
-
-    const baseSpots: Record<string, { base: number; originalPrice: number }> = {
-      'training-split': { base: 56, originalPrice: 49900 },
-      'personal-coaching': { base: 16, originalPrice: 249900 },
-    };
-
+    // The promo is admin-controlled (Product.originalPrice/discountPercent/
+    // promoCounterBase/promoCounterLimit, edited in /admin/products) — this
+    // route only derives the live price/counter from those fields, it never
+    // writes anything back. Once the real order count pushes spotsTaken to
+    // the limit, the discount turns off automatically and the customer is
+    // charged originalPrice.
     const enhancedProducts = products.map((p) => {
-      const config = baseSpots[p.slug] || { base: 0, originalPrice: p.price };
       const ordersCount = countMap[p.id] || 0;
-      const spotsTaken = Math.min(100, config.base + ordersCount);
+      const spotsTaken = Math.min(p.promoCounterLimit, p.promoCounterBase + ordersCount);
+      const promoActive = p.discountPercent > 0 && p.originalPrice > 0 && spotsTaken < p.promoCounterLimit;
+      const price = promoActive
+        ? Math.round(p.originalPrice * (1 - p.discountPercent / 100))
+        : (p.originalPrice || p.price);
+
       return {
         ...p,
-        originalPrice: config.originalPrice,
+        price,
+        originalPrice: p.originalPrice || p.price,
+        promoActive,
         spotsTaken,
-        totalSpots: 100,
+        totalSpots: p.promoCounterLimit,
       };
     });
 
     return NextResponse.json({ products: enhancedProducts });
   } catch {
+    // Last-resort static snapshot, only used if the DB query itself throws
+    // (e.g. DB unreachable) — not the live source of truth.
     const fallbackProducts = [
       {
         id: "prod-split",
@@ -76,6 +73,7 @@ export async function GET() {
         type: "TRAINING_PLAN",
         price: 29900,
         originalPrice: 49900,
+        promoActive: true,
         currency: "EGP",
         spotsTaken: 56,
         totalSpots: 100,
@@ -87,6 +85,7 @@ export async function GET() {
         type: "PERSONAL_COACHING",
         price: 149900,
         originalPrice: 249900,
+        promoActive: true,
         currency: "EGP",
         spotsTaken: 16,
         totalSpots: 100,
