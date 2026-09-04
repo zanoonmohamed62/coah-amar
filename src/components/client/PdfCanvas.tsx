@@ -4,73 +4,15 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Loader2, WifiOff, CheckCircle2, ZoomIn, ZoomOut, RotateCcw, Lock, MessageCircle } from "lucide-react";
 import { useSettings } from "@/lib/use-settings";
+import {
+  getCachedPdf,
+  getCachedVersion,
+  fetchCurrentVersion,
+  savePdfToCache,
+} from "@/lib/split-cache";
 
-const IDB_DB      = "amar-split-cache";
-const IDB_STORE   = "pdf-blobs";
-const IDB_KEY     = "amarx-split-v2"; // bumped key to force re-fetch after upgrade
-const IDB_VER_KEY = "amarx-split-version";
-
-function openIDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_DB, 2);
-    req.onupgradeneeded = () => {
-      if (!req.result.objectStoreNames.contains(IDB_STORE)) {
-        req.result.createObjectStore(IDB_STORE);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror   = () => reject(req.error);
-  });
-}
-
-async function getCached(): Promise<ArrayBuffer | null> {
-  try {
-    const db = await openIDB();
-    return new Promise((res, rej) => {
-      const tx = db.transaction(IDB_STORE, "readonly");
-      const r  = tx.objectStore(IDB_STORE).get(IDB_KEY);
-      r.onsuccess = () => {
-        const v = r.result;
-        res(v instanceof ArrayBuffer && v.byteLength > 0 ? v : null);
-      };
-      r.onerror = () => rej(r.error);
-    });
-  } catch { return null; }
-}
-
-async function saveToCache(buf: ArrayBuffer, version: string): Promise<void> {
-  try {
-    const db = await openIDB();
-    await new Promise<void>((res, rej) => {
-      const tx = db.transaction(IDB_STORE, "readwrite");
-      tx.objectStore(IDB_STORE).put(buf.slice(0), IDB_KEY);
-      tx.objectStore(IDB_STORE).put(version, IDB_VER_KEY);
-      tx.oncomplete = () => res();
-      tx.onerror    = () => rej(tx.error);
-    });
-  } catch { /* silent */ }
-}
-
-async function getCachedVersion(): Promise<string | null> {
-  try {
-    const db = await openIDB();
-    return new Promise((res, rej) => {
-      const tx = db.transaction(IDB_STORE, "readonly");
-      const r  = tx.objectStore(IDB_STORE).get(IDB_VER_KEY);
-      r.onsuccess = () => res(typeof r.result === "string" ? r.result : null);
-      r.onerror   = () => rej(r.error);
-    });
-  } catch { return null; }
-}
-
-async function fetchCurrentVersion(): Promise<string | null> {
-  try {
-    const res = await fetch("/api/split/version", { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.version ?? null;
-  } catch { return null; }
-}
+// IndexedDB access lives in @/lib/split-cache so the background prefetcher
+// (SplitPrefetcher) and this viewer share one set of keys and can't drift.
 
 // Deters leaks by making any copy traceable to the customer who viewed it.
 // Drawn fresh onto every rendered page from the live session — never baked
@@ -288,7 +230,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 
       const [cachedBuf, cachedVersion, currentVersion] = await Promise.all([
-        getCached(),
+        getCachedPdf(),
         getCachedVersion(),
         fetchCurrentVersion(),
       ]);
@@ -309,7 +251,7 @@ export default function PdfCanvas({ isArabic }: Props) {
         }
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         buf = await res.arrayBuffer();
-        await saveToCache(buf, currentVersion ?? "legacy");
+        await savePdfToCache(buf, currentVersion ?? "legacy");
         setIsOfflineCached(true);
       }
 

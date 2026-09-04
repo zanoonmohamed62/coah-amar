@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { AppSidebar } from "@/components/client/AppSidebar";
 import { useLanguage } from "@/lib/language-context";
 import { PWAProvider } from "@/components/PWAProvider";
+import { SplitPrefetcher } from "@/components/client/SplitPrefetcher";
 import { Menu, X } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -48,6 +49,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <PWAProvider />
+      <SplitPrefetcher />
 
       <style>{`
         .app-shell * {
