@@ -88,9 +88,7 @@ export function CoachingDetailSection() {
                 transition={{ duration: 0.6, delay: i * 0.1 }}
                 className="glass-accent border border-[var(--border-accent)] rounded-[var(--radius-xl)] p-6 card-hover"
               >
-                <div className="w-10 h-10 rounded-[var(--radius-md)] bg-[var(--accent-glow)] flex items-center justify-center mb-4">
-                  <IconComp size={18} className="text-[var(--accent)]" />
-                </div>
+                <IconComp size={22} className="text-[var(--accent)] mb-4" />
                 <h3
                   className="text-lg font-bold text-[var(--text-primary)] mb-4"
                 >
@@ -159,9 +157,7 @@ export function CoachingDetailSection() {
                 { icon: Heart, text: get("coachingDetail", "feature3", t.coachingDetail.feature3) },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--accent-glow)] flex items-center justify-center flex-shrink-0">
-                    <item.icon size={16} className="text-[var(--accent)]" />
-                  </div>
+                  <item.icon size={16} className="text-[var(--accent)] flex-shrink-0" />
                   <p className="text-sm text-[var(--text-secondary)]">{item.text}</p>
                 </div>
               ))}

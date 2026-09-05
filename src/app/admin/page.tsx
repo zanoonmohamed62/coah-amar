@@ -102,9 +102,7 @@ export default function AdminOverview() {
       {stats && stats.pendingOrders > 0 && (
         <div className="p-4 rounded-[var(--radius-xl)] bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-[var(--radius-md)] bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-              <Clock size={18} />
-            </div>
+            <Clock size={20} className="text-amber-400 shrink-0" />
             <div>
               <p className="text-sm font-bold text-amber-300">
                 {t.pendingBannerTitle(stats.pendingOrders)}
@@ -131,16 +129,14 @@ export default function AdminOverview() {
           ))
         ) : (
           <>
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden group hover:border-[var(--accent)]/40 transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden hover:border-[var(--accent)]/40 transition-colors">
+              <div className="flex items-center gap-1.5 mb-3 text-[var(--text-muted)]">
+                <TrendingUp size={13} className="text-[var(--accent)]" />
+                <span className="text-xs font-bold uppercase tracking-wider">
                   {t.monthlyRevenue}
                 </span>
-                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
-                  <TrendingUp size={16} />
-                </div>
               </div>
-              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight tabular-nums">
                 {stats?.monthlyRevenue.toLocaleString()}{" "}
                 <span className="text-sm font-bold text-[var(--accent)]">{t.egp}</span>
               </p>
@@ -149,16 +145,14 @@ export default function AdminOverview() {
               </p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden hover:border-emerald-500/40 transition-colors">
+              <div className="flex items-center gap-1.5 mb-3 text-[var(--text-muted)]">
+                <Dumbbell size={13} className="text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider">
                   {t.activeAthletes}
                 </span>
-                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                  <Dumbbell size={16} />
-                </div>
               </div>
-              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight tabular-nums">
                 {stats?.activeEntitlements}
               </p>
               <p className="text-xs text-[var(--text-muted)] mt-2">
@@ -166,31 +160,27 @@ export default function AdminOverview() {
               </p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden group hover:border-blue-500/40 transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden hover:border-[var(--border-accent)] transition-colors">
+              <div className="flex items-center gap-1.5 mb-3 text-[var(--text-muted)]">
+                <Users size={13} />
+                <span className="text-xs font-bold uppercase tracking-wider">
                   {t.totalClients}
                 </span>
-                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                  <Users size={16} />
-                </div>
               </div>
-              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight tabular-nums">
                 {stats?.totalCustomers}
               </p>
               <p className="text-xs text-[var(--text-muted)] mt-2">{t.totalClientsDesc}</p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden group hover:border-purple-500/40 transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden hover:border-purple-500/40 transition-colors">
+              <div className="flex items-center gap-1.5 mb-3 text-[var(--text-muted)]">
+                <ShoppingBag size={13} className="text-purple-400" />
+                <span className="text-xs font-bold uppercase tracking-wider">
                   {t.allTimeSales}
                 </span>
-                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                  <ShoppingBag size={16} />
-                </div>
               </div>
-              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight tabular-nums">
                 {stats?.totalRevenue.toLocaleString()}{" "}
                 <span className="text-sm font-bold text-purple-400">{t.egp}</span>
               </p>
@@ -217,38 +207,42 @@ export default function AdminOverview() {
             <div className="grid grid-cols-2 gap-3">
               <Link
                 href="/admin/orders"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
+                className="p-3 border-b-2 border-transparent hover:border-[var(--accent)] bg-[var(--bg-elevated)] rounded-[var(--radius-md)] transition-colors text-start"
               >
-                <ShoppingBag size={16} className="text-[var(--accent)] mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">{t.manageOrders}</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.manageOrdersDesc}</p>
+                <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <ShoppingBag size={13} className="text-[var(--text-muted)]" /> {t.manageOrders}
+                </p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">{t.manageOrdersDesc}</p>
               </Link>
 
               <Link
                 href="/admin/customers"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
+                className="p-3 border-b-2 border-transparent hover:border-[var(--accent)] bg-[var(--bg-elevated)] rounded-[var(--radius-md)] transition-colors text-start"
               >
-                <Users size={16} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">{t.athletesList}</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.athletesListDesc}</p>
+                <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <Users size={13} className="text-[var(--text-muted)]" /> {t.athletesList}
+                </p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">{t.athletesListDesc}</p>
               </Link>
 
               <Link
                 href="/admin/cms"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
+                className="p-3 border-b-2 border-transparent hover:border-[var(--accent)] bg-[var(--bg-elevated)] rounded-[var(--radius-md)] transition-colors text-start"
               >
-                <FileText size={16} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">{t.websiteCms}</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.websiteCmsDesc}</p>
+                <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <FileText size={13} className="text-[var(--text-muted)]" /> {t.websiteCms}
+                </p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">{t.websiteCmsDesc}</p>
               </Link>
 
               <Link
                 href="/admin/settings"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
+                className="p-3 border-b-2 border-transparent hover:border-[var(--accent)] bg-[var(--bg-elevated)] rounded-[var(--radius-md)] transition-colors text-start"
               >
-                <CreditCard size={16} className="text-amber-400 mb-2 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">{t.paymentConfig}</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.paymentConfigDesc}</p>
+                <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <CreditCard size={13} className="text-[var(--text-muted)]" /> {t.paymentConfig}
+                </p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">{t.paymentConfigDesc}</p>
               </Link>
             </div>
           </div>

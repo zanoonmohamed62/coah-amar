@@ -48,10 +48,8 @@ export function TrustStrip() {
           {pillars.map((p, i) => {
             const Icon = p.icon;
             return (
-              <div key={i} className="p-3.5 rounded-[var(--radius-md)] bg-white/[0.02] border border-white/[0.05] hover:border-blue-500/30 hover:bg-white/[0.04] transition-all flex items-center gap-3.5 group">
-                <div className="w-10 h-10 rounded-[var(--radius-md)] bg-blue-500/10 border border-blue-500/25 flex items-center justify-center shrink-0 shadow-[0_0_14px_rgba(37,99,235,0.15)] group-hover:scale-105 transition-transform">
-                  <Icon size={18} className="text-blue-400" />
-                </div>
+              <div key={i} className="p-3.5 rounded-[var(--radius-md)] bg-white/[0.02] border border-white/[0.05] hover:border-blue-500/30 hover:bg-white/[0.04] transition-all flex items-start gap-2.5 group">
+                <Icon size={16} className="text-blue-400 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-bold text-white leading-tight">
                     <EditableText sectionId="trustStrip" fieldId={p.titleField} value={p.title} />

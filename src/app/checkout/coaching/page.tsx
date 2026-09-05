@@ -249,9 +249,7 @@ export default function CoachingCheckoutPage() {
                   transition={{ duration: 0.5, delay: i * 0.1 }}
                   className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-lg)] p-6 hover:border-blue-500/40 transition-colors shadow-lg"
                 >
-                  <div className="w-10 h-10 rounded-[var(--radius-sm)] bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
-                    <IconComp size={18} className="text-blue-400" />
-                  </div>
+                  <IconComp size={22} className="text-blue-400 mb-4" />
                   <h3 className="text-lg font-bold text-white mb-4">
                     {pillar.title}
                   </h3>
@@ -318,9 +316,7 @@ export default function CoachingCheckoutPage() {
                   { icon: Heart, key: "feature3", fallback: t.coachingDetail.feature3 },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-[var(--radius-sm)] bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <item.icon size={14} className="text-blue-400" />
-                    </div>
+                    <item.icon size={16} className="text-blue-400 flex-shrink-0" />
                     <p className="text-xs sm:text-sm text-slate-300">
                       <EditableText sectionId="coachingDetail" fieldId={item.key} value={get("coachingDetail", item.key, item.fallback)} />
                     </p>

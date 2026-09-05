@@ -207,9 +207,7 @@ export default function SplitCheckoutPage() {
                       key={i}
                       className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-lg)] p-4 hover:border-blue-500/30 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
-                        <IconComponent size={16} className="text-blue-400" />
-                      </div>
+                      <IconComponent size={20} className="text-blue-400 mb-3" />
                       <p className="text-sm font-bold text-white mb-1">
                         <EditableText sectionId="trainingDetail" fieldId={`highlight${i + 1}_title`} value={get("trainingDetail", `highlight${i + 1}_title`, item.title)} />
                       </p>
