@@ -247,7 +247,7 @@ export function TwoPathsSection() {
             className="rounded-[var(--radius-xl)] p-8 flex flex-col justify-between relative overflow-hidden bg-[#0f1626]/90 backdrop-blur-xl border-2 border-blue-500/50 shadow-[0_0_50px_rgba(37,99,235,0.25)] transition-all duration-300 hover:border-blue-400/70"
           >
             {/* Top badge */}
-            <div className={`absolute -top-3 ${isArabic ? "left-6" : "right-6"} bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-[0.65rem] font-extrabold tracking-wider uppercase px-3 py-1 rounded-[var(--radius-pill)] shadow-lg border border-blue-400/30 flex items-center gap-1`}>
+            <div className={`absolute top-4 ${isArabic ? "left-6" : "right-6"} bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-[0.65rem] font-extrabold tracking-wider uppercase px-3 py-1 rounded-[var(--radius-pill)] shadow-lg border border-blue-400/30 flex items-center gap-1`}>
               <Sparkles size={12} />
               <EditableText as="span" sectionId="pricing" fieldId="offer2_mostPopular" value={get("pricing", "offer2_mostPopular", isArabic ? "الأكثر طلباً" : "MOST POPULAR")} />
             </div>

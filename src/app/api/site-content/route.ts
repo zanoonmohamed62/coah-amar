@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       { content, lang },
-      { headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } }
+      { headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } }
     );
   } catch {
     return NextResponse.json({ content: {}, lang: "en" });

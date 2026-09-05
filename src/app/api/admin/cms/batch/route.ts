@@ -28,8 +28,26 @@ export async function PUT(req: NextRequest) {
 
   const userId = session!.user!.id!;
 
+  const expandedUpdates: { sectionId: string; fieldId: string; lang: "en" | "ar"; value: string }[] = [];
+
+  for (const item of updates) {
+    const isImage =
+      item.value.startsWith("/uploads/") ||
+      item.value.startsWith("http") ||
+      /\.(jpg|jpeg|png|webp|svg|gif|avif)$/i.test(item.value) ||
+      item.fieldId.toLowerCase().includes("image") ||
+      item.fieldId.toLowerCase().includes("img");
+
+    if (isImage) {
+      expandedUpdates.push({ ...item, lang: "en" });
+      expandedUpdates.push({ ...item, lang: "ar" });
+    } else {
+      expandedUpdates.push(item);
+    }
+  }
+
   await Promise.all(
-    updates.map(({ sectionId, fieldId, lang, value }) =>
+    expandedUpdates.map(({ sectionId, fieldId, lang, value }) =>
       db.siteContent.upsert({
         where: { sectionId_fieldId_lang: { sectionId, fieldId, lang } },
         create: {
@@ -52,8 +70,11 @@ export async function PUT(req: NextRequest) {
     )
   );
 
-  const langs = new Set(updates.map((u) => u.lang));
-  await Promise.all([...langs].map((lang) => redis.del(`site-content:${lang}`).catch(() => {})));
+  // Invalidate Redis cache for both languages so changes are immediately visible
+  await Promise.all([
+    redis.del("site-content:en").catch(() => {}),
+    redis.del("site-content:ar").catch(() => {}),
+  ]);
 
   return NextResponse.json({ ok: true, count: updates.length });
 }

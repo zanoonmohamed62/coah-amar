@@ -23,7 +23,7 @@ function UploadProofInner() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-[#07090e]">
-      <div className="max-w-md w-full space-y-6 bg-[#0b0f19] border border-slate-800 p-8 rounded-sm shadow-2xl">
+      <div className="max-w-md w-full space-y-6 bg-[#0b0f19] border border-slate-800 p-8 rounded-[var(--radius-xl)] shadow-2xl">
         <div className="text-center">
           <h1 className="text-2xl font-extrabold text-white mb-2">
             {isArabic ? "ارفع صورة التحويل" : "Upload Your Payment Proof"}

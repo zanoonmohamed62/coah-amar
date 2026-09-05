@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
 
-    // Validate size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
+    // Validate size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large (max 50MB)" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();

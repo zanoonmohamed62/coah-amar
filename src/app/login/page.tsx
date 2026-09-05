@@ -64,7 +64,7 @@ function LoginForm() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError("");
-    await signIn("google", { callbackUrl: callbackUrl || "/app" });
+    await signIn("google", { callbackUrl: callbackUrl || "/" });
   };
 
   return (

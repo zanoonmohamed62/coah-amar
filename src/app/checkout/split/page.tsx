@@ -42,6 +42,8 @@ export default function SplitCheckoutPage() {
   const [error, setError] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
   const [priceEGP, setPriceEGP] = useState<number | null>(null);
+  const [productLoading, setProductLoading] = useState(true);
+  const [productError, setProductError] = useState(false);
   const [spotsTaken, setSpotsTaken] = useState(0);
   const [totalSpots, setTotalSpots] = useState(100);
   const [promoActive, setPromoActive] = useState(false);
@@ -59,12 +61,13 @@ export default function SplitCheckoutPage() {
           setPromoActive(p.promoActive ?? false);
         }
       })
-      .catch(() => {});
+      .catch(() => { setProductError(true); })
+      .finally(() => { setProductLoading(false); });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId) { setError(isArabic ? "لم يتم العثور على المنتج. حاول مرة أخرى." : "Product not found. Please try again."); return; }
+    if (!productId) { setError(isArabic ? "لم يتم تحميل المنتج. حاول تحديث الصفحة." : "Product not loaded. Please refresh the page."); return; }
     setIsSubmitting(true);
     setError("");
 
@@ -362,6 +365,12 @@ export default function SplitCheckoutPage() {
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {productError && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-md)] px-4 py-3 text-sm text-amber-400">
+                      {isArabic ? "تعذّر تحميل بيانات المنتج. حاول تحديث الصفحة." : "Could not load product data. Please refresh the page."}
+                    </div>
+                  )}
+
                   {error && (
                     <div className="bg-red-500/10 border border-red-500/30 rounded-[var(--radius-md)] px-4 py-3 text-sm text-red-400">
                       {error}
@@ -472,7 +481,7 @@ export default function SplitCheckoutPage() {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || productLoading || productError}
                     className="btn-primary w-full py-4 flex items-center justify-center gap-2 group disabled:opacity-70 text-base font-bold shadow-lg shadow-blue-600/20"
                   >
                     <span>
@@ -493,8 +502,8 @@ export default function SplitCheckoutPage() {
 
                   <p className="text-center text-xs text-slate-500">
                     {isArabic
-                      ? "بعد الضغط سيتم تحويلك للواتساب لإرسال صورة التحويل واستلام ملفاتك فوراً."
-                      : "After payment, you will confirm via WhatsApp to activate instant access."}
+                      ? "بعد الضغط هتظهرلك شاشة رفع صورة التحويل لتأكيد الدفع وتفعيل حسابك."
+                      : "After submitting, you'll see an upload screen to send your payment screenshot and activate your account."}
                   </p>
                 </form>
               </div>

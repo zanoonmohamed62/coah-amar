@@ -38,19 +38,81 @@ export function EditableImage({ sectionId, fieldId, value, alt, className, style
     return <img src={src} alt={alt} className={className} style={style} />;
   }
 
+async function compressImageIfNeeded(file: File): Promise<File> {
+  if (!file.type.match(/^image\/(jpeg|png|webp)$/i)) {
+    return file;
+  }
+  if (file.size < 1.5 * 1024 * 1024) {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX_DIM = 2400;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIM) / width);
+          width = MAX_DIM;
+        } else {
+          width = Math.round((width * MAX_DIM) / height);
+          height = MAX_DIM;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
+            type: "image/webp",
+            lastModified: Date.now(),
+          });
+          resolve(compressedFile);
+        },
+        "image/webp",
+        0.88
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
+
   async function handleFile(file: File) {
     setUploading(true);
     setError("");
     try {
+      const processedFile = await compressImageIfNeeded(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", processedFile);
       const res = await fetch("/api/admin/cms/upload", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.url) {
         setSrc(data.url);
         commitEdit(sectionId, fieldId, data.url);
       } else {
-        setError(data.error || "Upload failed — try a smaller image (max 5MB)");
+        setError(data.error || "Upload failed — please try again");
       }
     } catch {
       setError("Upload failed — check your connection and try again");

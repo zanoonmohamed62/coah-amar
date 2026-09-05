@@ -72,7 +72,7 @@ function ReturnContent() {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full text-center space-y-6 bg-[#0b0f19] border border-slate-800 p-8 rounded-sm shadow-2xl"
+        className="max-w-md w-full text-center space-y-6 bg-[#0b0f19] border border-slate-800 p-8 rounded-[var(--radius-xl)] shadow-2xl"
       >
         {(phase === "capturing" || phase === "confirming") && (
           <>

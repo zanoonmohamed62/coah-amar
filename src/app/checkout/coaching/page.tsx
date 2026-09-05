@@ -55,6 +55,8 @@ export default function CoachingCheckoutPage() {
   const [error, setError] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
   const [priceEGP, setPriceEGP] = useState<number | null>(null);
+  const [productLoading, setProductLoading] = useState(true);
+  const [productError, setProductError] = useState(false);
 
   const [spotsTaken, setSpotsTaken] = useState(0);
   const [totalSpots, setTotalSpots] = useState(100);
@@ -73,7 +75,8 @@ export default function CoachingCheckoutPage() {
           setPromoActive(p.promoActive ?? false);
         }
       })
-      .catch(() => {});
+      .catch(() => { setProductError(true); })
+      .finally(() => { setProductLoading(false); });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -415,6 +418,12 @@ export default function CoachingCheckoutPage() {
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {productError && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-md)] px-4 py-3 text-sm text-amber-400">
+                      {isArabic ? "تعذّر تحميل بيانات الباقة. حاول تحديث الصفحة." : "Could not load package data. Please refresh the page."}
+                    </div>
+                  )}
+
                   {error && (
                     <div className="bg-red-500/10 border border-red-500/30 rounded-[var(--radius-md)] px-4 py-3 text-sm text-red-400">
                       {error}
@@ -586,7 +595,7 @@ export default function CoachingCheckoutPage() {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || productLoading || productError}
                     className="btn-primary w-full py-4 flex items-center justify-center gap-2 group disabled:opacity-70 text-base font-bold shadow-lg shadow-blue-600/30"
                   >
                     <span>
@@ -607,8 +616,8 @@ export default function CoachingCheckoutPage() {
 
                   <p className="text-center text-xs text-slate-500">
                     {isArabic
-                      ? "بعد الضغط سيتم تحويلك للواتساب لإرسال صورة التحويل والبدء في استمارة التقييم فوراً."
-                      : "After submission, you will confirm via WhatsApp to complete onboarding."}
+                      ? "بعد الضغط هتظهرلك شاشة رفع صورة التحويل لتأكيد الدفع وبدء استمارة التقييم."
+                      : "After submitting, you'll see an upload screen to send your payment screenshot and start onboarding."}
                   </p>
                 </form>
               </div>

@@ -108,9 +108,7 @@ export default function CMSPage() {
       if (!res.ok) throw new Error();
       setPending({});
       showToast("ok", `Saved ${updates.length} change${updates.length > 1 ? "s" : ""}`);
-      // No iframe reload here — every edited field already shows its new value
-      // in place (that's what was just typed/uploaded), so a reload would only
-      // add a slow round-trip for no visible benefit.
+      iframeRef.current?.contentWindow?.postMessage({ type: "cms-refresh" }, window.location.origin);
     } catch {
       showToast("err", "Save failed — please try again.");
     } finally {
@@ -288,11 +286,6 @@ export default function CMSPage() {
           {editMode && !iframeReady && (
             <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "rgba(10,12,16,0.95)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "var(--radius-md)", fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
               <Loader2 size={14} className="animate-spin" /> Loading editor…
-            </div>
-          )}
-          {editMode && iframeReady && (
-            <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.4)", borderRadius: "var(--radius-md)", fontSize: 11, color: "#93c5fd", fontWeight: 600 }}>
-              <Globe size={14} /> Click any text to edit it directly · Hover an image to replace it
             </div>
           )}
           <div
