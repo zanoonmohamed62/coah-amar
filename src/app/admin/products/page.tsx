@@ -6,9 +6,7 @@ import {
   Edit2,
   Eye,
   EyeOff,
-  ShoppingBag,
   Sparkles,
-  DollarSign,
   X,
   CheckCircle2,
 } from "lucide-react";
@@ -65,6 +63,7 @@ export default function ProductsPage() {
     description: "",
     features: "",
     originalPrice: 499,
+    discountEnabled: false,
     discountPercent: 0,
     promoCounterBase: 0,
     promoCounterLimit: 100,
@@ -74,9 +73,11 @@ export default function ProductsPage() {
 
   // Mirrors the rounding in GET /api/products so the admin preview and the
   // public price can't disagree.
-  const previewPrice = form.discountPercent > 0
+  const discountOn = form.discountEnabled && form.discountPercent > 0;
+  const previewPrice = discountOn
     ? Math.round(form.originalPrice * (1 - form.discountPercent / 100))
     : form.originalPrice;
+  const previewSaving = form.originalPrice - previewPrice;
 
   const fetchProducts = () => {
     fetch("/api/admin/products")
@@ -105,6 +106,7 @@ export default function ProductsPage() {
         ? "جدول تدريب كامل 12 أسبوع\nشرح تكنيك التمارين والبدائل\nنظام تتبع الأوزان والزيادة التدريجية\nدخول دائم للبوابة"
         : "Complete 12-Week Split Breakdown\nExercise Execution & Technique Guidance\nProgressive Overload Tracking\nLifetime Dashboard Access",
       originalPrice: 499,
+      discountEnabled: false,
       discountPercent: 0,
       promoCounterBase: 0,
       promoCounterLimit: 100,
@@ -123,6 +125,7 @@ export default function ProductsPage() {
       description: p.description || "",
       features: parseFeatures(p.features).join("\n"),
       originalPrice: Math.round((p.originalPrice || p.price) / 100),
+      discountEnabled: (p.discountPercent || 0) > 0,
       discountPercent: p.discountPercent || 0,
       promoCounterBase: p.promoCounterBase || 0,
       promoCounterLimit: p.promoCounterLimit || 100,
@@ -136,14 +139,22 @@ export default function ProductsPage() {
     setSaving(true);
 
     const originalPricePiastres = Math.round(form.originalPrice * 100);
-    const livePrice = form.discountPercent > 0
-      ? Math.round((originalPricePiastres * (1 - form.discountPercent / 100)) / 100) * 100
+    // Turning the toggle off stores 0, which is what every consumer (the public
+    // /api/products route, the checkout pages) already reads as "no promo" —
+    // so the percentage the admin typed isn't silently kept live.
+    const effectiveDiscount = form.discountEnabled ? form.discountPercent : 0;
+    const livePrice = effectiveDiscount > 0
+      ? Math.round((originalPricePiastres * (1 - effectiveDiscount / 100)) / 100) * 100
       : originalPricePiastres;
 
+    // discountEnabled is a UI-only toggle — it's expressed to the API as
+    // discountPercent: 0, so it isn't part of the payload.
+    const { discountEnabled: _discountEnabled, ...formFields } = form;
     const payload = {
-      ...form,
+      ...formFields,
       price: livePrice,
       originalPrice: originalPricePiastres,
+      discountPercent: effectiveDiscount,
       features: form.features.split("\n").map((f) => f.trim()).filter(Boolean),
     };
 
@@ -207,6 +218,20 @@ export default function ProductsPage() {
           {products.map((p) => {
             const features = parseFeatures(p.features);
 
+            // Mirrors GET /api/products exactly, so this card shows the same
+            // price and promo state the customer is being served right now.
+            const spotsTaken = Math.min(
+              p.promoCounterLimit,
+              p.promoCounterBase + (p._count?.orders || 0)
+            );
+            const promoActive =
+              p.discountPercent > 0 && p.originalPrice > 0 && spotsTaken < p.promoCounterLimit;
+            const promoState: "live" | "ended" | "off" =
+              p.discountPercent > 0 ? (promoActive ? "live" : "ended") : "off";
+            const livePrice = promoActive
+              ? Math.round((p.originalPrice * (1 - p.discountPercent / 100)) / 100) * 100
+              : p.originalPrice || p.price;
+
             return (
               <div
                 key={p.id}
@@ -255,22 +280,54 @@ export default function ProductsPage() {
                   <p className="text-xs text-[var(--text-muted)] mb-4">{p.description || "—"}</p>
 
                   <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] mb-4">
-                    <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">
-                      {t.priceLabel}
-                    </span>
-                    <p className="text-2xl font-black text-[var(--accent)] tracking-tight">
-                      {(p.price / 100).toLocaleString()}{" "}
-                      <span className="text-sm font-bold text-[var(--text-secondary)]">{p.currency}</span>
-                    </p>
-                    {p.discountPercent > 0 && p.originalPrice > p.price && (
-                      <p className="text-[11px] text-[var(--text-muted)] mt-1">
-                        {isArabic ? "بدلاً من" : "was"}{" "}
-                        <span className="line-through">{(p.originalPrice / 100).toLocaleString()} {p.currency}</span>
-                        {" · "}
-                        {isArabic
-                          ? `العداد: ${p.promoCounterBase}/${p.promoCounterLimit}`
-                          : `counter: ${p.promoCounterBase}/${p.promoCounterLimit}`}
+                    <div className="flex items-start justify-between gap-3 mb-1">
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                        {t.priceLabel}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-[var(--radius-pill)] border shrink-0 ${
+                          promoState === "live"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : promoState === "ended"
+                            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                            : "bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border)]"
+                        }`}
+                      >
+                        {promoState === "live" ? t.promoLive : promoState === "ended" ? t.promoEnded : t.promoOff}
+                      </span>
+                    </div>
+
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <p className="text-2xl font-black text-[var(--accent)] tracking-tight tabular-nums">
+                        {(livePrice / 100).toLocaleString()}{" "}
+                        <span className="text-sm font-bold text-[var(--text-secondary)]">{p.currency}</span>
                       </p>
+                      {promoState === "live" && (
+                        <span className="text-[11px] text-[var(--text-muted)] line-through tabular-nums">
+                          {(p.originalPrice / 100).toLocaleString()} {p.currency}
+                        </span>
+                      )}
+                      {promoState === "live" && (
+                        <span className="text-[10px] font-bold text-emerald-400">
+                          −{p.discountPercent}%
+                        </span>
+                      )}
+                    </div>
+
+                    {p.discountPercent > 0 && (
+                      <div className="mt-2.5">
+                        <div className="h-1 rounded-[var(--radius-pill)] bg-[var(--bg-card)] overflow-hidden">
+                          <div
+                            className={`h-full rounded-[var(--radius-pill)] ${
+                              promoState === "live" ? "bg-[var(--accent)]" : "bg-amber-500"
+                            }`}
+                            style={{ width: `${Math.min(100, (spotsTaken / (p.promoCounterLimit || 1)) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-1 tabular-nums">
+                          {t.spotsProgress(spotsTaken, p.promoCounterLimit)}
+                        </p>
+                      </div>
                     )}
                   </div>
 
@@ -359,62 +416,141 @@ export default function ProductsPage() {
 
                 <div>
                   <label className="text-xs font-bold text-[var(--text-muted)] block mb-1">
-                    {isArabic ? "السعر الأصلي (قبل الخصم)" : "Original Price (before discount)"}
+                    {t.originalPriceLabel}
                   </label>
-                  <input
-                    required
-                    type="number"
-                    value={form.originalPrice}
-                    onChange={(e) => setForm((f) => ({ ...f, originalPrice: Number(e.target.value), price: Number(e.target.value) }))}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] font-bold"
-                  />
+                  <div className="relative">
+                    <input
+                      required
+                      type="number"
+                      min={0}
+                      value={form.originalPrice}
+                      onChange={(e) => setForm((f) => ({ ...f, originalPrice: Number(e.target.value) }))}
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] ps-3 pe-12 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] font-bold tabular-nums"
+                    />
+                    <span className="absolute inset-y-0 end-3 flex items-center text-[10px] font-bold text-[var(--text-muted)] pointer-events-none">
+                      {form.currency}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1 leading-relaxed">
+                    {t.originalPriceHint}
+                  </p>
                 </div>
               </div>
 
-              <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] space-y-3">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block">
-                  {isArabic ? "عرض الإطلاق (خصم أول مشتركين)" : "Launch Promo (early-buyer discount)"}
-                </span>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">
-                      {isArabic ? "نسبة الخصم %" : "Discount %"}
-                    </label>
-                    <input
-                      type="number" min={0} max={100}
-                      value={form.discountPercent}
-                      onChange={(e) => setForm((f) => ({ ...f, discountPercent: Number(e.target.value) }))}
-                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
-                    />
+              <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] overflow-hidden">
+                <label className="flex items-center gap-3 p-4 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={form.discountEnabled}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        discountEnabled: e.target.checked,
+                        // Give a freshly-enabled promo a sane starting value instead
+                        // of 0%, which would read as "on" but change nothing.
+                        discountPercent: e.target.checked && f.discountPercent === 0 ? 40 : f.discountPercent,
+                      }))
+                    }
+                    className="w-4 h-4 shrink-0 accent-[var(--accent)] cursor-pointer"
+                  />
+                  <span className="flex-1">
+                    <span className="block text-xs font-bold text-[var(--text-primary)]">
+                      {t.discountToggle}
+                    </span>
+                    {!form.discountEnabled && (
+                      <span className="block text-[10px] text-[var(--text-muted)] mt-0.5">
+                        {t.discountToggleOffHint}
+                      </span>
+                    )}
+                  </span>
+                </label>
+
+                {form.discountEnabled && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-[var(--border)] pt-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[11px] text-[var(--text-muted)] block mb-1">
+                          {t.discountPercentLabel}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number" min={1} max={95}
+                            value={form.discountPercent}
+                            onChange={(e) => setForm((f) => ({ ...f, discountPercent: Number(e.target.value) }))}
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] ps-3 pe-7 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] tabular-nums"
+                          />
+                          <span className="absolute inset-y-0 end-2.5 flex items-center text-[10px] font-bold text-[var(--text-muted)] pointer-events-none">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-[var(--text-muted)] block mb-1">
+                          {t.counterBaseLabel}
+                        </label>
+                        <input
+                          type="number" min={0}
+                          value={form.promoCounterBase}
+                          onChange={(e) => setForm((f) => ({ ...f, promoCounterBase: Number(e.target.value) }))}
+                          className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] tabular-nums"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-[var(--text-muted)] block mb-1">
+                          {t.counterLimitLabel}
+                        </label>
+                        <input
+                          type="number" min={1}
+                          value={form.promoCounterLimit}
+                          onChange={(e) => setForm((f) => ({ ...f, promoCounterLimit: Number(e.target.value) }))}
+                          className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] tabular-nums"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                      {t.discountEndsHint(form.promoCounterBase, form.promoCounterLimit)}
+                    </p>
                   </div>
-                  <div>
-                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">
-                      {isArabic ? "بداية العداد" : "Counter Starts At"}
-                    </label>
-                    <input
-                      type="number" min={0}
-                      value={form.promoCounterBase}
-                      onChange={(e) => setForm((f) => ({ ...f, promoCounterBase: Number(e.target.value) }))}
-                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-[var(--text-muted)] block mb-1">
-                      {isArabic ? "الحد الأقصى" : "Ends At"}
-                    </label>
-                    <input
-                      type="number" min={1}
-                      value={form.promoCounterLimit}
-                      onChange={(e) => setForm((f) => ({ ...f, promoCounterLimit: Number(e.target.value) }))}
-                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
-                    />
-                  </div>
+                )}
+
+                {/* Live result of the settings above — the number the customer actually sees. */}
+                <div className="px-4 py-3 bg-[var(--bg-card)] border-t border-[var(--border)]">
+                  {discountOn ? (
+                    <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                        {t.customerPaysNow}
+                      </span>
+                      <span className="text-lg font-black text-[var(--accent)] tabular-nums">
+                        {previewPrice.toLocaleString()} {form.currency}
+                      </span>
+                      <span className="text-[11px] text-[var(--text-muted)]">
+                        {t.insteadOf}{" "}
+                        <span className="line-through tabular-nums">
+                          {form.originalPrice.toLocaleString()} {form.currency}
+                        </span>
+                        {previewSaving > 0 && (
+                          <>
+                            {" · "}
+                            {t.youSaveThem}{" "}
+                            <span className="text-emerald-400 font-bold tabular-nums">
+                              {previewSaving.toLocaleString()} {form.currency}
+                            </span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline flex-wrap gap-x-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                        {t.customerPaysNow}
+                      </span>
+                      <span className="text-lg font-black text-[var(--text-primary)] tabular-nums">
+                        {form.originalPrice.toLocaleString()} {form.currency}
+                      </span>
+                      <span className="text-[11px] text-[var(--text-muted)]">{t.discountOffNow}</span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                  {isArabic
-                    ? `السعر الحالي المعروض للعملاء: ${previewPrice} ${form.currency}. الخصم بيتوقف تلقائيًا لما العداد يوصل للحد الأقصى.`
-                    : `Live price shown to customers right now: ${previewPrice} ${form.currency}. The discount turns off automatically once the counter reaches the limit.`}
-                </p>
               </div>
 
               <div>
