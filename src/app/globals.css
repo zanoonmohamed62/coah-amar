@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
@@ -25,7 +24,8 @@
     --accent-glow-strong: rgba(37, 99, 235, 0.25);
     --border: rgba(255, 255, 255, 0.08);
     --border-accent: rgba(37, 99, 235, 0.35);
-    --font-cairo: 'Cairo', system-ui, sans-serif;
+    /* --font-inter, --font-outfit, --font-cairo, --font-alexandria are supplied
+       by next/font in layout.tsx as classes on <html>, not redeclared here. */
 
     /* Unified corner-radius scale (shadcn-style: 18px interactive / 24px containers) */
     --radius-sm: 8px;

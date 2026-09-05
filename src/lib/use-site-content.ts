@@ -18,7 +18,7 @@ async function fetchSiteContent(lang: string): Promise<ContentMap> {
 
   const promise = (async () => {
     try {
-      const res = await fetch(`/api/site-content?lang=${encodeURIComponent(lang)}&t=${Date.now()}`);
+      const res = await fetch(`/api/site-content?lang=${encodeURIComponent(lang)}`);
       const data = await res.json();
       const result: ContentMap = data.content || {};
       cacheByLang.set(lang, result);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guard";
+import { redis } from "@/lib/redis";
 
 type Update = {
   sectionId: string;
@@ -50,6 +51,9 @@ export async function PUT(req: NextRequest) {
       })
     )
   );
+
+  const langs = new Set(updates.map((u) => u.lang));
+  await Promise.all([...langs].map((lang) => redis.del(`site-content:${lang}`).catch(() => {})));
 
   return NextResponse.json({ ok: true, count: updates.length });
 }
