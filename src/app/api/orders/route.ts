@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
 import { createOrderSchema } from "@/lib/validations";
 import { OrderStatus, PaymentMethod } from "@prisma/client";
@@ -45,6 +46,11 @@ export async function POST(req: NextRequest) {
   const existing = await db.order.findUnique({ where: { orderRef } });
   if (existing) return NextResponse.json({ order: existing }, { status: 200 });
 
+  // The customer-facing order pages are reachable without a session, so their
+  // access check is this token — not orderRef, which the browser generates from
+  // a timestamp plus 4 characters and is therefore guessable.
+  const accessToken = randomBytes(32).toString("base64url");
+
   const isPaypal = paymentMethod === "PAYPAL";
 
   // PayPal is verified-payment only — no order is created until we know PayPal can
@@ -62,6 +68,7 @@ export async function POST(req: NextRequest) {
       userId: existingUser?.id ?? null,
       productId,
       orderRef,
+      accessToken,
       amount: product.price,
       currency: product.currency,
       paymentMethod: paymentMethod as PaymentMethod,
@@ -92,8 +99,8 @@ export async function POST(req: NextRequest) {
         orderRef,
         productType: product.type,
         productName: product.name,
-        returnUrl: `${appUrl}/checkout/return?orderRef=${orderRef}`,
-        cancelUrl: `${appUrl}/checkout/return?orderRef=${orderRef}&cancelled=1`,
+        returnUrl: `${appUrl}/checkout/return?orderRef=${encodeURIComponent(orderRef)}&at=${encodeURIComponent(accessToken)}`,
+        cancelUrl: `${appUrl}/checkout/return?orderRef=${encodeURIComponent(orderRef)}&at=${encodeURIComponent(accessToken)}&cancelled=1`,
       });
       approvalUrl = result.approvalUrl;
     } catch (err) {
@@ -106,7 +113,7 @@ export async function POST(req: NextRequest) {
     try {
       const { sendOrderConfirmationEmail } = await import("@/lib/email");
       await sendOrderConfirmationEmail({
-        to: email, name, orderRef,
+        to: email, name, orderRef, accessToken,
         productName: product.name,
         amount: String(product.price / 100),
         paymentMethod,
@@ -125,15 +132,41 @@ export async function POST(req: NextRequest) {
   );
 }
 
+// Status poll for the customer's own order page. Requires the order's
+// accessToken: orderRef is short, client-generated and shows up in emails and
+// screenshots, so on its own it can't gate customer details.
 export async function GET(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed, reset } = await rateLimit(`order-status:${ip}`, 30, 60);
+  if (!allowed) return rateLimitResponse(reset);
+
   const orderRef = req.nextUrl.searchParams.get("orderRef");
+  const token = req.nextUrl.searchParams.get("token");
   if (!orderRef) return NextResponse.json({ error: "orderRef is required" }, { status: 400 });
 
   const order = await db.order.findUnique({
     where: { orderRef },
-    select: { orderRef: true, status: true, confirmedAt: true, product: { select: { name: true, type: true } } },
+    select: {
+      orderRef: true,
+      accessToken: true,
+      status: true,
+      confirmedAt: true,
+      product: { select: { name: true, type: true } },
+    },
   });
-  if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  // Same 404 whether the order is missing or the token is wrong, so this can't
+  // be used to enumerate order refs.
+  if (!order || !token || !timingSafeEqualStr(token, order.accessToken)) {
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
 
-  return NextResponse.json({ order });
+  const { accessToken: _accessToken, ...safe } = order;
+  return NextResponse.json({ order: safe });
+}
+
+function timingSafeEqualStr(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }

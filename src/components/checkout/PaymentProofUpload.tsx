@@ -6,23 +6,27 @@ import { useLanguage } from "@/lib/language-context";
 
 type Props = {
   orderRef: string;
+  token: string;
+  /** Show the "already received" state on load, for an order that has a proof. */
+  initialUploaded?: boolean;
 };
 
 /**
  * Drag-and-drop / click-to-upload box for a manual-transfer payment screenshot
  * (InstaPay/Telda only — PayPal confirms automatically via webhook and never
- * renders this). Posts straight to /api/orders/[orderRef]/proof, which is
- * public but order-ref-scoped, since the customer usually has no session yet
- * at this point in checkout. Used both on the checkout success screen and on
- * the standalone /checkout/upload-proof page (the link sent in the order
- * confirmation email, for customers who close the tab before uploading).
+ * renders this). Posts to /api/orders/[orderRef]/proof, which is reachable
+ * without a session — the customer usually has no account yet at this point in
+ * checkout — and is scoped by the order's unguessable accessToken. Used both on
+ * the checkout success screen and on the standalone /checkout/upload-proof page
+ * (the link sent in the order confirmation email, for customers who close the
+ * tab before uploading).
  */
-export function PaymentProofUpload({ orderRef }: Props) {
+export function PaymentProofUpload({ orderRef, token, initialUploaded = false }: Props) {
   const { isArabic } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploaded, setUploaded] = useState(false);
+  const [uploaded, setUploaded] = useState(initialUploaded);
   const [error, setError] = useState("");
 
   async function handleFile(file: File) {
@@ -31,10 +35,13 @@ export function PaymentProofUpload({ orderRef }: Props) {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(`/api/orders/${encodeURIComponent(orderRef)}/proof`, {
-        method: "POST",
-        body: fd,
-      });
+      const res = await fetch(
+        `/api/orders/${encodeURIComponent(orderRef)}/proof?token=${encodeURIComponent(token)}`,
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setUploaded(true);

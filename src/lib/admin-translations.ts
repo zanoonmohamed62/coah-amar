@@ -127,6 +127,15 @@ export const adminTranslations = {
       viewAthlete: "View Profile",
       editAccess: "Manage Access",
       noAthletes: "No athletes found in the directory.",
+      deleteAthlete: "Delete athlete",
+      deleteTitle: "Delete this athlete?",
+      deleteBody: (name: string) =>
+        `${name}'s account, order history and plan access will be permanently deleted. This can't be undone.`,
+      deleteOrdersWarning: (n: number) =>
+        `${n} order${n === 1 ? "" : "s"} will be deleted too, so revenue totals will change.`,
+      deleteConfirmPrompt: "Type the athlete's email to confirm:",
+      deleteConfirmBtn: "Delete permanently",
+      deleteFailed: "Couldn't delete this athlete.",
       modalTitle: "Onboard New Athlete",
       nameLabel: "Full Name",
       emailLabel: "Email Address",
@@ -368,6 +377,15 @@ export const adminTranslations = {
       viewAthlete: "الملف الشخصي",
       editAccess: "إدارة الصلاحيات",
       noAthletes: "لا يوجد متدربون في الدليل حالياً.",
+      deleteAthlete: "حذف المتدرب",
+      deleteTitle: "متأكد إنك عايز تمسح المتدرب ده؟",
+      deleteBody: (name: string) =>
+        `هيتمسح حساب ${name} وكل طلباته واشتراكاته نهائيًا. مفيش رجوع في العملية دي.`,
+      deleteOrdersWarning: (n: number) =>
+        `هيتمسح معاه ${n} طلب، فأرقام المبيعات هتتغير.`,
+      deleteConfirmPrompt: "اكتب إيميل المتدرب للتأكيد:",
+      deleteConfirmBtn: "امسح نهائيًا",
+      deleteFailed: "مش قادر أمسح المتدرب ده.",
       modalTitle: "تسجيل وإضافة متدرب جديد",
       nameLabel: "الاسم بالكامل",
       emailLabel: "البريد الإلكتروني",

@@ -119,6 +119,13 @@ model Order {
   product       Product       @relation(fields: [productId], references: [id])
 
   orderRef      String        @unique // AMAR-xxxxxx
+  // Unguessable key for the customer-facing order pages (payment instructions,
+  // proof upload, status). orderRef is short and client-generated, so it's a
+  // display label — never the access check. Always written explicitly by
+  // POST /api/orders as 32 random bytes; the cuid() default exists only so
+  // adding this column to a table with existing rows doesn't collide on the
+  // unique index, and is not relied on as a source of unguessable values.
+  accessToken   String        @unique @default(cuid())
   amount        Int           // piastres
   currency      String        @default("EGP")
   paymentMethod PaymentMethod

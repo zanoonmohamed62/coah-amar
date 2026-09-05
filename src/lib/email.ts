@@ -8,9 +8,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://coachair.com";
 // ORDER CONFIRMATION — sent immediately after checkout
 // ─────────────────────────────────────────────────────────────
 export async function sendOrderConfirmationEmail({
-  to, name, orderRef, productName, amount, paymentMethod,
+  to, name, orderRef, accessToken, productName, amount, paymentMethod,
 }: {
-  to: string; name: string; orderRef: string;
+  to: string; name: string; orderRef: string; accessToken: string;
   productName: string; amount: string; paymentMethod: string;
 }) {
   const methodLabel: Record<string, string> = {
@@ -36,7 +36,7 @@ export async function sendOrderConfirmationEmail({
       <p style="margin:4px 0;"><strong>Payment:</strong> ${methodLabel[paymentMethod] || paymentMethod}</p>
     </div>
     <p style="color:#f59e0b;font-size:13px;margin-bottom:16px;">⚠️ To complete your order, upload your ${methodLabel[paymentMethod] || paymentMethod} transfer screenshot on our site — we'll activate your account as soon as we confirm it.</p>
-    <a href="${APP_URL}/checkout/upload-proof?orderRef=${orderRef}" style="display:inline-block;background:#3b82f6;color:#fff;padding:12px 28px;border-radius:2px;text-decoration:none;font-weight:bold;margin-bottom:16px;">
+    <a href="${APP_URL}/checkout/upload-proof?orderRef=${encodeURIComponent(orderRef)}&token=${encodeURIComponent(accessToken)}" style="display:inline-block;background:#3b82f6;color:#fff;padding:12px 28px;border-radius:2px;text-decoration:none;font-weight:bold;margin-bottom:16px;">
       Upload Payment Screenshot →
     </a>
     <p style="color:#64748b;font-size:12px;">Having trouble? Message us on WhatsApp instead: <a href="https://wa.me/${coachWA.replace("+","")}" style="color:#3b82f6;">${coachWA}</a></p>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { mkdir, writeFile } from "fs/promises";
@@ -6,20 +7,32 @@ import path from "path";
 
 type Params = { params: Promise<{ orderRef: string }> };
 
-// Public, order-ref-scoped (same trust model as GET /api/orders?orderRef=) —
-// a customer paying via InstaPay/Telda usually has no session yet at this
-// point in the funnel, so this can't be gated behind requireAuth/requireCustomer.
-// Knowing the exact orderRef is the access control here, same as the existing
-// status-poll endpoint.
+function tokenMatches(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+// Public but token-scoped — a customer paying via InstaPay/Telda usually has no
+// session yet at this point in the funnel, so this can't be gated behind
+// requireAuth/requireCustomer. The unguessable accessToken is the access check;
+// orderRef alone is not, since the browser builds it from a timestamp plus four
+// characters and it appears in emails and screenshots.
 export async function POST(req: NextRequest, { params }: Params) {
   const ip = getClientIp(req);
   const { allowed, reset } = await rateLimit(`payment-proof:${ip}`, 8, 60);
   if (!allowed) return rateLimitResponse(reset);
 
   const { orderRef } = await params;
+  const token = req.nextUrl.searchParams.get("token") || "";
 
   const order = await db.order.findUnique({ where: { orderRef } });
-  if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  // Same 404 for a missing order and a bad token, so this can't confirm which
+  // order refs exist.
+  if (!order || !token || !tokenMatches(token, order.accessToken)) {
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
 
   if (order.paymentMethod === "PAYPAL") {
     return NextResponse.json({ error: "PayPal orders are confirmed automatically — no proof needed." }, { status: 400 });

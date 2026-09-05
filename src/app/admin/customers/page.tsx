@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import {
   Search,
   Plus,
@@ -11,9 +12,12 @@ import {
   Copy,
   Check,
   AlertTriangle,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 
 type Customer = {
   id: string;
@@ -62,7 +66,15 @@ export default function CustomersPage() {
   const [createdInfo, setCreatedInfo] = useState<{ email: string; pass: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
   const { lang, isArabic } = useLanguage();
+  const { data: session } = useSession();
+  const canDelete = isSuperAdminEmail(session?.user?.email);
   const t = adminTranslations[lang].customers;
   const tCommon = adminTranslations[lang].common;
 
@@ -123,6 +135,32 @@ export default function CustomersPage() {
     if (filter === "inactive") return c.entitlements.length === 0;
     return true;
   });
+
+  const closeDeleteModal = () => {
+    setDeleteTarget(null);
+    setDeleteConfirmText("");
+    setDeleteError("");
+  };
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/admin/customers/${deleteTarget.id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDeleteError(data.error || t.deleteFailed);
+        return;
+      }
+      closeDeleteModal();
+      fetchCustomers();
+    } catch {
+      setDeleteError(t.deleteFailed);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   const openWhatsApp = (phone: string, name: string) => {
     let clean = phone.replace(/[^0-9+]/g, "");
@@ -285,6 +323,19 @@ export default function CustomersPage() {
                             <MessageSquare size={14} />
                           </button>
                         )}
+                        {canDelete && (
+                          <button
+                            onClick={() => {
+                              setDeleteTarget(cust);
+                              setDeleteConfirmText("");
+                              setDeleteError("");
+                            }}
+                            className="p-1.5 rounded-[var(--radius-sm)] border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                            title={t.deleteAthlete}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -294,6 +345,77 @@ export default function CustomersPage() {
           </table>
         </div>
       </div>
+
+      {/* Delete confirmation — irreversible and it also removes orders, so it
+          asks for the athlete's email rather than a single click. */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-[var(--bg-card)] border border-red-500/30 rounded-[var(--radius-xl)] w-full max-w-md shadow-[var(--shadow-card)]">
+            <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-red-500/5">
+              <h3 className="text-sm font-black uppercase tracking-wider text-red-400 flex items-center gap-2">
+                <AlertTriangle size={16} /> {t.deleteTitle}
+              </h3>
+              <button
+                onClick={closeDeleteModal}
+                className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                {t.deleteBody(deleteTarget.name)}
+              </p>
+
+              {deleteTarget.orders.length > 0 && (
+                <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-md)] px-3 py-2 leading-relaxed">
+                  {t.deleteOrdersWarning(deleteTarget.orders.length)}
+                </p>
+              )}
+
+              <div>
+                <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1.5">
+                  {t.deleteConfirmPrompt}
+                </label>
+                <p className="text-[11px] font-mono text-[var(--text-secondary)] mb-2 select-all">
+                  {deleteTarget.email}
+                </p>
+                <input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  autoComplete="off"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-red-500/50"
+                />
+              </div>
+
+              {deleteError && (
+                <p className="text-xs text-red-400 leading-relaxed">{deleteError}</p>
+              )}
+
+              <div className="pt-1 flex gap-2">
+                <button
+                  onClick={handleDelete}
+                  disabled={
+                    deleting ||
+                    deleteConfirmText.trim().toLowerCase() !== deleteTarget.email.toLowerCase()
+                  }
+                  className="flex-1 py-2.5 bg-red-500 hover:bg-red-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs rounded-[var(--radius-lg)] transition-colors flex items-center justify-center gap-2"
+                >
+                  {deleting && <Loader2 size={13} className="animate-spin" />}
+                  {t.deleteConfirmBtn}
+                </button>
+                <button
+                  onClick={closeDeleteModal}
+                  className="px-4 py-2.5 border border-[var(--border)] text-xs font-bold rounded-[var(--radius-lg)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                >
+                  {tCommon.cancel}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Onboard Modal */}
       {showAddModal && (

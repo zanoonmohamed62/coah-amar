@@ -17,7 +17,10 @@ function ReturnContent() {
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
   const orderRef = searchParams.get("orderRef") || "";
+  // `token` is PayPal's own order token (it appends it on return); `at` is this
+  // order's accessToken, which is what our own status endpoint checks.
   const token = searchParams.get("token") || "";
+  const accessToken = searchParams.get("at") || "";
   const cancelled = searchParams.get("cancelled") === "1";
 
   const [phase, setPhase] = useState<Phase>(cancelled ? "cancelled" : "capturing");
@@ -51,7 +54,9 @@ function ReturnContent() {
         if (cancelledEffect) return;
         await new Promise((r) => setTimeout(r, 2000));
         try {
-          const res = await fetch(`/api/orders?orderRef=${encodeURIComponent(orderRef)}`);
+          const res = await fetch(
+            `/api/orders?orderRef=${encodeURIComponent(orderRef)}&token=${encodeURIComponent(accessToken)}`
+          );
           const data = await res.json();
           if (data.order?.status === "CONFIRMED") {
             if (!cancelledEffect) setPhase("confirmed");
@@ -65,7 +70,7 @@ function ReturnContent() {
     return () => {
       cancelledEffect = true;
     };
-  }, [cancelled, orderRef, token]);
+  }, [cancelled, orderRef, token, accessToken]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-[#07090e]">

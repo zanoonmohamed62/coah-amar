@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guard";
-import { EntitlementStatus, ProductType } from "@prisma/client";
+import { isSuperAdminEmail } from "@/lib/super-admin";
+import { EntitlementStatus, ProductType, Role } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -121,4 +122,48 @@ export async function PUT(req: NextRequest, { params }: Params) {
   });
 
   return NextResponse.json({ customer });
+}
+
+// Permanently removes a customer along with their orders and entitlements.
+// Irreversible and it moves revenue figures, so it's restricted to the owner
+// account rather than any admin, and refuses to delete admins (which would be
+// a way to strip a colleague's access from the wrong screen) or your own account.
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const { error, session } = await requireAdmin();
+  if (error) return error;
+  if (!isSuperAdminEmail(session.user?.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  const target = await db.user.findUnique({
+    where: { id },
+    select: { id: true, role: true, email: true },
+  });
+  if (!target) return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+
+  if (target.id === session.user?.id) {
+    return NextResponse.json({ error: "You can't delete your own account." }, { status: 400 });
+  }
+  if (target.role === Role.ADMIN) {
+    return NextResponse.json(
+      { error: "This is an admin account. Remove their admin access from Manage Admins first." },
+      { status: 400 }
+    );
+  }
+
+  // Entitlements reference orders, so they have to go first.
+  await db.entitlement.deleteMany({ where: { userId: id } });
+  await db.order.deleteMany({ where: { userId: id } });
+  await db.user.delete({ where: { id } });
+
+  // Revenue and order counts on the dashboard are derived from what we just
+  // deleted, so the cached copy is now wrong.
+  try {
+    const { redis } = await import("@/lib/redis");
+    await redis.del("admin:stats");
+  } catch {}
+
+  return NextResponse.json({ ok: true });
 }

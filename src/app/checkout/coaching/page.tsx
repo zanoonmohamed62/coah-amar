@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Check,
   ArrowRight,
   ArrowLeft,
   ShieldCheck,
-  Flame,
   Dumbbell,
   Apple,
   Pill,
@@ -26,7 +25,6 @@ import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
 import { useSiteContent } from "@/lib/use-site-content";
 import { EditableText } from "@/components/cms/EditableText";
-import { PaymentProofUpload } from "@/components/checkout/PaymentProofUpload";
 import { toErrorMessage } from "@/lib/error-message";
 
 const COACHING_PRICE_EUR = 71;
@@ -35,9 +33,9 @@ const pillarIcons = [Dumbbell, Apple, Pill, Heart];
 
 export default function CoachingCheckoutPage() {
   const { t, isArabic } = useLanguage();
+  const router = useRouter();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const getSetting = useSettings();
-  const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
   const get = useSiteContent();
 
   const [paymentMethod, setPaymentMethod] = useState<"instapay" | "paypal" | "telda">("instapay");
@@ -50,8 +48,6 @@ export default function CoachingCheckoutPage() {
     notes: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [orderRef, setOrderRef] = useState("");
   const [error, setError] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
   const [priceEGP, setPriceEGP] = useState<number | null>(null);
@@ -126,83 +122,21 @@ export default function CoachingCheckoutPage() {
         return;
       }
 
-      setOrderRef(ref);
-      setIsSuccess(true);
+      // Hand off to the order page rather than showing success from local state:
+      // everything the customer still needs (where to pay, proof upload, status)
+      // lives at a URL they can reload, close and come back to.
+      router.push(
+        `/checkout/upload-proof?orderRef=${encodeURIComponent(ref)}&token=${encodeURIComponent(
+          data.order.accessToken
+        )}`
+      );
+      return;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : (isArabic ? "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً." : "An error occurred."));
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (isSuccess) {
-    const paymentLabel = paymentMethod === "instapay" ? "InstaPay" : paymentMethod === "paypal" ? "PayPal" : "Telda";
-    const waMsg = encodeURIComponent(
-      isArabic
-        ? `مرحباً كوتش عمار! قمت بطلب اشتراك التدريب والمتابعة الشخصية (٣ شهور).\nرقم الطلب: ${orderRef}\nالاسم: ${formData.name}\nالهدف: ${formData.goal}\nطريقة الدفع: ${paymentLabel}\nيرجى تأكيد الدفع وتفعيل المتابعة وبدء التقييم.`
-        : `Hi Coach Amar! I purchased the 3-Month Personal Coaching.\nOrder: ${orderRef}\nName: ${formData.name}\nGoal: ${formData.goal}\nPayment: ${paymentLabel}\nPlease confirm payment and start onboarding.`
-    );
-
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6 bg-[#07090e] pt-24 pb-20">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-lg w-full text-center space-y-6 bg-[#0b0f19] border border-blue-500/30 p-8 rounded-[var(--radius-xl)] shadow-2xl"
-        >
-          <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/30 rounded-full flex items-center justify-center mx-auto">
-            <Sparkles size={28} className="text-blue-400" />
-          </div>
-
-          <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-[var(--radius-pill)]">
-            Order Ref: {orderRef}
-          </span>
-
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            {isArabic ? "تم تسجيل طلب التدريب بنجاح!" : "Coaching Order Received!"}
-          </h1>
-
-          <p className="text-slate-300 text-sm leading-relaxed">
-            {isArabic
-              ? "شكراً لاشتراكك مع كوتش عمار. الخطوة الأخيرة: ارفع صورة التحويل تحت لتأكيد الدفع واستلام استمارة التقييم."
-              : "Thank you for joining. Final step: upload your payment screenshot below to confirm and receive your onboarding assessment."}
-          </p>
-
-          {/* Details summary */}
-          <div className="bg-[#07090e] border border-slate-800 rounded-[var(--radius-lg)] p-4 text-xs space-y-2 text-slate-400 text-left rtl:text-right">
-            <div className="flex justify-between">
-              <span>{isArabic ? "الاسم:" : "Name:"}</span>
-              <span className="text-white font-semibold">{formData.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{isArabic ? "الباقة:" : "Package:"}</span>
-              <span className="text-blue-400 font-semibold">{isArabic ? "متابعة ٣ شهور (نظام متكامل)" : "3-Month Coaching"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{isArabic ? "المبلغ:" : "Amount:"}</span>
-              <span className="text-white font-semibold">{priceEGP ?? 1499} LE / {COACHING_PRICE_EUR} €</span>
-            </div>
-          </div>
-
-          <PaymentProofUpload orderRef={orderRef} />
-
-          <a
-            href={`https://wa.me/${waNumber}?text=${waMsg}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors py-2"
-          >
-            <MessageCircle size={14} strokeWidth={2} />
-            <span>{isArabic ? "محتاج مساعدة؟ تواصل عبر واتساب" : "Need help? Contact us on WhatsApp"}</span>
-          </a>
-
-          <Link href="/" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">
-            {isArabic ? "العودة للصفحة الرئيسية" : "Back to Home"}
-          </Link>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#07090e] pt-24 pb-20 px-6">
