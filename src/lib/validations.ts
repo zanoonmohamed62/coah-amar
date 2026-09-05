@@ -19,7 +19,7 @@ export const changePasswordSchema = z.object({
 // ─────────────────────────────────────────────────────────────
 
 export const createOrderSchema = z.object({
-  productId: z.string().cuid("Invalid product ID"),
+  productId: z.string().min(1, "Invalid product ID"),
   name: z.string().min(2, "الاسم قصير جداً — اكتب اسمك بالكامل"),
   email: z.string().email("البريد الإلكتروني غير صحيح"),
   // Messages here reach the customer verbatim on the checkout page, so they
