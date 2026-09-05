@@ -21,6 +21,7 @@ import { useSettings } from "@/lib/use-settings";
 import { useSiteContent } from "@/lib/use-site-content";
 import { EditableText } from "@/components/cms/EditableText";
 import { PaymentProofUpload } from "@/components/checkout/PaymentProofUpload";
+import { toErrorMessage } from "@/lib/error-message";
 
 const SPLIT_PRICE_EUR = 11;
 
@@ -68,40 +69,51 @@ export default function SplitCheckoutPage() {
     setError("");
 
     const ref = `SPLIT-${Date.now()}-${Math.random().toString(36).slice(-4).toUpperCase()}`;
+    const fallbackMsg = isArabic ? "حدث خطأ ما. يرجى المحاولة مرة أخرى." : "Something went wrong. Please try again.";
 
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productId,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        paymentMethod: paymentMethod.toUpperCase(),
-        goal: "Build muscle",
-        level: "Intermediate",
-        notes: "",
-        isRenewal: false,
-        orderRef: ref,
-      }),
-    });
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          paymentMethod: paymentMethod.toUpperCase(),
+          goal: "Build muscle",
+          level: "Intermediate",
+          notes: "",
+          isRenewal: false,
+          orderRef: ref,
+        }),
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setIsSubmitting(false);
+        const data = await res.json().catch(() => null);
+        // Only ever put a string in state — `error` is rendered directly into
+        // JSX, so a non-string (e.g. a validation-error object) would throw
+        // during render and take the whole page down.
+        setError(toErrorMessage(data?.error, fallbackMsg));
+        return;
+      }
+
+      const data = await res.json();
+      if (data.approvalUrl) {
+        window.location.href = data.approvalUrl;
+        return;
+      }
+
       setIsSubmitting(false);
-      const data = await res.json().catch(() => null);
-      setError(data?.error || (isArabic ? "حدث خطأ ما. يرجى المحاولة مرة أخرى." : "Something went wrong. Please try again."));
-      return;
+      setOrderRef(ref);
+      setIsSuccess(true);
+    } catch {
+      // Network failure / offline — previously this rejected unhandled and left
+      // the button stuck on "Processing…" forever.
+      setIsSubmitting(false);
+      setError(fallbackMsg);
     }
-
-    const data = await res.json();
-    if (data.approvalUrl) {
-      window.location.href = data.approvalUrl;
-      return;
-    }
-
-    setIsSubmitting(false);
-    setOrderRef(ref);
-    setIsSuccess(true);
   };
 
   if (isSuccess) {
@@ -394,6 +406,8 @@ export default function SplitCheckoutPage() {
                       <input
                         type="tel"
                         required
+                        minLength={7}
+                        title={isArabic ? "اكتب رقم الواتساب بالكامل مع كود الدولة" : "Enter your full WhatsApp number including country code"}
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+20 or +34..."

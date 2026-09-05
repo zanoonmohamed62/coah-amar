@@ -5,6 +5,14 @@ import { OrderStatus, PaymentMethod } from "@prisma/client";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { createPayPalOrder, isPayPalConfigured } from "@/lib/paypal";
 
+const FIELD_LABELS: Record<string, string> = {
+  name: "الاسم",
+  email: "البريد الإلكتروني",
+  phone: "رقم الواتساب",
+  productId: "المنتج",
+  paymentMethod: "طريقة الدفع",
+};
+
 export async function POST(req: NextRequest) {
   // Rate limit: 5 orders per minute per IP
   const ip = getClientIp(req);
@@ -12,7 +20,18 @@ export async function POST(req: NextRequest) {
   if (!allowed) return rateLimitResponse(reset);
 
   const parsed = createOrderSchema.safeParse(await req.json());
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) {
+    // Return a plain string, never a Zod error object: the checkout pages render
+    // `error` straight into JSX, and handing them an object crashes React —
+    // which surfaced to customers as a blank "this page couldn't load" screen
+    // instead of "check your phone number".
+    const issue = parsed.error.issues[0];
+    const field = issue?.path?.[0];
+    const message =
+      (typeof field === "string" ? `${FIELD_LABELS[field] ?? field}: ` : "") +
+      (issue?.message ?? "Invalid data");
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 
   const { productId, name, email, phone, paymentMethod, goal, level, notes, isRenewal, orderRef } = parsed.data;
 

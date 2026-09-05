@@ -20,9 +20,11 @@ export const changePasswordSchema = z.object({
 
 export const createOrderSchema = z.object({
   productId: z.string().cuid("Invalid product ID"),
-  name: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(7),
+  name: z.string().min(2, "الاسم قصير جداً — اكتب اسمك بالكامل"),
+  email: z.string().email("البريد الإلكتروني غير صحيح"),
+  // Messages here reach the customer verbatim on the checkout page, so they
+  // have to say what to actually fix — not "String must contain at least 7".
+  phone: z.string().min(7, "رقم الواتساب غير صحيح — اكتب الرقم بالكامل مع كود الدولة"),
   paymentMethod: z.enum(["INSTAPAY", "PAYPAL", "TELDA"]),
   goal: z.string().optional(),
   level: z.string().optional(),

@@ -27,6 +27,7 @@ import { useSettings } from "@/lib/use-settings";
 import { useSiteContent } from "@/lib/use-site-content";
 import { EditableText } from "@/components/cms/EditableText";
 import { PaymentProofUpload } from "@/components/checkout/PaymentProofUpload";
+import { toErrorMessage } from "@/lib/error-message";
 
 const COACHING_PRICE_EUR = 71;
 
@@ -106,7 +107,14 @@ export default function CoachingCheckoutPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error || (isArabic ? "حدث خطأ أثناء تسجيل الطلب." : "Failed to place order."));
+        // `new Error(someObject)` stringifies to "[object Object]" — flatten a
+        // structured API error into a real sentence instead.
+        throw new Error(
+          toErrorMessage(
+            data?.error,
+            isArabic ? "حدث خطأ أثناء تسجيل الطلب." : "Failed to place order."
+          )
+        );
       }
 
       const data = await res.json();
@@ -453,6 +461,8 @@ export default function CoachingCheckoutPage() {
                       <input
                         type="tel"
                         required
+                        minLength={7}
+                        title={isArabic ? "اكتب رقم الواتساب بالكامل مع كود الدولة" : "Enter your full WhatsApp number including country code"}
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+20 or +34..."

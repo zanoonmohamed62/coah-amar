@@ -223,7 +223,35 @@ export default function PdfCanvas({ isArabic }: Props) {
     }
   }, [renderPage, scaleMultiplier]);
 
+  // Turn raw PDF bytes into a rendered document.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const openPdf = useCallback(async (pdfjsLib: any, buf: ArrayBuffer) => {
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(buf.slice(0)),
+      cMapUrl: "/pdfjs/cmaps/cmaps/",
+      cMapPacked: true,
+      standardFontDataUrl: "/pdfjs/standard_fonts/standard_fonts/",
+      enableXfa: true,
+      // Render fonts directly onto canvas instead of CSS @font-face.
+      // Fixes glyph width mismatches that cause garbled letter spacing.
+      disableFontFace: true,
+      useSystemFonts: false,
+    });
+
+    const pdf = await loadingTask.promise;
+    pdfRef.current = pdf;
+    setNumPages(pdf.numPages);
+    setStatus("ready");
+  }, []);
+
   // Load PDF document (pdfjs v4)
+  //
+  // Cache-first: a cached copy renders immediately without waiting on any
+  // network call, then the version check runs in the background and only
+  // re-downloads if the admin actually replaced the file. Previously the
+  // version request was awaited *before* the cached bytes were used, so every
+  // open paused on the network (which reads as "it's downloading again") and
+  // offline it had to fail that request first.
   const loadDocument = useCallback(async () => {
     setStatus("loading");
     setErrMsg("");
@@ -233,52 +261,54 @@ export default function PdfCanvas({ isArabic }: Props) {
       // pdfjs v4 uses .mjs worker
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 
-      const [cachedBuf, cachedVersion, currentVersion] = await Promise.all([
+      const [cachedBuf, cachedVersion] = await Promise.all([
         getCachedPdf(),
         getCachedVersion(),
-        fetchCurrentVersion(),
       ]);
 
-      // Reuse the cached copy only if we know for certain it's still current.
-      // If the version check fails (offline), trust whatever is cached rather
-      // than blocking the viewer.
-      const cacheIsStale = currentVersion !== null && cachedVersion !== null && currentVersion !== cachedVersion;
+      if (cachedBuf) {
+        await openPdf(pdfjsLib, cachedBuf);
 
-      let buf = cachedBuf && !cacheIsStale ? cachedBuf : null;
-      if (!buf) {
-        const res = await fetch("/api/split", { cache: "no-store" });
-        if (res.status === 403) {
-          setStatus("no-access");
-          return;
-        }
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
-        buf = await res.arrayBuffer();
-        await savePdfToCache(buf, currentVersion ?? "legacy");
+        // Background freshness check — never blocks what's on screen, and is a
+        // no-op offline (fetchCurrentVersion resolves null on failure).
+        void (async () => {
+          try {
+            const currentVersion = await fetchCurrentVersion();
+            if (
+              currentVersion === null ||
+              cachedVersion === null ||
+              currentVersion === cachedVersion
+            ) return;
+
+            const res = await fetch("/api/split", { cache: "no-store" });
+            if (!res.ok) return;
+            const fresh = await res.arrayBuffer();
+            if (fresh.byteLength === 0) return;
+            await savePdfToCache(fresh, currentVersion);
+            await openPdf(pdfjsLib, fresh);
+          } catch { /* keep showing the cached copy */ }
+        })();
+        return;
       }
 
-      const loadingTask = pdfjsLib.getDocument({
-        data: new Uint8Array(buf.slice(0)),
-        cMapUrl: "/pdfjs/cmaps/cmaps/",
-        cMapPacked: true,
-        standardFontDataUrl: "/pdfjs/standard_fonts/standard_fonts/",
-        enableXfa: true,
-        // Render fonts directly onto canvas instead of CSS @font-face.
-        // Fixes glyph width mismatches that cause garbled letter spacing.
-        disableFontFace: true,
-        useSystemFonts: false,
-      });
-
-      const pdf = await loadingTask.promise;
-      pdfRef.current = pdf;
-      setNumPages(pdf.numPages);
-      setStatus("ready");
+      // No cache yet — must fetch before anything can render.
+      const currentVersion = await fetchCurrentVersion();
+      const res = await fetch("/api/split", { cache: "no-store" });
+      if (res.status === 403) {
+        setStatus("no-access");
+        return;
+      }
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const buf = await res.arrayBuffer();
+      await savePdfToCache(buf, currentVersion ?? "legacy");
+      await openPdf(pdfjsLib, buf);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[PdfCanvas]", msg);
       setErrMsg(msg);
       setStatus("error");
     }
-  }, []);
+  }, [openPdf]);
 
   useEffect(() => {
     loadDocument();
