@@ -26,10 +26,12 @@ export async function POST(req: NextRequest) {
     // which surfaced to customers as a blank "this page couldn't load" screen
     // instead of "check your phone number".
     const issue = parsed.error.issues[0];
-    const field = issue?.path?.[0];
-    const message =
-      (typeof field === "string" ? `${FIELD_LABELS[field] ?? field}: ` : "") +
-      (issue?.message ?? "Invalid data");
+    const field = typeof issue?.path?.[0] === "string" ? (issue.path[0] as string) : "";
+    const raw = issue?.message ?? "البيانات المدخلة غير صحيحة";
+    const label = FIELD_LABELS[field];
+    // Only prefix the field name when the message doesn't already name it,
+    // otherwise it reads as "رقم الواتساب: رقم الواتساب غير صحيح".
+    const message = label && !raw.includes(label) ? `${label}: ${raw}` : raw;
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
