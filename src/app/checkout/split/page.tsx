@@ -38,6 +38,7 @@ export default function SplitCheckoutPage() {
   const [error, setError] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
   const [priceEGP, setPriceEGP] = useState<number | null>(null);
+  const [originalPriceEGP, setOriginalPriceEGP] = useState<number | null>(null);
   const [productLoading, setProductLoading] = useState(true);
   const [productError, setProductError] = useState(false);
   const [spotsTaken, setSpotsTaken] = useState(0);
@@ -47,11 +48,12 @@ export default function SplitCheckoutPage() {
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
-      .then((data: { products?: { id: string; slug: string; price: number; spotsTaken?: number; totalSpots?: number; promoActive?: boolean }[] }) => {
+      .then((data: { products?: { id: string; slug: string; price: number; originalPrice?: number; spotsTaken?: number; totalSpots?: number; promoActive?: boolean }[] }) => {
         const p = (data.products || []).find((p) => p.slug === "training-split" || p.slug === "training-plan" || p.slug === "ammar-x-split" || p.slug === "amar-x-split");
         if (p) {
           setProductId(p.id);
           setPriceEGP(p.price / 100);
+          setOriginalPriceEGP(p.originalPrice ? p.originalPrice / 100 : null);
           setSpotsTaken(p.spotsTaken ?? 0);
           setTotalSpots(p.totalSpots ?? 100);
           setPromoActive(p.promoActive ?? false);
@@ -60,6 +62,11 @@ export default function SplitCheckoutPage() {
       .catch(() => { setProductError(true); })
       .finally(() => { setProductLoading(false); });
   }, []);
+
+  const discountPct =
+    promoActive && originalPriceEGP && priceEGP && originalPriceEGP > priceEGP
+      ? Math.round((1 - priceEGP / originalPriceEGP) * 100)
+      : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,6 +230,16 @@ export default function SplitCheckoutPage() {
                     <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider block">
                       {isArabic ? "دفع مرة واحدة" : "ONE-TIME"}
                     </span>
+                    {discountPct > 0 && (
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-xs text-slate-500 line-through">
+                          {originalPriceEGP} {isArabic ? "ج.م" : "LE"}
+                        </span>
+                        <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)]">
+                          -{discountPct}%
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-2xl font-black text-white">{priceEGP ?? 299}</span>
                       <span className="text-xs text-slate-400">LE / {SPLIT_PRICE_EUR} €</span>
@@ -289,6 +306,11 @@ export default function SplitCheckoutPage() {
                 <div className="flex items-center justify-between py-2 border-b border-slate-800 text-sm">
                   <span className="text-slate-300 font-medium">Amar X Split (7-Day Program)</span>
                   <div className="text-right">
+                    {discountPct > 0 && (
+                      <span className="text-xs text-slate-500 line-through block">
+                        {originalPriceEGP} LE
+                      </span>
+                    )}
                     <span className="text-white font-bold">{priceEGP ?? 299} LE</span>
                   </div>
                 </div>
@@ -296,6 +318,14 @@ export default function SplitCheckoutPage() {
                 <div className="flex items-baseline justify-between pt-2">
                   <span className="text-slate-400 text-xs">{isArabic ? "الإجمالي المطلوب" : "Total Amount"}</span>
                   <div className="text-right">
+                    {discountPct > 0 && (
+                      <div className="flex items-center gap-1.5 justify-end mb-0.5">
+                        <span className="text-xs text-slate-500 line-through">{originalPriceEGP} LE</span>
+                        <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)]">
+                          -{discountPct}%
+                        </span>
+                      </div>
+                    )}
                     <span className="text-2xl font-black text-blue-400">{priceEGP ?? 299} LE</span>
                     <span className="text-xs text-slate-400 ml-1.5">({SPLIT_PRICE_EUR} €)</span>
                   </div>

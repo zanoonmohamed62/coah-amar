@@ -57,15 +57,17 @@ export default function CoachingCheckoutPage() {
   const [spotsTaken, setSpotsTaken] = useState(0);
   const [totalSpots, setTotalSpots] = useState(100);
   const [promoActive, setPromoActive] = useState(false);
+  const [originalPriceEGP, setOriginalPriceEGP] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
-      .then((data: { products?: { id: string; slug: string; price: number; spotsTaken?: number; totalSpots?: number; promoActive?: boolean }[] }) => {
+      .then((data: { products?: { id: string; slug: string; price: number; originalPrice?: number; spotsTaken?: number; totalSpots?: number; promoActive?: boolean }[] }) => {
         const p = (data.products || []).find((p) => p.slug === "personal-coaching" || p.slug === "coaching-3months" || p.slug === "coaching");
         if (p) {
           setProductId(p.id);
           setPriceEGP(p.price / 100);
+          setOriginalPriceEGP(p.originalPrice ? p.originalPrice / 100 : null);
           setSpotsTaken(p.spotsTaken ?? 0);
           setTotalSpots(p.totalSpots ?? 100);
           setPromoActive(p.promoActive ?? false);
@@ -74,6 +76,11 @@ export default function CoachingCheckoutPage() {
       .catch(() => { setProductError(true); })
       .finally(() => { setProductLoading(false); });
   }, []);
+
+  const discountPct =
+    promoActive && originalPriceEGP && priceEGP && originalPriceEGP > priceEGP
+      ? Math.round((1 - priceEGP / originalPriceEGP) * 100)
+      : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,6 +326,11 @@ export default function CoachingCheckoutPage() {
                     <p className="text-xs text-slate-400 mt-0.5">{isArabic ? "نظام متكامل لمدة ٣ شهور كاملة" : "3-Month Full Transformation System"}</p>
                   </div>
                   <div className="text-right">
+                    {discountPct > 0 && (
+                      <span className="text-xs text-slate-500 line-through block">
+                        {originalPriceEGP} LE
+                      </span>
+                    )}
                     <span className="text-blue-400 font-bold">{priceEGP ?? 1499} LE</span>
                   </div>
                 </div>
@@ -326,6 +338,14 @@ export default function CoachingCheckoutPage() {
                 <div className="flex items-baseline justify-between pt-2">
                   <span className="text-slate-400 text-xs">{isArabic ? "الإجمالي المطلوب" : "Total Amount"}</span>
                   <div className="text-right">
+                    {discountPct > 0 && (
+                      <div className="flex items-center gap-1.5 justify-end mb-0.5">
+                        <span className="text-xs text-slate-500 line-through">{originalPriceEGP} LE</span>
+                        <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)]">
+                          -{discountPct}%
+                        </span>
+                      </div>
+                    )}
                     <span className="text-2xl font-black text-white">{priceEGP ?? 1499} LE</span>
                     <span className="text-xs text-slate-400 ml-1.5">({COACHING_PRICE_EUR} €)</span>
                   </div>
