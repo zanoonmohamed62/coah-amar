@@ -67,6 +67,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     ...authConfig.callbacks,
+    // authConfig.jwt only sets token.role from `user` on the initial sign-in
+    // request (Edge-safe, no DB access there). Sessions last up to 15 minutes,
+    // so promoting someone to ADMIN from /admin/team would otherwise not take
+    // effect until their token fully expired and they signed in again. This
+    // override re-reads the role from the DB (Node runtime, DB access is fine
+    // here) at most once every 60s per token, so a promotion/demotion shows
+    // up on the user's very next request instead of up to 15 minutes later.
+    async jwt(params) {
+      const token = await authConfig.callbacks.jwt(params);
+      const lastRoleCheck = (token as unknown as { roleCheckedAt?: number }).roleCheckedAt ?? 0;
+      if (token.id && Date.now() - lastRoleCheck > 60_000) {
+        try {
+          const current = await db.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true },
+          });
+          if (current) token.role = current.role;
+          (token as unknown as { roleCheckedAt: number }).roleCheckedAt = Date.now();
+        } catch (dbError) {
+          console.error("Role refresh error:", dbError);
+        }
+      }
+      return token;
+    },
     async signIn({ user, account }) {
       // Credentials sign-in is already fully validated in authorize() above.
       if (account?.provider !== "google") return true;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guard";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 import { Role } from "@prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
@@ -12,6 +13,9 @@ type Params = { params: Promise<{ id: string }> };
 export async function PUT(req: NextRequest, { params }: Params) {
   const { error, session } = await requireAdmin();
   if (error) return error;
+  if (!isSuperAdminEmail(session.user?.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
 

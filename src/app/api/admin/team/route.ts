@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guard";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 import { Role } from "@prisma/client";
 
 export async function GET() {
-  const { error } = await requireAdmin();
+  const { error, session } = await requireAdmin();
   if (error) return error;
+  if (!isSuperAdminEmail(session.user?.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const admins = await db.user.findMany({
     where: { role: Role.ADMIN },
@@ -23,8 +27,11 @@ export async function GET() {
 // pre-provisioned ADMIN role survives their first real login untouched. No
 // changes to auth.ts were needed for this to work.
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error, session } = await requireAdmin();
   if (error) return error;
+  if (!isSuperAdminEmail(session.user?.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { email } = await req.json().catch(() => ({}));
   if (!email || typeof email !== "string" || !email.includes("@")) {

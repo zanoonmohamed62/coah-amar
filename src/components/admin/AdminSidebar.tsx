@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
@@ -21,11 +21,13 @@ import {
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
 import { useAdminSidebar } from "./AdminSidebarContext";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const [pendingOrders, setPendingOrders] = useState(0);
   const { lang, isArabic } = useLanguage();
+  const { data: session } = useSession();
   const t = adminTranslations[lang].sidebar;
   const { mobileOpen, closeMobile } = useAdminSidebar();
 
@@ -36,7 +38,9 @@ export function AdminSidebar() {
     { href: "/admin/products", label: t.products, icon: Package },
     { href: "/admin/cms", label: t.cms, icon: FileText },
     { href: "/admin/settings", label: t.settings, icon: Settings },
-    { href: "/admin/team", label: t.team, icon: ShieldCheck },
+    ...(isSuperAdminEmail(session?.user?.email)
+      ? [{ href: "/admin/team", label: t.team, icon: ShieldCheck }]
+      : []),
   ];
 
   useEffect(() => {

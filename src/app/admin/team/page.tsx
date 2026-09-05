@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Plus, ShieldCheck, X, UserMinus, Sparkles } from "lucide-react";
+import { Plus, ShieldCheck, X, UserMinus, Sparkles, Lock } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 
 type Admin = { id: string; name: string; email: string; createdAt: string };
 
@@ -68,6 +69,25 @@ export default function TeamPage() {
   }
 
   const currentUserId = (session?.user as { id?: string } | undefined)?.id;
+  const isSuperAdmin = isSuperAdminEmail(session?.user?.email);
+
+  if (session && !isSuperAdmin) {
+    return (
+      <div className="max-w-md mx-auto text-center py-16">
+        <div className="w-12 h-12 rounded-[var(--radius-lg)] bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center mx-auto mb-4 text-[var(--text-muted)]">
+          <Lock size={20} />
+        </div>
+        <h2 className="text-lg font-bold text-[var(--text-primary)] mb-1">
+          {isArabic ? "غير مسموح" : "Not authorized"}
+        </h2>
+        <p className="text-sm text-[var(--text-muted)]">
+          {isArabic
+            ? "الصفحة دي متاحة للمالك الأساسي للحساب بس."
+            : "This page is only available to the account owner."}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-3xl">
