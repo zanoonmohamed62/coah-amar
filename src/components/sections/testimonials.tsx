@@ -96,13 +96,13 @@ export function TestimonialsSection() {
                         <EditableText sectionId="testimonials" fieldId={r.durationField} value={r.duration} />
                       </p>
                     </div>
-                    <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-1 rounded">
+                    <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-1 rounded-[var(--radius-sm)]">
                       <EditableText sectionId="testimonials" fieldId={r.resultField} value={r.result} />
                     </span>
                   </div>
                   <div className="flex gap-1 mb-2">
                     {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} size={14} className="text-yellow-500 fill-yellow-500" />
+                      <Star key={s} size={13} className="text-yellow-500 fill-yellow-500" />
                     ))}
                   </div>
                   <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
@@ -118,11 +118,11 @@ export function TestimonialsSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="bg-[#0b0f19] border border-slate-800 border-dashed rounded-sm p-6 flex flex-col items-center justify-center gap-3 min-h-[160px]"
+                  className="bg-[#0b0f19] border border-slate-800 border-dashed rounded-[var(--radius-xl)] p-6 flex flex-col items-center justify-center gap-3 min-h-[160px]"
                 >
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} size={14} className="text-slate-700" />
+                      <Star key={s} size={13} className="text-slate-700" />
                     ))}
                   </div>
                   <p className="text-slate-600 text-sm">
@@ -138,7 +138,7 @@ export function TestimonialsSection() {
             href={`https://wa.me/${waNumber}?text=${encodeURIComponent(isArabic ? "مرحباً كوتش عمار، أريد مشاركة نتيجتي" : "Hi Coach Amar, I want to share my results")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 px-6 py-3 bg-blue-600/15 border border-blue-500/30 hover:border-blue-400 hover:bg-blue-600/25 text-blue-300 hover:text-white rounded-sm transition-all font-semibold text-sm"
+            className="inline-flex items-center gap-2.5 px-6 py-3 bg-blue-600/15 border border-blue-500/30 hover:border-blue-400 hover:bg-blue-600/25 text-blue-300 hover:text-white rounded-[var(--radius-lg)] transition-all font-semibold text-sm"
           >
             <MessageSquarePlus size={16} />
             {isArabic ? "شارك نتيجتك" : "Share Your Result"}

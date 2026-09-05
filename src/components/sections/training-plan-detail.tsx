@@ -66,7 +66,7 @@ export function TrainingPlanSection() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: i * 0.1 }}
-                    className="glass border border-[var(--border)] rounded-sm p-4"
+                    className="glass border border-[var(--border)] rounded-[var(--radius-md)] p-4"
                   >
                     <IconComponent size={18} className="text-[var(--accent)] mb-2" />
                     <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">{item.title}</p>
@@ -95,7 +95,7 @@ export function TrainingPlanSection() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="relative"
           >
-            <div className="relative rounded-sm overflow-hidden border border-[var(--border-accent)] bg-[#07090e] aspect-[4/3] shadow-2xl group flex flex-col items-center justify-center card-hover">
+            <div className="relative rounded-[var(--radius-xl)] overflow-hidden border border-[var(--border-accent)] bg-[#07090e] aspect-[4/3] shadow-2xl group flex flex-col items-center justify-center card-hover">
               {/* Abstract decorative elements */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1)_0%,transparent_60%)] pointer-events-none" />
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-50" />
@@ -127,15 +127,15 @@ export function TrainingPlanSection() {
 
               {/* Simulated Footer Grid */}
               <div className="absolute bottom-6 w-[80%] grid grid-cols-3 gap-3 opacity-60">
-                <div className="h-12 border border-[var(--border)] rounded-sm bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-75">
+                <div className="h-12 border border-[var(--border)] rounded-[var(--radius-md)] bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-75">
                   <div className="w-6 h-1 bg-[var(--accent)] mb-1.5 rounded-sm" />
                   <div className="w-12 h-1 bg-white/20 rounded-sm" />
                 </div>
-                <div className="h-12 border border-[var(--border)] rounded-sm bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-100">
+                <div className="h-12 border border-[var(--border)] rounded-[var(--radius-md)] bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-100">
                   <div className="w-8 h-1 bg-[var(--accent)] mb-1.5 rounded-sm" />
                   <div className="w-14 h-1 bg-white/20 rounded-sm" />
                 </div>
-                <div className="h-12 border border-[var(--border)] rounded-sm bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-150">
+                <div className="h-12 border border-[var(--border)] rounded-[var(--radius-md)] bg-[var(--bg-elevated)] flex flex-col justify-center px-3 group-hover:border-[var(--border-accent)] transition-colors delay-150">
                   <div className="w-5 h-1 bg-[var(--accent)] mb-1.5 rounded-sm" />
                   <div className="w-10 h-1 bg-white/20 rounded-sm" />
                 </div>
@@ -143,7 +143,7 @@ export function TrainingPlanSection() {
             </div>
 
             {/* Price tag overlay */}
-            <div className={`absolute -bottom-4 ${isArabic ? "-left-4" : "-right-4"} glass-accent border border-[var(--border-accent)] rounded-sm px-6 py-4 text-center shadow-xl`}>
+            <div className={`absolute -bottom-4 ${isArabic ? "-left-4" : "-right-4"} glass-accent border border-[var(--border-accent)] rounded-[var(--radius-lg)] px-6 py-4 text-center shadow-xl`}>
               <p className="text-xs text-[var(--accent)] tracking-wider uppercase mb-1">{get("trainingDetail", "cardBadge", t.trainingDetail.cardBadge)}</p>
               <p className="text-3xl font-bold text-gradient" style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}>
                 {get("trainingDetail", "cardPrice", t.trainingDetail.cardPrice)} <span className="text-sm font-normal text-[var(--text-muted)]">{get("trainingDetail", "cardCurrency", t.trainingDetail.cardCurrency)}</span>

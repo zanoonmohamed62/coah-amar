@@ -56,24 +56,24 @@ export function PWAProvider() {
     <>
       {/* ── Offline indicator ── */}
       {!isOnline && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 bg-[#1a1f2e] border border-blue-500/30 text-blue-400 text-xs font-semibold rounded-full shadow-2xl shadow-blue-500/10 backdrop-blur-md">
-          <Wifi size={13} className="opacity-50" />
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 bg-[#1a1f2e] border border-blue-500/30 text-blue-400 text-xs font-semibold rounded-[var(--radius-pill)] shadow-2xl shadow-blue-500/10 backdrop-blur-md">
+          <Wifi size={14} className="opacity-50" />
           <span>وضع أوفلاين — الجدول محفوظ محلياً</span>
         </div>
       )}
 
       {/* ── Install PWA banner ── */}
       {showInstallBanner && canInstall && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm mx-4 px-4 py-4 bg-[#0d1117] border border-blue-500/30 rounded-sm shadow-2xl shadow-black/50 backdrop-blur-md">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm mx-4 px-4 py-4 bg-[#0d1117] border border-blue-500/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-card)] backdrop-blur-md">
           <button
             onClick={() => setShowInstallBanner(false)}
             className="absolute top-2 right-2 p-1 text-gray-600 hover:text-white transition-colors"
           >
-            <X size={12} />
+            <X size={14} />
           </button>
           <div className="flex items-start gap-3">
             {/* Blue App Icon */}
-            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-blue-500/20 shadow-md shadow-blue-500/10">
+            <div className="w-12 h-12 rounded-[var(--radius-lg)] overflow-hidden flex-shrink-0 border border-blue-500/20 shadow-[var(--shadow-button)]">
               <img src="/icons/icon-192.png" alt="AMAR X" className="w-full h-full object-cover" />
             </div>
             <div>
@@ -85,7 +85,7 @@ export function PWAProvider() {
           </div>
           <button
             onClick={handleInstall}
-            className="mt-3 w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+            className="mt-3 w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-[var(--radius-lg)] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
           >
             <Plus size={14} />
             <span>إضافة للشاشة الرئيسية</span>

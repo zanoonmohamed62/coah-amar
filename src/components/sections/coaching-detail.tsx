@@ -86,9 +86,9 @@ export function CoachingDetailSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="glass-accent border border-[var(--border-accent)] rounded-sm p-6 card-hover"
+                className="glass-accent border border-[var(--border-accent)] rounded-[var(--radius-xl)] p-6 card-hover"
               >
-                <div className="w-10 h-10 rounded-sm bg-[var(--accent-glow)] flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-[var(--radius-md)] bg-[var(--accent-glow)] flex items-center justify-center mb-4">
                   <IconComp size={18} className="text-[var(--accent)]" />
                 </div>
                 <h3
@@ -116,7 +116,7 @@ export function CoachingDetailSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="relative rounded-sm overflow-hidden border border-[var(--border-accent)] aspect-video shadow-2xl group card-hover"
+            className="relative rounded-[var(--radius-xl)] overflow-hidden border border-[var(--border-accent)] aspect-video shadow-2xl group card-hover"
           >
             <Image
               src="/assets/split-cover.png"
@@ -129,7 +129,7 @@ export function CoachingDetailSection() {
             {/* Stats overlay */}
             <div className={`absolute bottom-6 ${isArabic ? "right-6" : "left-6"} flex gap-4 z-10`}>
               {clientStats.map((s) => (
-                <div key={s.label} className="glass border border-[var(--border)] rounded-sm px-3.5 py-2">
+                <div key={s.label} className="glass border border-[var(--border)] rounded-[var(--radius-md)] px-3.5 py-2">
                   <p className="text-xs text-[var(--text-muted)]">{s.label}</p>
                   <p className="text-lg font-bold text-gradient" style={{ fontFamily: isArabic ? "var(--font-alexandria)" : "var(--font-outfit)" }}>{s.value}</p>
                 </div>
@@ -159,8 +159,8 @@ export function CoachingDetailSection() {
                 { icon: Heart, text: get("coachingDetail", "feature3", t.coachingDetail.feature3) },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-sm bg-[var(--accent-glow)] flex items-center justify-center flex-shrink-0">
-                    <item.icon size={15} className="text-[var(--accent)]" />
+                  <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--accent-glow)] flex items-center justify-center flex-shrink-0">
+                    <item.icon size={16} className="text-[var(--accent)]" />
                   </div>
                   <p className="text-sm text-[var(--text-secondary)]">{item.text}</p>
                 </div>

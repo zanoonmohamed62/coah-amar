@@ -55,7 +55,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-[0_2px_10px_rgba(37,99,235,0.25)] border border-white/10">
+            <div className="w-10 h-10 rounded-[var(--radius-lg)] overflow-hidden flex-shrink-0 shadow-[0_2px_10px_rgba(37,99,235,0.25)] border border-white/10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/icon.svg" alt="Amar X Split" className="w-full h-full object-contain" />
             </div>
@@ -85,32 +85,32 @@ export function Navbar() {
             {/* Language Switch Button */}
             <button
               onClick={toggleLang}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer shadow-sm"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-[var(--radius-lg)] border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer shadow-sm"
               title={lang === "en" ? "تبديل إلى اللغة العربية" : "Switch to English"}
             >
-              <Globe size={13} className="text-blue-400" />
+              <Globe size={14} className="text-blue-400" />
               <span>{t.nav.langSwitch}</span>
             </button>
 
             {status === "authenticated" ? (
               <Link
                 href={accountHref}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-semibold text-[var(--text-secondary)] hover:text-white transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-lg)] border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-semibold text-[var(--text-secondary)] hover:text-white transition-all shadow-sm"
               >
-                <AccountIcon size={13} className="text-blue-400" />
+                <AccountIcon size={14} className="text-blue-400" />
                 <span>{accountLabel}</span>
               </Link>
             ) : status !== "loading" ? (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-semibold text-[var(--text-secondary)] hover:text-white transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-lg)] border border-white/10 bg-white/[0.04] backdrop-blur-md hover:border-blue-500/40 hover:bg-white/[0.08] text-xs font-semibold text-[var(--text-secondary)] hover:text-white transition-all shadow-sm"
               >
-                <LogIn size={13} className="text-blue-400" />
+                <LogIn size={14} className="text-blue-400" />
                 <span>{isArabic ? "تسجيل الدخول" : "Login"}</span>
               </Link>
             ) : null}
 
-            <Link href="/#plans" className="btn-primary text-xs py-2 px-5 rounded-xl font-bold tracking-wide relative z-10">
+            <Link href="/#plans" className="btn-primary text-xs py-2 px-5 rounded-[var(--radius-lg)] font-bold tracking-wide relative z-10">
               <EditableText sectionId="nav" fieldId="startNow" value={get("nav", "startNow", t.nav.startNow)} />
             </Link>
           </div>
@@ -119,7 +119,7 @@ export function Navbar() {
           <div className="md:hidden flex items-center gap-2">
             <button
               onClick={toggleLang}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-[var(--border)] glass text-xs font-medium text-[var(--text-secondary)]"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-sm)] border border-[var(--border)] glass text-xs font-medium text-[var(--text-secondary)]"
             >
               <Globe size={12} className="text-[var(--accent)]" />
               <span>{lang === "en" ? "عربي" : "EN"}</span>
@@ -130,7 +130,7 @@ export function Navbar() {
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
-              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+              {mobileOpen ? <X size={22} strokeWidth={2} /> : <Menu size={22} strokeWidth={2} />}
             </button>
           </div>
         </div>
@@ -174,7 +174,7 @@ export function Navbar() {
                   toggleLang();
                   setMobileOpen(false);
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-[var(--border-accent)] glass text-sm font-semibold text-[var(--accent)]"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-[var(--radius-lg)] border border-[var(--border-accent)] glass text-sm font-semibold text-[var(--accent)]"
               >
                 <Globe size={16} />
                 <span>{t.nav.langSwitch}</span>
@@ -184,7 +184,7 @@ export function Navbar() {
                 <Link
                   href={accountHref}
                   onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-[var(--border-accent)] glass text-sm font-semibold text-[var(--text-secondary)]"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-[var(--radius-lg)] border border-[var(--border-accent)] glass text-sm font-semibold text-[var(--text-secondary)]"
                 >
                   <AccountIcon size={16} />
                   <span>{accountLabel}</span>
@@ -193,7 +193,7 @@ export function Navbar() {
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-sm border border-[var(--border-accent)] glass text-sm font-semibold text-[var(--text-secondary)]"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-[var(--radius-lg)] border border-[var(--border-accent)] glass text-sm font-semibold text-[var(--text-secondary)]"
                 >
                   <LogIn size={16} />
                   <span>{isArabic ? "تسجيل الدخول" : "Login"}</span>

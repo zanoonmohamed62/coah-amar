@@ -189,7 +189,7 @@ export default function ProductsPage() {
 
         <button
           onClick={openNewModal}
-          className="flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors cursor-pointer shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-[var(--radius-lg)] transition-colors cursor-pointer shadow-[var(--shadow-button)]"
         >
           <Plus size={14} /> {t.addBtn}
         </button>
@@ -199,7 +199,7 @@ export default function ProductsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm animate-pulse" />
+            <div key={i} className="h-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] animate-pulse" />
           ))}
         </div>
       ) : (
@@ -210,14 +210,14 @@ export default function ProductsPage() {
             return (
               <div
                 key={p.id}
-                className={`bg-[var(--bg-card)] border rounded-sm p-6 flex flex-col justify-between transition-all ${
+                className={`bg-[var(--bg-card)] border rounded-[var(--radius-xl)] p-6 flex flex-col justify-between transition-all ${
                   p.isActive ? "border-[var(--border)] hover:border-[var(--border-accent)]" : "border-zinc-800 opacity-60"
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <span
-                      className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-sm border ${
+                      className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-[var(--radius-sm)] border ${
                         p.type === "TRAINING_PLAN"
                           ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
                           : "bg-purple-500/10 text-purple-400 border-purple-500/30"
@@ -229,22 +229,22 @@ export default function ProductsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => toggleActive(p.id, p.isActive)}
-                        className={`p-1.5 rounded-sm border transition-colors ${
+                        className={`p-1.5 rounded-[var(--radius-sm)] border transition-colors ${
                           p.isActive
                             ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
                             : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700"
                         }`}
                         title={p.isActive ? "Deactivate Offer" : "Activate Offer"}
                       >
-                        {p.isActive ? <Eye size={13} /> : <EyeOff size={13} />}
+                        {p.isActive ? <Eye size={14} /> : <EyeOff size={14} />}
                       </button>
 
                       <button
                         onClick={() => openEditModal(p)}
-                        className="p-1.5 rounded-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
+                        className="p-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
                         title={t.editBtn}
                       >
-                        <Edit2 size={13} />
+                        <Edit2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -254,7 +254,7 @@ export default function ProductsPage() {
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] mb-4">{p.description || "—"}</p>
 
-                  <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm mb-4">
+                  <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] mb-4">
                     <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">
                       {t.priceLabel}
                     </span>
@@ -308,15 +308,15 @@ export default function ProductsPage() {
       {/* Add / Edit Product Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm w-full max-w-lg shadow-2xl">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] w-full max-w-lg shadow-[var(--shadow-card)]">
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-elevated)]">
               <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                <Sparkles size={15} className="text-[var(--accent)]" />{" "}
+                <Sparkles size={16} className="text-[var(--accent)]" />{" "}
                 {editingId ? t.editBtn : t.addBtn}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               >
                 <X size={16} />
               </button>
@@ -338,7 +338,7 @@ export default function ProductsPage() {
                     }));
                   }}
                   placeholder="e.g. Training Split"
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                 />
               </div>
 
@@ -350,7 +350,7 @@ export default function ProductsPage() {
                   <select
                     value={form.type}
                     onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as any }))}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   >
                     <option value="TRAINING_PLAN">{t.trainingPlanType}</option>
                     <option value="PERSONAL_COACHING">{t.coachingType}</option>
@@ -366,12 +366,12 @@ export default function ProductsPage() {
                     type="number"
                     value={form.originalPrice}
                     onChange={(e) => setForm((f) => ({ ...f, originalPrice: Number(e.target.value), price: Number(e.target.value) }))}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] font-bold"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] font-bold"
                   />
                 </div>
               </div>
 
-              <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm space-y-3">
+              <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] space-y-3">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block">
                   {isArabic ? "عرض الإطلاق (خصم أول مشتركين)" : "Launch Promo (early-buyer discount)"}
                 </span>
@@ -384,7 +384,7 @@ export default function ProductsPage() {
                       type="number" min={0} max={100}
                       value={form.discountPercent}
                       onChange={(e) => setForm((f) => ({ ...f, discountPercent: Number(e.target.value) }))}
-                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                     />
                   </div>
                   <div>
@@ -395,7 +395,7 @@ export default function ProductsPage() {
                       type="number" min={0}
                       value={form.promoCounterBase}
                       onChange={(e) => setForm((f) => ({ ...f, promoCounterBase: Number(e.target.value) }))}
-                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                     />
                   </div>
                   <div>
@@ -406,7 +406,7 @@ export default function ProductsPage() {
                       type="number" min={1}
                       value={form.promoCounterLimit}
                       onChange={(e) => setForm((f) => ({ ...f, promoCounterLimit: Number(e.target.value) }))}
-                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                     />
                   </div>
                 </div>
@@ -425,7 +425,7 @@ export default function ProductsPage() {
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   placeholder="Brief summary of the offer..."
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                 />
               </div>
 
@@ -437,7 +437,7 @@ export default function ProductsPage() {
                   rows={4}
                   value={form.features}
                   onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))}
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] resize-y"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)] resize-y"
                 />
               </div>
 
@@ -445,14 +445,14 @@ export default function ProductsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-sm transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-[var(--radius-lg)] transition-colors disabled:opacity-50"
                 >
                   {saving ? "Saving…" : t.saveChanges}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2.5 border border-[var(--border)] text-xs font-bold rounded-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                  className="px-4 py-2.5 border border-[var(--border)] text-xs font-bold rounded-[var(--radius-lg)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                 >
                   {tCommon.cancel}
                 </button>

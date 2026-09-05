@@ -50,7 +50,7 @@ export function PaymentProofUpload({ orderRef }: Props) {
 
   if (uploaded) {
     return (
-      <div className="flex flex-col items-center gap-3 p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-sm text-center">
+      <div className="flex flex-col items-center gap-3 p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-[var(--radius-lg)] text-center">
         <CheckCircle2 size={28} className="text-emerald-400" />
         <p className="text-sm font-bold text-emerald-300">
           {isArabic ? "تم استلام صورة التحويل!" : "Payment proof received!"}
@@ -76,7 +76,7 @@ export function PaymentProofUpload({ orderRef }: Props) {
           if (file) handleFile(file);
         }}
         onClick={() => !uploading && inputRef.current?.click()}
-        className={`flex flex-col items-center gap-2.5 p-6 border-2 border-dashed rounded-sm cursor-pointer transition-colors ${
+        className={`flex flex-col items-center gap-2.5 p-6 border-2 border-dashed rounded-[var(--radius-lg)] cursor-pointer transition-colors ${
           dragOver ? "border-blue-400 bg-blue-500/10" : "border-slate-700 hover:border-blue-500/50 bg-[#0b0f19]"
         }`}
       >
@@ -92,7 +92,7 @@ export function PaymentProofUpload({ orderRef }: Props) {
               {isArabic ? "ارفع صورة التحويل" : "Upload your payment screenshot"}
             </p>
             <p className="text-xs text-slate-400 flex items-center gap-1.5">
-              <Upload size={12} />
+              <Upload size={14} />
               {isArabic ? "اسحب الصورة هنا أو اضغط للاختيار" : "Drag & drop, or click to choose a file"}
             </p>
           </>

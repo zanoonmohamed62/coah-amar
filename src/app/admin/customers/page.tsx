@@ -145,7 +145,7 @@ export default function CustomersPage() {
             <button
               key={key}
               onClick={() => setFilter(key as any)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-sm border transition-all ${
+              className={`px-3 py-1.5 text-xs font-bold rounded-[var(--radius-sm)] border transition-all ${
                 filter === key
                   ? "bg-[var(--accent)] text-black border-[var(--accent)]"
                   : "bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -164,7 +164,7 @@ export default function CustomersPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.searchPlaceholder}
-              className={`w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm ${
+              className={`w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] ${
                 isArabic ? "pr-9 pl-3" : "pl-9 pr-3"
               } py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-accent)]`}
             />
@@ -179,7 +179,7 @@ export default function CustomersPage() {
               setSelectedProductId("");
               setShowAddModal(true);
             }}
-            className="px-3.5 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-sm transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-sm cursor-pointer"
+            className="px-3.5 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-[var(--radius-lg)] transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-[var(--shadow-button)] cursor-pointer"
           >
             <Plus size={14} /> {t.addAthleteBtn}
           </button>
@@ -187,7 +187,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Directory Table */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-sm">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">
@@ -219,7 +219,7 @@ export default function CustomersPage() {
                   <tr key={cust.id} className="hover:bg-[var(--bg-elevated)] transition-colors group">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs">
+                        <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs">
                           {cust.name.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
@@ -245,7 +245,7 @@ export default function CustomersPage() {
                               ? `الطلب اتعمل بإيميل مختلف: ${mismatched.join(", ")}`
                               : `Order was placed with a different email: ${mismatched.join(", ")}`}
                           >
-                            <AlertTriangle size={10} />
+                            <AlertTriangle size={11} />
                             {isArabic ? "إيميل الطلب مختلف" : "Order email mismatch"}
                           </p>
                         );
@@ -257,9 +257,9 @@ export default function CustomersPage() {
                           {cust.entitlements.map((e) => (
                             <span
                               key={e.id}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-pill)] text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
                             >
-                              <Dumbbell size={10} /> {e.product.name}
+                              <Dumbbell size={11} /> {e.product.name}
                             </span>
                           ))}
                         </div>
@@ -279,10 +279,10 @@ export default function CustomersPage() {
                         {cust.phone && (
                           <button
                             onClick={() => openWhatsApp(cust.phone!, cust.name)}
-                            className="p-1.5 rounded-sm border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                            className="p-1.5 rounded-[var(--radius-sm)] border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
                             title="WhatsApp"
                           >
-                            <MessageSquare size={13} />
+                            <MessageSquare size={14} />
                           </button>
                         )}
                       </div>
@@ -298,14 +298,14 @@ export default function CustomersPage() {
       {/* Onboard Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm w-full max-w-md shadow-2xl">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] w-full max-w-md shadow-[var(--shadow-card)]">
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-elevated)]">
               <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                <Sparkles size={15} className="text-[var(--accent)]" /> {t.modalTitle}
+                <Sparkles size={16} className="text-[var(--accent)]" /> {t.modalTitle}
               </h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               >
                 <X size={16} />
               </button>
@@ -313,10 +313,10 @@ export default function CustomersPage() {
 
             {createdInfo ? (
               <div className="p-6 space-y-4">
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-sm space-y-2">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-[var(--radius-md)] space-y-2">
                   <p className="text-xs font-bold text-emerald-400">Athlete account created successfully!</p>
                   <p className="text-xs text-[var(--text-secondary)]">Provide the credentials below to the athlete:</p>
-                  <div className="p-2.5 bg-[var(--bg-base)] border border-[var(--border)] rounded font-mono text-xs space-y-1">
+                  <div className="p-2.5 bg-[var(--bg-base)] border border-[var(--border)] rounded-[var(--radius-sm)] font-mono text-xs space-y-1">
                     <p className="text-[var(--text-primary)]">Email: <strong>{createdInfo.email}</strong></p>
                     <p className="text-[var(--text-primary)]">Password: <strong>{createdInfo.pass}</strong></p>
                   </div>
@@ -329,13 +329,13 @@ export default function CustomersPage() {
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
                     }}
-                    className="flex-1 py-2 bg-[var(--accent)] text-black font-bold text-xs rounded-sm flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2 bg-[var(--accent)] text-black font-bold text-xs rounded-[var(--radius-lg)] flex items-center justify-center gap-1.5"
                   >
                     {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied!" : "Copy Credentials"}
                   </button>
                   <button
                     onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 border border-[var(--border)] text-xs font-bold rounded-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                    className="px-4 py-2 border border-[var(--border)] text-xs font-bold rounded-[var(--radius-lg)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                   >
                     {tCommon.cancel}
                   </button>
@@ -350,7 +350,7 @@ export default function CustomersPage() {
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="e.g. Mostafa Ali"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   />
                 </div>
 
@@ -362,7 +362,7 @@ export default function CustomersPage() {
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="athlete@example.com"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   />
                 </div>
 
@@ -372,7 +372,7 @@ export default function CustomersPage() {
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
                     placeholder="+20 100 000 0000"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   />
                 </div>
 
@@ -381,7 +381,7 @@ export default function CustomersPage() {
                   <select
                     value={selectedProductId}
                     onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                   >
                     <option value="">-- No plan assigned --</option>
                     {products.map((p) => (
@@ -396,14 +396,14 @@ export default function CustomersPage() {
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-sm transition-colors disabled:opacity-50"
+                    className="flex-1 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-[var(--radius-lg)] transition-colors disabled:opacity-50"
                   >
                     {creating ? "Creating…" : t.createBtn}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 border border-[var(--border)] text-xs font-bold rounded-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                    className="px-4 py-2 border border-[var(--border)] text-xs font-bold rounded-[var(--radius-lg)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                   >
                     {t.cancelBtn}
                   </button>

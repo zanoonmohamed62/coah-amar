@@ -349,17 +349,17 @@ export default function PdfCanvas({ isArabic }: Props) {
         {/* Offline caching is deliberately silent — the customer shouldn't have
             to think about downloads, so no status badge is shown here. */}
         <div className="flex items-center gap-2" />
-        <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-sm border border-white/10">
-          <button onClick={() => handleZoom(-0.15)} className="p-1 hover:bg-white/10 rounded-sm text-[var(--text-muted)] hover:text-white transition-colors">
+        <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-[var(--radius-sm)] border border-white/10">
+          <button onClick={() => handleZoom(-0.15)} className="p-1 hover:bg-white/10 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-white transition-colors">
             <ZoomOut size={14} />
           </button>
           <span className="text-[10px] font-mono text-[var(--text-muted)] w-9 text-center">{Math.round(scaleMultiplier * 100)}%</span>
-          <button onClick={() => handleZoom(0.15)} className="p-1 hover:bg-white/10 rounded-sm text-[var(--text-muted)] hover:text-white transition-colors">
+          <button onClick={() => handleZoom(0.15)} className="p-1 hover:bg-white/10 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-white transition-colors">
             <ZoomIn size={14} />
           </button>
           {scaleMultiplier !== 1 && (
-            <button onClick={() => setScaleMultiplier(1)} className="p-1 hover:bg-white/10 rounded-sm text-blue-400 transition-colors ml-1">
-              <RotateCcw size={13} />
+            <button onClick={() => setScaleMultiplier(1)} className="p-1 hover:bg-white/10 rounded-[var(--radius-sm)] text-blue-400 transition-colors ml-1">
+              <RotateCcw size={14} />
             </button>
           )}
         </div>
@@ -380,8 +380,8 @@ export default function PdfCanvas({ isArabic }: Props) {
       >
         {isBlurred && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl">
-            <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-2xl flex flex-col items-center max-w-sm text-center">
-              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-[var(--radius-xl)] flex flex-col items-center max-w-sm text-center">
+              <div className="w-16 h-16 bg-red-500/20 rounded-[var(--radius-pill)] flex items-center justify-center mb-4">
                 <span className="text-3xl">🚫</span>
               </div>
               <h2 className="text-xl font-black text-red-500 mb-2">
@@ -422,7 +422,7 @@ export default function PdfCanvas({ isArabic }: Props) {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <a
                   href="/#split"
-                  className="px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-black rounded-sm flex items-center gap-2 hover:opacity-90 transition-opacity"
+                  className="px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-black rounded-[var(--radius-lg)] flex items-center gap-2 hover:opacity-90 transition-opacity"
                 >
                   {isArabic ? "اشتري الجدول" : "Buy the Split"}
                 </a>
@@ -430,7 +430,7 @@ export default function PdfCanvas({ isArabic }: Props) {
                   <a
                     href={`https://wa.me/${waNumber}?text=${encodeURIComponent(isArabic ? "مرحباً، مش قادر أشوف الجدول بتاعي" : "Hi, I can't see my split")}`}
                     target="_blank" rel="noopener noreferrer"
-                    className="px-5 py-2.5 bg-white/5 border border-white/10 text-[var(--text-secondary)] text-sm font-bold rounded-sm flex items-center gap-2 hover:bg-white/10 transition-colors"
+                    className="px-5 py-2.5 bg-white/5 border border-white/10 text-[var(--text-secondary)] text-sm font-bold rounded-[var(--radius-lg)] flex items-center gap-2 hover:bg-white/10 transition-colors"
                   >
                     <MessageCircle size={14} />
                     {isArabic ? "تواصل عبر واتساب" : "Contact on WhatsApp"}
@@ -449,14 +449,14 @@ export default function PdfCanvas({ isArabic }: Props) {
               {errMsg && (
                 <p className="text-[11px] text-[var(--text-muted)] font-mono max-w-xs break-words">{errMsg}</p>
               )}
-              <button onClick={loadDocument} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-sm">
+              <button onClick={loadDocument} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-[var(--radius-lg)]">
                 {isArabic ? "إعادة المحاولة" : "Retry"}
               </button>
             </div>
           )}
 
           {status === "ready" && Array.from({ length: numPages }, (_, i) => (
-            <div key={i} id={`pdf-page-${i + 1}`} className="relative rounded-sm overflow-hidden shadow-2xl bg-white max-w-full border border-white/5">
+            <div key={i} id={`pdf-page-${i + 1}`} className="relative rounded-[var(--radius-md)] overflow-hidden shadow-[var(--shadow-card)] bg-white max-w-full border border-white/5">
               <canvas ref={(el) => { canvasRefs.current[i] = el; }} style={{ display: "block", maxWidth: "100%" }} />
               <div ref={(el) => { overlayRefs.current[i] = el; }} className="absolute inset-0 z-10" />
             </div>

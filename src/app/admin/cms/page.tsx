@@ -130,7 +130,7 @@ export default function CMSPage() {
         {/* Toast */}
         {toast && (
           <div
-            className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-sm border text-sm font-semibold shadow-2xl ${
+            className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-[var(--radius-md)] border text-sm font-semibold shadow-[var(--shadow-card)] ${
               toast.type === "ok"
                 ? "bg-emerald-950 border-emerald-500/50 text-emerald-300"
                 : "bg-red-950 border-red-500/50 text-red-300"
@@ -160,7 +160,7 @@ export default function CMSPage() {
               Site Editor
             </span>
             {dirtyCount > 0 && (
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#fbbf24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", padding: "2px 8px", borderRadius: 99 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#fbbf24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", padding: "2px 8px", borderRadius: "var(--radius-pill)" }}>
                 {dirtyCount} unsaved
               </span>
             )}
@@ -176,7 +176,7 @@ export default function CMSPage() {
                 setPage(e.target.value);
               }}
               style={{
-                padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)",
+                padding: "6px 10px", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)",
                 background: "rgba(255,255,255,0.04)", color: "#f1f5f9", fontSize: 11, fontWeight: 700, cursor: "pointer",
               }}
             >
@@ -186,7 +186,7 @@ export default function CMSPage() {
             </select>
 
             {/* Edit / Preview toggle */}
-            <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, overflow: "hidden", fontSize: 11 }}>
+            <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "var(--radius-md)", overflow: "hidden", fontSize: 11 }}>
               <button
                 onClick={() => setEditMode(true)}
                 style={{
@@ -195,7 +195,7 @@ export default function CMSPage() {
                   color: editMode ? "#000" : "rgba(255,255,255,0.5)",
                 }}
               >
-                <Pencil size={12} /> Edit
+                <Pencil size={14} /> Edit
               </button>
               <button
                 onClick={() => setEditMode(false)}
@@ -205,12 +205,12 @@ export default function CMSPage() {
                   color: !editMode ? "#000" : "rgba(255,255,255,0.5)",
                 }}
               >
-                <Eye size={12} /> Preview
+                <Eye size={14} /> Preview
               </button>
             </div>
 
             {/* Language toggle */}
-            <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, overflow: "hidden", fontSize: 11 }}>
+            <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "var(--radius-md)", overflow: "hidden", fontSize: 11 }}>
               {(["en", "ar"] as const).map((l) => (
                 <button
                   key={l}
@@ -231,37 +231,37 @@ export default function CMSPage() {
             </div>
 
             {/* Viewport toggle */}
-            <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, overflow: "hidden" }}>
+            <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
               <button onClick={() => setViewport("desktop")} style={{ padding: "6px 9px", border: "none", cursor: "pointer", background: viewport === "desktop" ? "rgba(202,240,43,0.12)" : "transparent", color: viewport === "desktop" ? "var(--accent,#caf02b)" : "rgba(255,255,255,0.4)" }} title="Desktop">
-                <Monitor size={13} />
+                <Monitor size={14} />
               </button>
               <button onClick={() => setViewport("mobile")} style={{ padding: "6px 9px", border: "none", cursor: "pointer", background: viewport === "mobile" ? "rgba(202,240,43,0.12)" : "transparent", color: viewport === "mobile" ? "var(--accent,#caf02b)" : "rgba(255,255,255,0.4)" }} title="Mobile">
-                <Smartphone size={13} />
+                <Smartphone size={14} />
               </button>
             </div>
 
             <button
               onClick={() => iframeRef.current && (iframeRef.current.src = iframeRef.current.src)}
-              style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", cursor: "pointer" }}
+              style={{ padding: "6px 8px", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", cursor: "pointer" }}
               title="Refresh"
             >
-              <RefreshCw size={13} />
+              <RefreshCw size={14} />
             </button>
 
             <a
               href={page}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, textDecoration: "none" }}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, textDecoration: "none" }}
             >
-              <ExternalLink size={12} /> Open Live Site
+              <ExternalLink size={14} /> Open Live Site
             </a>
 
             {dirtyCount > 0 && (
               <button
                 onClick={handleDiscard}
                 disabled={saving}
-                style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                style={{ padding: "7px 14px", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
               >
                 Discard
               </button>
@@ -272,13 +272,13 @@ export default function CMSPage() {
               disabled={saving || dirtyCount === 0}
               style={{
                 display: "flex", alignItems: "center", gap: 6, padding: "7px 16px",
-                background: "var(--accent,#caf02b)", color: "#000", border: "none", borderRadius: 6,
+                background: "var(--accent,#caf02b)", color: "#000", border: "none", borderRadius: "var(--radius-md)",
                 fontWeight: 900, fontSize: 12, cursor: "pointer",
                 opacity: saving || dirtyCount === 0 ? 0.4 : 1,
               }}
             >
-              {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-              Save {dirtyCount > 0 && <span style={{ background: "rgba(0,0,0,0.2)", fontSize: 10, fontWeight: 900, padding: "1px 6px", borderRadius: 99 }}>{dirtyCount}</span>}
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              Save {dirtyCount > 0 && <span style={{ background: "rgba(0,0,0,0.2)", fontSize: 10, fontWeight: 900, padding: "1px 6px", borderRadius: "var(--radius-pill)" }}>{dirtyCount}</span>}
             </button>
           </div>
         </header>
@@ -286,13 +286,13 @@ export default function CMSPage() {
         {/* Site frame */}
         <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto", background: "#141720", position: "relative" }}>
           {editMode && !iframeReady && (
-            <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "rgba(10,12,16,0.95)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
-              <Loader2 size={13} className="animate-spin" /> Loading editor…
+            <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "rgba(10,12,16,0.95)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "var(--radius-md)", fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+              <Loader2 size={14} className="animate-spin" /> Loading editor…
             </div>
           )}
           {editMode && iframeReady && (
-            <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.4)", borderRadius: 6, fontSize: 11, color: "#93c5fd", fontWeight: 600 }}>
-              <Globe size={12} /> Click any text to edit it directly · Hover an image to replace it
+            <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.4)", borderRadius: "var(--radius-md)", fontSize: 11, color: "#93c5fd", fontWeight: 600 }}>
+              <Globe size={14} /> Click any text to edit it directly · Hover an image to replace it
             </div>
           )}
           <div

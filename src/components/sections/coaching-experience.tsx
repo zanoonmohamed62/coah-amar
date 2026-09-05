@@ -42,7 +42,7 @@ export function CoachingExperienceSection() {
             <button
               key={i}
               onClick={() => setActiveWeek(i)}
-              className={`flex-shrink-0 px-4 py-2.5 rounded-sm text-xs font-bold tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+              className={`flex-shrink-0 px-4 py-2.5 rounded-[var(--radius-lg)] text-xs font-bold tracking-wider uppercase transition-all duration-300 cursor-pointer ${
                 activeWeek === i
                   ? "bg-[var(--accent)] text-white shadow-lg shadow-blue-500/20"
                   : "glass border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-accent)] hover:text-[var(--accent)]"
@@ -61,7 +61,7 @@ export function CoachingExperienceSection() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.35 }}
-            className="glass-accent border border-[var(--border-accent)] rounded-sm p-6 md:p-8 shadow-xl"
+            className="glass-accent border border-[var(--border-accent)] rounded-[var(--radius-xl)] p-6 md:p-8 shadow-xl"
           >
             {/* Week header */}
             <div className="flex items-center justify-between mb-6 pb-6 border-b border-[var(--border)]">
@@ -80,7 +80,7 @@ export function CoachingExperienceSection() {
             {/* Data cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Training */}
-              <div className="glass border border-[var(--border)] rounded-sm p-4">
+              <div className="glass border border-[var(--border)] rounded-[var(--radius-md)] p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Dumbbell size={15} className="text-[var(--accent)]" />
                   <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{get("experience", "metricsTraining", t.experience.metricsTraining)}</span>
@@ -104,7 +104,7 @@ export function CoachingExperienceSection() {
               </div>
 
               {/* Nutrition */}
-              <div className="glass border border-[var(--border)] rounded-sm p-4">
+              <div className="glass border border-[var(--border)] rounded-[var(--radius-md)] p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Apple size={15} className="text-[var(--accent)]" />
                   <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{get("experience", "metricsNutrition", t.experience.metricsNutrition)}</span>
@@ -116,7 +116,7 @@ export function CoachingExperienceSection() {
               </div>
 
               {/* Cardio */}
-              <div className="glass border border-[var(--border)] rounded-sm p-4">
+              <div className="glass border border-[var(--border)] rounded-[var(--radius-md)] p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Heart size={15} className="text-[var(--accent)]" />
                   <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{get("experience", "metricsCardio", t.experience.metricsCardio)}</span>
@@ -128,7 +128,7 @@ export function CoachingExperienceSection() {
               </div>
 
               {/* Check-in */}
-              <div className="glass border border-[var(--border)] rounded-sm p-4">
+              <div className="glass border border-[var(--border)] rounded-[var(--radius-md)] p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <BarChart3 size={15} className="text-[var(--accent)]" />
                   <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{get("experience", "metricsCheckIn", t.experience.metricsCheckIn)}</span>

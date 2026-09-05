@@ -98,9 +98,9 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
       <button
         onClick={() => setIsOpen(false)}
         aria-label={isArabic ? "إغلاق القائمة" : "Close menu"}
-        className={`md:hidden absolute top-4 ${isArabic ? "left-4" : "right-4"} p-2 rounded-sm bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)]`}
+        className={`md:hidden absolute top-4 ${isArabic ? "left-4" : "right-4"} p-2 rounded-[var(--radius-sm)] bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)]`}
       >
-        <X size={18} />
+        <X size={16} />
       </button>
 
       {/* Brand */}
@@ -127,17 +127,17 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
         <div className={`flex items-center gap-2 ${isCollapsed ? "md:flex-col" : ""}`}>
           <button
             onClick={toggleLang}
-            className="p-1.5 rounded-sm border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors text-xs font-bold"
+            className="p-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors text-xs font-bold"
             title={isArabic ? "Switch to English" : "التحويل إلى العربية"}
           >
-            <Globe size={13} />
+            <Globe size={14} />
           </button>
-          
+
           {/* Desktop Collapse Toggle */}
           {setIsCollapsed && (
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden md:flex p-1.5 rounded-sm border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+              className="hidden md:flex p-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
               title={isCollapsed ? (isArabic ? "توسيع" : "Expand") : (isArabic ? "طي القائمة" : "Collapse")}
             >
               {isCollapsed ? <ExpandIcon size={14} /> : <CollapseIcon size={14} />}
@@ -156,13 +156,13 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
               href={href}
               onClick={() => setIsOpen(false)}
               title={isCollapsed ? label : undefined}
-              className={`flex items-center gap-3 py-2.5 rounded-sm text-sm font-medium transition-all ${isCollapsed ? "px-0 justify-center md:px-0" : "px-3"} ${
+              className={`flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-sm font-medium transition-all ${isCollapsed ? "px-0 justify-center md:px-0" : "px-3"} ${
                 active
                   ? "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 font-semibold"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] border border-transparent"
               }`}
             >
-              <Icon size={18} className={active ? "text-[var(--accent)]" : "text-[var(--text-muted)]"} />
+              <Icon size={16} className={active ? "text-[var(--accent)]" : "text-[var(--text-muted)]"} />
               {!isCollapsed && <span>{label}</span>}
               {!isCollapsed && active && <ArrowIcon size={12} className={isArabic ? "mr-auto text-[var(--accent)]" : "ml-auto text-[var(--accent)]"} />}
             </Link>
@@ -176,9 +176,9 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           onClick={handleUpdate}
           disabled={isUpdating}
           title={isCollapsed ? (isArabic ? "تحديث" : "Update") : undefined}
-          className={`w-full flex items-center gap-3 py-2.5 rounded-sm text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer disabled:opacity-50 ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+          className={`w-full flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer disabled:opacity-50 ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >
-          <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} /> 
+          <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} />
           {!isCollapsed && (isArabic ? (isUpdating ? "جاري التحديث..." : "تحديث التطبيق") : (isUpdating ? "Updating..." : "Check for Updates"))}
         </button>
 
@@ -189,9 +189,9 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           target="_blank"
           rel="noopener noreferrer"
           title={isCollapsed ? (isArabic ? "واتساب الكوتش" : "WhatsApp Coach") : undefined}
-          className={`flex items-center gap-3 py-2.5 rounded-sm text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+          className={`flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >
-          <MessageCircle size={16} /> 
+          <MessageCircle size={16} />
           {!isCollapsed && (isArabic ? "واتساب الكوتش" : "WhatsApp Coach")}
         </a>
 
@@ -200,7 +200,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           target="_blank"
           rel="noopener noreferrer"
           title={isCollapsed ? (isArabic ? "الموقع الرسمي" : "Visit Website") : undefined}
-          className={`flex items-center gap-3 py-2.5 rounded-sm text-xs font-bold text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+          className={`flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >
           <ExternalLink size={16} />
           {!isCollapsed && (isArabic ? "الموقع الرسمي" : "Visit Website")}
@@ -209,7 +209,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           title={isCollapsed ? (isArabic ? "تسجيل الخروج" : "Sign Out") : undefined}
-          className={`w-full flex items-center gap-3 py-2.5 rounded-sm text-xs font-bold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+          className={`w-full flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >
           <LogOut size={16} /> 
           {!isCollapsed && (isArabic ? "تسجيل الخروج" : "Sign Out")}

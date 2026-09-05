@@ -23,7 +23,7 @@ function FAQItem({ sectionId, qFieldId, q, aFieldId, a, index }: {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.35, delay: index * 0.04 }}
-      className="mb-3 rounded-sm bg-[#0b0f19] border border-white/[0.07] overflow-hidden hover:border-blue-500/30 transition-colors"
+      className="mb-3 rounded-[var(--radius-lg)] bg-[#0b0f19] border border-white/[0.07] overflow-hidden hover:border-blue-500/30 transition-colors"
     >
       <button
         onClick={() => setOpen(!open)}
@@ -33,9 +33,9 @@ function FAQItem({ sectionId, qFieldId, q, aFieldId, a, index }: {
         <span className="text-sm sm:text-base font-bold text-white group-hover:text-blue-400 transition-colors leading-relaxed">
           <EditableText sectionId={sectionId} fieldId={qFieldId} value={q} />
         </span>
-        <div className="w-7 h-7 rounded-sm bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0">
+        <div className="w-7 h-7 rounded-[var(--radius-sm)] bg-white/[0.04] border border-white/[0.08] flex items-center justify-center flex-shrink-0">
           <ChevronDown
-            size={15}
+            size={14}
             className={`text-slate-400 transition-transform duration-250 ${open ? "rotate-180 text-blue-400" : ""}`}
           />
         </div>

@@ -68,7 +68,7 @@ export function AdminSidebar() {
       {/* Brand Header */}
       <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
         <Link href="/admin" className="flex items-center gap-2.5 group" onClick={closeMobile}>
-          <div className="w-8 h-8 rounded-sm bg-[var(--accent)] flex items-center justify-center font-black text-black text-sm tracking-wider group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[var(--accent)] flex items-center justify-center font-black text-black text-sm tracking-wider group-hover:scale-105 transition-transform">
             AM
           </div>
           <div>
@@ -100,9 +100,9 @@ export function AdminSidebar() {
               key={href}
               href={href}
               onClick={closeMobile}
-              className={`flex items-center justify-between px-3 py-2.5 rounded-sm text-sm font-medium transition-all ${
+              className={`flex items-center justify-between px-3 py-2.5 rounded-[var(--radius-sm)] text-sm font-medium transition-all ${
                 active
-                  ? "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 shadow-[0_0_15px_rgba(202,240,43,0.1)] font-semibold"
+                  ? "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 shadow-[0_0_15px_var(--accent-glow)] font-semibold"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] border border-transparent"
               }`}
             >
@@ -129,7 +129,7 @@ export function AdminSidebar() {
         <Link
           href="/app"
           target="_blank"
-          className="w-full flex items-center justify-between px-3 py-2 rounded-sm text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors border border-transparent"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-[var(--radius-sm)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors border border-transparent"
         >
           <span className="flex items-center gap-2">
             <Sparkles size={13} className="text-[var(--accent)]" /> {t.clientApp}
@@ -139,7 +139,7 @@ export function AdminSidebar() {
 
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-semibold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-xs font-semibold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
           <LogOut size={14} /> {t.signOut}
         </button>

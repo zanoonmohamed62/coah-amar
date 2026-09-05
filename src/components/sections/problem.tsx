@@ -61,7 +61,7 @@ export function ProblemSection() {
           >
             <div>
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/[0.07]">
-                <div className="w-10 h-10 rounded-sm bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-[var(--radius-md)] bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
                   <X size={18} className="text-red-400" />
                 </div>
                 <div>
@@ -93,7 +93,7 @@ export function ProblemSection() {
                       className="flex items-start gap-3 text-xs md:text-sm text-slate-400 leading-relaxed"
                     >
                       <div className="w-4 h-4 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <X size={11} className="text-red-400/80" />
+                        <X size={12} className="text-red-400/80" />
                       </div>
                       <span>{item}</span>
                     </motion.li>
@@ -116,7 +116,7 @@ export function ProblemSection() {
 
             <div>
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-blue-500/20">
-                <div className="w-10 h-10 rounded-sm bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-[var(--radius-md)] bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
                   <Sparkles size={18} className="text-blue-400" />
                 </div>
                 <div>
@@ -148,7 +148,7 @@ export function ProblemSection() {
                       className="flex items-start gap-3 text-xs md:text-sm text-slate-200 font-medium leading-relaxed"
                     >
                       <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5 border border-blue-500/30">
-                        <Check size={11} className="text-blue-400" />
+                        <Check size={12} className="text-blue-400" />
                       </div>
                       <span>{item}</span>
                     </motion.li>

@@ -25,13 +25,13 @@ function StepCard({ step, icon: Icon, sectionId, titleFieldId, title, descFieldI
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay }}
-      className="p-4 rounded-sm bg-[#0b0f19] border border-white/[0.06] hover:border-blue-500/30 hover:bg-white/[0.03] transition-all flex items-start gap-4 group"
+      className="p-4 rounded-[var(--radius-md)] bg-[#0b0f19] border border-white/[0.06] hover:border-blue-500/30 hover:bg-white/[0.03] transition-all flex items-start gap-4 group"
     >
       <div className="flex-shrink-0 relative">
-        <div className="w-10 h-10 rounded-sm bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(37,99,235,0.15)] group-hover:scale-105 transition-transform">
+        <div className="w-10 h-10 rounded-[var(--radius-md)] bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(37,99,235,0.15)] group-hover:scale-105 transition-transform">
           <Icon size={18} />
         </div>
-        <span className="absolute -top-1.5 -right-1.5 text-[0.6rem] font-black text-blue-300 bg-[#07090e] px-1.5 py-0.5 rounded border border-blue-500/30">
+        <span className="absolute -top-1.5 -right-1.5 text-[0.6rem] font-black text-blue-300 bg-[#07090e] px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-blue-500/30">
           {step}
         </span>
       </div>

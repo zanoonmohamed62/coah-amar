@@ -27,10 +27,10 @@ export function CoachSection() {
           className="relative max-w-md mx-auto lg:max-w-none w-full"
         >
           {/* Ambient Glow */}
-          <div className="absolute -inset-3 bg-blue-600/15 rounded-xl filter blur-2xl opacity-60 pointer-events-none" />
+          <div className="absolute -inset-3 bg-blue-600/15 rounded-[var(--radius-xl)] filter blur-2xl opacity-60 pointer-events-none" />
 
           {/* Main portrait */}
-          <div className="relative aspect-[3/4] rounded-sm overflow-hidden border border-slate-800/90 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] bg-[#0b0f19]">
+          <div className="relative aspect-[3/4] rounded-[var(--radius-xl)] overflow-hidden border border-slate-800/90 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] bg-[#0b0f19]">
             <EditableImage
               sectionId="coach"
               fieldId="portraitImage"
@@ -53,7 +53,7 @@ export function CoachSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-sm inline-block mb-4">
+          <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-[var(--radius-pill)] inline-block mb-4">
             <EditableText sectionId="coach" fieldId="badge" value={get("coach", "badge", t.coach.badge)} />
           </span>
 

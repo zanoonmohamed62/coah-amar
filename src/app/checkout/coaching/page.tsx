@@ -145,13 +145,13 @@ export default function CoachingCheckoutPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-lg w-full text-center space-y-6 bg-[#0b0f19] border border-blue-500/30 p-8 rounded-sm shadow-2xl"
+          className="max-w-lg w-full text-center space-y-6 bg-[#0b0f19] border border-blue-500/30 p-8 rounded-[var(--radius-xl)] shadow-2xl"
         >
           <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/30 rounded-full flex items-center justify-center mx-auto">
             <Sparkles size={28} className="text-blue-400" />
           </div>
 
-          <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-sm">
+          <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-[var(--radius-pill)]">
             Order Ref: {orderRef}
           </span>
 
@@ -166,7 +166,7 @@ export default function CoachingCheckoutPage() {
           </p>
 
           {/* Details summary */}
-          <div className="bg-[#07090e] border border-slate-800 rounded-sm p-4 text-xs space-y-2 text-slate-400 text-left rtl:text-right">
+          <div className="bg-[#07090e] border border-slate-800 rounded-[var(--radius-lg)] p-4 text-xs space-y-2 text-slate-400 text-left rtl:text-right">
             <div className="flex justify-between">
               <span>{isArabic ? "الاسم:" : "Name:"}</span>
               <span className="text-white font-semibold">{formData.name}</span>
@@ -189,7 +189,7 @@ export default function CoachingCheckoutPage() {
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors py-2"
           >
-            <MessageCircle size={14} />
+            <MessageCircle size={14} strokeWidth={2} />
             <span>{isArabic ? "محتاج مساعدة؟ تواصل عبر واتساب" : "Need help? Contact us on WhatsApp"}</span>
           </a>
 
@@ -224,7 +224,7 @@ export default function CoachingCheckoutPage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-sm mb-4">
+            <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-[var(--radius-pill)] mb-4">
               <EditableText sectionId="coachingDetail" fieldId="badge" value={get("coachingDetail", "badge", t.coachingDetail.badge)} />
             </span>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight mb-4">
@@ -247,9 +247,9 @@ export default function CoachingCheckoutPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 hover:border-blue-500/40 transition-colors shadow-lg"
+                  className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-lg)] p-6 hover:border-blue-500/40 transition-colors shadow-lg"
                 >
-                  <div className="w-10 h-10 rounded-sm bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
+                  <div className="w-10 h-10 rounded-[var(--radius-sm)] bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
                     <IconComp size={18} className="text-blue-400" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-4">
@@ -269,13 +269,13 @@ export default function CoachingCheckoutPage() {
           </div>
 
           {/* Large visual + Highlights banner */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-[#0b0f19] border border-slate-800 rounded-sm p-6 sm:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 sm:p-8">
             <motion.div
               initial={{ opacity: 0, x: isArabic ? 20 : -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
-              className="lg:col-span-6 relative rounded-sm overflow-hidden border border-blue-500/30 aspect-video shadow-2xl group"
+              className="lg:col-span-6 relative rounded-[var(--radius-xl)] overflow-hidden border border-blue-500/30 aspect-video shadow-2xl group"
             >
               <Image
                 src="/assets/split-cover.png"
@@ -289,7 +289,7 @@ export default function CoachingCheckoutPage() {
               {/* Stats overlay */}
               <div className={`absolute bottom-4 ${isArabic ? "right-4" : "left-4"} flex gap-3 z-10`}>
                 {t.coachingDetail.clientStats.map((s) => (
-                  <div key={s.label} className="bg-[#07090e]/90 border border-slate-700/80 rounded-sm px-3 py-1.5 backdrop-blur-sm">
+                  <div key={s.label} className="bg-[#07090e]/90 border border-slate-700/80 rounded-[var(--radius-sm)] px-3 py-1.5 backdrop-blur-sm">
                     <p className="text-[10px] text-slate-400">{s.label}</p>
                     <p className="text-sm font-bold text-blue-400">{s.value}</p>
                   </div>
@@ -318,7 +318,7 @@ export default function CoachingCheckoutPage() {
                   { icon: Heart, key: "feature3", fallback: t.coachingDetail.feature3 },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-sm bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <div className="w-7 h-7 rounded-[var(--radius-sm)] bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
                       <item.icon size={14} className="text-blue-400" />
                     </div>
                     <p className="text-xs sm:text-sm text-slate-300">
@@ -338,9 +338,9 @@ export default function CoachingCheckoutPage() {
             <div className="lg:col-span-5 space-y-6">
               {/* Discount Offer Banner — only shown while the launch promo is still active */}
               {promoActive && (
-                <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-sm p-5 shadow-inner">
+                <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-[var(--radius-lg)] p-5 shadow-inner">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-sm bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
                       <Sparkles size={16} className="text-blue-400" />
                     </div>
                     <div>
@@ -374,7 +374,7 @@ export default function CoachingCheckoutPage() {
               )}
 
               {/* Order Summary Box */}
-              <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 space-y-4">
+              <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 space-y-4">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Sparkles size={16} className="text-blue-400" />
                   <span>{isArabic ? "ملخص باقة المتابعة" : "Coaching Package Summary"}</span>
@@ -401,7 +401,7 @@ export default function CoachingCheckoutPage() {
 
               {/* Trust Badge */}
               <div className="flex items-center gap-3 text-xs text-slate-400 px-1">
-                <ShieldCheck size={16} className="text-blue-400 shrink-0" />
+                <ShieldCheck size={18} className="text-blue-400 shrink-0" />
                 <span>
                   {isArabic
                     ? "دفع آمن 100% — تواصل مباشر وفوري عبر الواتساب لبدء التقييم وتصميم خطتك"
@@ -412,7 +412,7 @@ export default function CoachingCheckoutPage() {
 
             {/* Right: Payment & Customer Form */}
             <div className="lg:col-span-7">
-              <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 sm:p-8">
+              <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 sm:p-8">
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                   <Lock size={18} className="text-blue-400" />
                   <span>{isArabic ? "بيانات المشترك والدفع" : "Customer & Payment Details"}</span>
@@ -420,7 +420,7 @@ export default function CoachingCheckoutPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-sm px-4 py-3 text-sm text-red-400">
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-[var(--radius-md)] px-4 py-3 text-sm text-red-400">
                       {error}
                     </div>
                   )}
@@ -435,7 +435,7 @@ export default function CoachingCheckoutPage() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder={isArabic ? "اسمك بالكامل" : "Your full name"}
-                      className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                      className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                     />
                   </div>
 
@@ -450,7 +450,7 @@ export default function CoachingCheckoutPage() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="your@email.com"
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                       />
                     </div>
 
@@ -466,7 +466,7 @@ export default function CoachingCheckoutPage() {
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+20 or +34..."
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                       />
                     </div>
                   </div>
@@ -479,7 +479,7 @@ export default function CoachingCheckoutPage() {
                       <select
                         value={formData.goal}
                         onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                       >
                         {(t.checkout?.goalOptions || [
                           isArabic ? "حرق الدهون والتنشيف" : "Fat Loss",
@@ -501,7 +501,7 @@ export default function CoachingCheckoutPage() {
                       <select
                         value={formData.level}
                         onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                       >
                         {(t.checkout?.levelOptions || [
                           isArabic ? "مبتدئ (أقل من سنة)" : "Beginner",
@@ -525,7 +525,7 @@ export default function CoachingCheckoutPage() {
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       placeholder={isArabic ? "مثال: حساسية ألبان، إصابة سابقة في الركبة، مواعيد خاصة..." : "e.g. food allergies, past injuries, schedule constraints..."}
-                      className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                      className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                     />
                   </div>
 
@@ -540,22 +540,22 @@ export default function CoachingCheckoutPage() {
                           key={m}
                           type="button"
                           onClick={() => setPaymentMethod(m)}
-                          className={`py-3 rounded-sm text-xs font-bold border transition-all uppercase flex items-center justify-center gap-1.5 ${
+                          className={`py-3 rounded-[var(--radius-md)] text-xs font-bold border transition-all uppercase flex items-center justify-center gap-1.5 ${
                             paymentMethod === m
                               ? "border-blue-500 bg-blue-500/15 text-blue-400 shadow-md shadow-blue-500/10"
                               : "border-slate-800 text-slate-400 hover:border-slate-700 bg-[#07090e]"
                           }`}
                         >
-                          {m === "instapay" && <Send size={13} />}
-                          {m === "paypal" && <Globe size={13} />}
-                          {m === "telda" && <Wallet size={13} />}
+                          {m === "instapay" && <Send size={14} />}
+                          {m === "paypal" && <Globe size={14} />}
+                          {m === "telda" && <Wallet size={14} />}
                           <span>{m === "instapay" ? "InstaPay" : m === "paypal" ? "PayPal" : "Telda"}</span>
                         </button>
                       ))}
                     </div>
 
                     {/* Payment instructions */}
-                    <div className="bg-[#07090e] border border-slate-800/80 rounded-sm p-3.5 mt-3 text-xs text-slate-400 leading-relaxed">
+                    <div className="bg-[#07090e] border border-slate-800/80 rounded-[var(--radius-md)] p-3.5 mt-3 text-xs text-slate-400 leading-relaxed">
                       {paymentMethod === "instapay" && (
                         <p>
                           📱 <strong className="text-white">InstaPay:</strong> التحويل على عنوان:{" "}
@@ -579,7 +579,7 @@ export default function CoachingCheckoutPage() {
                             <img
                               src={getSetting("telda_qr_url")}
                               alt="Telda QR"
-                              className="w-32 h-32 object-contain bg-white rounded-sm mt-3"
+                              className="w-32 h-32 object-contain bg-white rounded-[var(--radius-md)] mt-3"
                             />
                           )}
                         </div>
@@ -603,6 +603,7 @@ export default function CoachingCheckoutPage() {
                     {!isSubmitting && (
                       <ArrowIcon
                         size={16}
+                        strokeWidth={2}
                         className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`}
                       />
                     )}

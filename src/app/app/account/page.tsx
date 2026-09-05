@@ -51,10 +51,10 @@ export default function AccountPage() {
       </div>
 
       {/* Profile */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[var(--accent-glow)] border border-[var(--border-accent)] rounded-sm flex items-center justify-center">
-            <User size={18} className="text-[var(--accent)]" />
+          <div className="w-10 h-10 bg-[var(--accent-glow)] border border-[var(--border-accent)] rounded-[var(--radius-md)] flex items-center justify-center">
+            <User size={16} className="text-[var(--accent)]" />
           </div>
           <div>
             <p className="font-bold text-[var(--text-primary)]">{user?.name || (isArabic ? "متدرب كوتش عمار" : "Coach Amar Athlete")}</p>
@@ -65,7 +65,7 @@ export default function AccountPage() {
 
       {/* Renewal warning */}
       {expiringEntitlements.map(e => (
-        <div key={e.id} className="bg-[var(--bg-card)] border border-yellow-500/30 rounded-sm p-4 flex items-center gap-3">
+        <div key={e.id} className="bg-[var(--bg-card)] border border-yellow-500/30 rounded-[var(--radius-xl)] p-4 flex items-center gap-3">
           <Clock size={16} className="text-yellow-400 shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
@@ -82,7 +82,7 @@ export default function AccountPage() {
       ))}
 
       {/* Active entitlements */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden">
         <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)]">
           <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
             {isArabic ? "الخطط والبرامج النشطة" : "Active Plans"}
@@ -97,7 +97,7 @@ export default function AccountPage() {
             .filter(e => e.status === "ACTIVE" && !e.isExpired)
             .map(e => (
               <div key={e.id} className="flex items-center gap-3 px-5 py-3 border-b border-[var(--border)] last:border-0">
-                <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-[var(--text-primary)]">{e.product.name}</p>
                   <p className="text-xs text-[var(--text-muted)]">{isArabic ? "مفعل ومتاح للتصفح" : "Active & unlocked"}</p>
@@ -111,7 +111,7 @@ export default function AccountPage() {
       </div>
 
       {/* Order history */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden">
         <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center gap-2">
           <ShoppingBag size={14} className="text-[var(--text-muted)]" />
           <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">

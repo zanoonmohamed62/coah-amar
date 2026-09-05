@@ -127,7 +127,7 @@ export default function SplitCheckoutPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center space-y-6 bg-[#0b0f19] border border-slate-800 p-8 rounded-sm shadow-2xl"
+          className="max-w-md w-full text-center space-y-6 bg-[#0b0f19] border border-slate-800 p-8 rounded-[var(--radius-xl)] shadow-2xl"
         >
           <div className="w-16 h-16 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center mx-auto">
             <Check size={28} className="text-green-400" />
@@ -150,7 +150,7 @@ export default function SplitCheckoutPage() {
             className="flex items-center justify-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors py-2"
           >
             <span>{isArabic ? "محتاج مساعدة؟ تواصل عبر واتساب" : "Need help? Contact us on WhatsApp"}</span>
-            <ArrowIcon size={13} />
+            <ArrowIcon size={14} />
           </a>
           <Link href="/" className="block text-sm text-slate-500 hover:text-slate-300 transition-colors">
             {isArabic ? "العودة للرئيسية" : "Back to Home"}
@@ -184,7 +184,7 @@ export default function SplitCheckoutPage() {
               transition={{ duration: 0.6 }}
               className="lg:col-span-7"
             >
-              <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-sm mb-4">
+              <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-[var(--radius-pill)] mb-4">
                 <EditableText sectionId="trainingDetail" fieldId="badge" value={get("trainingDetail", "badge", t.trainingDetail.badge)} />
               </span>
 
@@ -205,9 +205,9 @@ export default function SplitCheckoutPage() {
                   return (
                     <div
                       key={i}
-                      className="bg-[#0b0f19] border border-slate-800 rounded-sm p-4 hover:border-blue-500/30 transition-colors"
+                      className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-lg)] p-4 hover:border-blue-500/30 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-sm bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
+                      <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
                         <IconComponent size={16} className="text-blue-400" />
                       </div>
                       <p className="text-sm font-bold text-white mb-1">
@@ -229,7 +229,7 @@ export default function SplitCheckoutPage() {
               transition={{ duration: 0.6, delay: 0.15 }}
               className="lg:col-span-5"
             >
-              <div className="relative rounded-sm overflow-hidden border border-blue-500/30 bg-[#0b0f19] shadow-2xl p-6 sm:p-8 flex flex-col justify-between aspect-[4/3] min-h-[360px]">
+              <div className="relative rounded-[var(--radius-xl)] overflow-hidden border border-blue-500/30 bg-[#0b0f19] shadow-2xl p-6 sm:p-8 flex flex-col justify-between aspect-[4/3] min-h-[360px]">
                 {/* Background glow */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-60" />
@@ -270,7 +270,7 @@ export default function SplitCheckoutPage() {
                       <span className="text-xs text-slate-400">LE / {SPLIT_PRICE_EUR} €</span>
                     </div>
                   </div>
-                  <span className="bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-sm">
+                  <span className="bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-[var(--radius-pill)]">
                     {isArabic ? "تفعيل فوري" : "Instant Access"}
                   </span>
                 </div>
@@ -286,9 +286,9 @@ export default function SplitCheckoutPage() {
             <div className="lg:col-span-5 space-y-6">
               {/* Discount Offer Banner — only shown while the launch promo is still active */}
               {promoActive && (
-                <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-sm p-5 shadow-inner">
+                <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-[var(--radius-lg)] p-5 shadow-inner">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-sm bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
                       <Sparkles size={16} className="text-blue-400" />
                     </div>
                     <div>
@@ -322,7 +322,7 @@ export default function SplitCheckoutPage() {
               )}
 
               {/* Order Summary Box */}
-              <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 space-y-4">
+              <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 space-y-4">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Sparkles size={16} className="text-blue-400" />
                   <span>{isArabic ? "ملخص الطلب" : "Order Summary"}</span>
@@ -346,7 +346,7 @@ export default function SplitCheckoutPage() {
 
               {/* Trust Badge */}
               <div className="flex items-center gap-3 text-xs text-slate-400 px-1">
-                <ShieldCheck size={16} className="text-blue-400 shrink-0" />
+                <ShieldCheck size={18} className="text-blue-400 shrink-0" />
                 <span>
                   {isArabic
                     ? "دفع آمن 100% — تفعيل فوري ومباشر على حسابك أو الواتساب"
@@ -357,7 +357,7 @@ export default function SplitCheckoutPage() {
 
             {/* Right: Payment & Customer Form */}
             <div className="lg:col-span-7">
-              <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 sm:p-8">
+              <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 sm:p-8">
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                   <Lock size={18} className="text-blue-400" />
                   <span>{isArabic ? "بيانات المشترك والدفع" : "Customer & Payment Details"}</span>
@@ -365,7 +365,7 @@ export default function SplitCheckoutPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-sm px-4 py-3 text-sm text-red-400">
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-[var(--radius-md)] px-4 py-3 text-sm text-red-400">
                       {error}
                     </div>
                   )}
@@ -380,7 +380,7 @@ export default function SplitCheckoutPage() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder={isArabic ? "اسمك بالكامل" : "Your full name"}
-                      className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                      className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                     />
                   </div>
 
@@ -395,7 +395,7 @@ export default function SplitCheckoutPage() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="your@email.com"
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                       />
                     </div>
 
@@ -411,7 +411,7 @@ export default function SplitCheckoutPage() {
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+20 or +34..."
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-sm px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                       />
                     </div>
                   </div>
@@ -427,7 +427,7 @@ export default function SplitCheckoutPage() {
                           key={m}
                           type="button"
                           onClick={() => setPaymentMethod(m)}
-                          className={`py-3 rounded-sm text-xs font-bold border transition-all uppercase ${
+                          className={`py-3 rounded-[var(--radius-md)] text-xs font-bold border transition-all uppercase ${
                             paymentMethod === m
                               ? "border-blue-500 bg-blue-500/15 text-blue-400 shadow-md shadow-blue-500/10"
                               : "border-slate-800 text-slate-400 hover:border-slate-700 bg-[#07090e]"
@@ -439,7 +439,7 @@ export default function SplitCheckoutPage() {
                     </div>
 
                     {/* Payment instructions */}
-                    <div className="bg-[#07090e] border border-slate-800/80 rounded-sm p-3.5 mt-3 text-xs text-slate-400 leading-relaxed">
+                    <div className="bg-[#07090e] border border-slate-800/80 rounded-[var(--radius-md)] p-3.5 mt-3 text-xs text-slate-400 leading-relaxed">
                       {paymentMethod === "instapay" && (
                         <p>
                           📱 <strong className="text-white">InstaPay:</strong> التحويل على عنوان:{" "}
@@ -463,7 +463,7 @@ export default function SplitCheckoutPage() {
                             <img
                               src={getSetting("telda_qr_url")}
                               alt="Telda QR"
-                              className="w-32 h-32 object-contain bg-white rounded-sm mt-3"
+                              className="w-32 h-32 object-contain bg-white rounded-[var(--radius-md)] mt-3"
                             />
                           )}
                         </div>
@@ -487,6 +487,7 @@ export default function SplitCheckoutPage() {
                     {!isSubmitting && (
                       <ArrowIcon
                         size={16}
+                        strokeWidth={2}
                         className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`}
                       />
                     )}

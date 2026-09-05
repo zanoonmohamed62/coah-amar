@@ -53,22 +53,22 @@ export default function MySplitPage() {
         <a
           href={`https://wa.me/${WA}?text=${encodeURIComponent(isArabic ? "\u0645\u0631\u062d\u0628\u0627\u064b \u0643\u0648\u062a\u0634 \u0639\u0645\u0627\u0631\u060c \u0644\u062f\u064a \u0627\u0633\u062a\u0641\u0633\u0627\u0631" : "Hi Coach Amar, I have a question about the X Split")}`}
           target="_blank" rel="noopener noreferrer"
-          className="px-3.5 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 text-xs font-bold rounded-sm transition-colors flex items-center gap-1.5"
+          className="px-3.5 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 text-xs font-bold rounded-[var(--radius-md)] transition-colors flex items-center gap-1.5"
         >
-          <MessageCircle size={13} />
+          <MessageCircle size={14} />
           <span>{isArabic ? "\u0648\u0627\u062a\u0633\u0627\u0628 \u0627\u0644\u0643\u0648\u062a\u0634" : "Ask Coach"}</span>
         </a>
       </div>
 
-      <div ref={containerRef} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-2xl flex flex-col flex-1" style={{ minHeight: "75vh" }}>
+      <div ref={containerRef} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)] flex flex-col flex-1" style={{ minHeight: "75vh" }}>
         <div className="px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={15} className="text-blue-400" />
+            <ShieldCheck size={16} className="text-blue-400" />
             <span className="text-xs font-black text-[var(--text-primary)] tracking-wide">
               {isArabic ? "\u0627\u0644\u062c\u062f\u0648\u0644 \u0627\u0644\u0631\u0633\u0645\u064a" : "Official Split"}
             </span>
           </div>
-          <button onClick={toggleFullscreen} className="p-1.5 hover:bg-white/5 rounded-sm text-[var(--text-primary)] hover:text-white transition-colors flex items-center gap-2">
+          <button onClick={toggleFullscreen} className="p-1.5 hover:bg-white/5 rounded-[var(--radius-sm)] text-[var(--text-primary)] hover:text-white transition-colors flex items-center gap-2">
             <span className="text-xs font-bold">
               {isFullscreen ? (isArabic ? "\u062a\u0635\u063a\u064a\u0631" : "Exit Fullscreen") : (isArabic ? "\u062a\u0643\u0628\u064a\u0631 \u0627\u0644\u0634\u0627\u0634\u0629" : "Fullscreen")}
             </span>

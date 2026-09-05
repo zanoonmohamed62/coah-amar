@@ -26,7 +26,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-sm overflow-hidden flex-shrink-0">
+              <div className="w-8 h-8 rounded-[var(--radius-sm)] overflow-hidden flex-shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/icons/icon.svg" alt="Amar X Split" className="w-full h-full object-contain" />
               </div>
@@ -104,7 +104,7 @@ export function Footer() {
                 className="text-[var(--text-muted)] hover:text-green-500 transition-colors"
                 aria-label="WhatsApp"
               >
-                <MessageCircle size={18} />
+                <MessageCircle size={18} strokeWidth={2} />
               </a>
             </div>
           </div>

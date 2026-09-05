@@ -134,7 +134,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
     return (
       <div className="space-y-6">
         <div className="h-6 w-32 bg-[var(--bg-card)] rounded animate-pulse" />
-        <div className="h-44 bg-[var(--bg-card)] rounded-sm animate-pulse" />
+        <div className="h-44 bg-[var(--bg-card)] rounded-[var(--radius-xl)] animate-pulse" />
       </div>
     );
   }
@@ -161,9 +161,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       </Link>
 
       {/* Customer Header Card */}
-      <div className="p-6 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-6 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-sm bg-[var(--accent)]/15 border border-[var(--accent)]/30 text-[var(--accent)] flex items-center justify-center font-black text-xl">
+          <div className="w-14 h-14 rounded-[var(--radius-md)] bg-[var(--accent)]/15 border border-[var(--accent)]/30 text-[var(--accent)] flex items-center justify-center font-black text-xl">
             {customer.name
               .split(" ")
               .map((n) => n[0])
@@ -174,21 +174,21 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-extrabold text-[var(--text-primary)]">{customer.name}</h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30">
+              <span className="px-2 py-0.5 rounded-[var(--radius-pill)] text-[10px] font-bold bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30">
                 {customer.role}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)] mt-1.5">
               <span className="flex items-center gap-1">
-                <Mail size={12} /> {customer.email}
+                <Mail size={14} /> {customer.email}
               </span>
               {customer.phone && (
                 <span className="flex items-center gap-1 font-mono">
-                  <Phone size={12} /> {customer.phone}
+                  <Phone size={14} /> {customer.phone}
                 </span>
               )}
               <span className="flex items-center gap-1">
-                <Calendar size={12} /> Joined {new Date(customer.createdAt).toLocaleDateString()}
+                <Calendar size={14} /> Joined {new Date(customer.createdAt).toLocaleDateString()}
               </span>
             </div>
           </div>
@@ -198,7 +198,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {customer.phone && (
             <button
               onClick={openWhatsApp}
-              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-sm hover:bg-emerald-500/25 transition-colors"
+              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-[var(--radius-lg)] hover:bg-emerald-500/25 transition-colors"
             >
               <MessageSquare size={14} /> WhatsApp
             </button>
@@ -206,7 +206,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
           <button
             onClick={() => setGranting(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-[var(--radius-lg)] transition-colors"
           >
             <Plus size={14} /> Grant Access
           </button>
@@ -214,7 +214,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Entitlements Section */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden">
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Dumbbell size={16} className="text-[var(--accent)]" />
@@ -243,13 +243,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               {customer.entitlements.map((ent) => (
                 <div
                   key={ent.id}
-                  className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                  className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                 >
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-bold text-[var(--text-primary)]">{ent.product.name}</p>
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-[var(--radius-pill)] ${
                           ent.status === "ACTIVE"
                             ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                             : "bg-red-500/15 text-red-400 border border-red-500/30"
@@ -276,14 +276,14 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                         {ent.expiresAt && (
                           <button
                             onClick={() => updateEntitlement(ent.id, undefined, 30)}
-                            className="px-3 py-1 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs text-[var(--text-primary)] rounded-sm transition-colors"
+                            className="px-3 py-1 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs text-[var(--text-primary)] rounded-[var(--radius-sm)] transition-colors"
                           >
                             +30 Days
                           </button>
                         )}
                         <button
                           onClick={() => updateEntitlement(ent.id, "REVOKED")}
-                          className="px-3 py-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 text-xs rounded-sm transition-colors"
+                          className="px-3 py-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 text-xs rounded-[var(--radius-sm)] transition-colors"
                         >
                           Revoke
                         </button>
@@ -291,7 +291,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     ) : (
                       <button
                         onClick={() => updateEntitlement(ent.id, "ACTIVE")}
-                        className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs rounded-sm transition-colors"
+                        className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs rounded-[var(--radius-sm)] transition-colors"
                       >
                         Re-activate
                       </button>
@@ -305,7 +305,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Order History */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden">
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShoppingBag size={16} className="text-[var(--accent)]" />
@@ -351,7 +351,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                       {(o.amount / 100).toLocaleString()} {o.currency}
                     </td>
                     <td className="px-6 py-3.5">
-                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-[var(--radius-pill)]">
                         {o.status}
                       </span>
                     </td>
@@ -369,7 +369,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       {/* Grant Access Modal */}
       {granting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-accent)] rounded-sm shadow-2xl p-6 space-y-4">
+          <div className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-accent)] rounded-[var(--radius-xl)] shadow-[var(--shadow-card)] p-6 space-y-4">
             <h3 className="text-base font-extrabold text-[var(--text-primary)]">Grant Program Access</h3>
             <p className="text-xs text-[var(--text-muted)]">
               Manually assign a workout split or coaching tier to {customer.name}.
@@ -381,7 +381,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 <select
                   value={selectedProductId}
                   onChange={(e) => setSelectedProductId(e.target.value)}
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                 >
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -400,7 +400,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   value={durationDays}
                   onChange={(e) => setDurationDays(+e.target.value)}
                   placeholder="90"
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                 />
                 <p className="text-[10px] text-[var(--text-muted)] mt-1">
                   Leave default 90 days for coaching or specify custom timeframe.
@@ -412,13 +412,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               <button
                 onClick={grantAccess}
                 disabled={saving}
-                className="flex-1 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors disabled:opacity-50"
+                className="flex-1 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-[var(--radius-lg)] transition-colors disabled:opacity-50"
               >
                 {saving ? "Granting…" : "Confirm Grant"}
               </button>
               <button
                 onClick={() => setGranting(false)}
-                className="px-4 py-2 border border-[var(--border)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-sm"
+                className="px-4 py-2 border border-[var(--border)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-[var(--radius-lg)]"
               >
                 Cancel
               </button>

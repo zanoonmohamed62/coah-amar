@@ -84,13 +84,13 @@ export default function TeamPage() {
         </div>
         <button
           onClick={() => { setShowModal(true); setError(""); }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-sm transition-colors shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black text-xs font-black rounded-[var(--radius-lg)] transition-colors shadow-[var(--shadow-button)]"
         >
           <Plus size={14} /> {isArabic ? "إضافة أدمن" : "Add Admin"}
         </button>
       </div>
 
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-sm">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">
@@ -117,7 +117,7 @@ export default function TeamPage() {
                     <tr key={a.id} className="hover:bg-[var(--bg-elevated)] transition-colors">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
                             <ShieldCheck size={14} />
                           </div>
                           <span className="font-bold text-[var(--text-primary)]">
@@ -139,10 +139,10 @@ export default function TeamPage() {
                           <button
                             onClick={() => handleRemove(a.id)}
                             disabled={removingId === a.id}
-                            className="p-1.5 rounded-sm border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                            className="p-1.5 rounded-[var(--radius-sm)] border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                             title={isArabic ? "إزالة صلاحية الأدمن" : "Remove admin access"}
                           >
-                            <UserMinus size={13} />
+                            <UserMinus size={14} />
                           </button>
                         )}
                       </td>
@@ -157,12 +157,12 @@ export default function TeamPage() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm w-full max-w-md shadow-2xl">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] w-full max-w-md shadow-[var(--shadow-card)]">
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-elevated)]">
               <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                <Sparkles size={15} className="text-[var(--accent)]" /> {isArabic ? "إضافة أدمن" : "Add Admin"}
+                <Sparkles size={16} className="text-[var(--accent)]" /> {isArabic ? "إضافة أدمن" : "Add Admin"}
               </h3>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                 <X size={16} />
               </button>
             </div>
@@ -178,7 +178,7 @@ export default function TeamPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@gmail.com"
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                 />
                 {error && <p className="text-xs text-red-400 mt-1.5">{error}</p>}
               </div>
@@ -186,14 +186,14 @@ export default function TeamPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-sm transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-black font-black text-xs rounded-[var(--radius-lg)] transition-colors disabled:opacity-50"
                 >
                   {saving ? (isArabic ? "جاري الإضافة..." : "Adding…") : (isArabic ? "إضافة" : "Add")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2.5 border border-[var(--border)] text-xs font-bold rounded-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                  className="px-4 py-2.5 border border-[var(--border)] text-xs font-bold rounded-[var(--radius-lg)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                 >
                   {isArabic ? "إلغاء" : "Cancel"}
                 </button>

@@ -61,9 +61,9 @@ function TeldaQrSection({ isArabic }: { isArabic: boolean }) {
   }
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden">
       <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)]">
-        <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
+        <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
           <QrCode size={16} />
         </div>
         <div>
@@ -80,7 +80,7 @@ function TeldaQrSection({ isArabic }: { isArabic: boolean }) {
         {qrUrl ? (
           <div className="flex items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrUrl} alt="Telda QR" className="w-28 h-28 object-contain bg-white rounded-sm border border-[var(--border)]" />
+            <img src={qrUrl} alt="Telda QR" className="w-28 h-28 object-contain bg-white rounded-[var(--radius-md)] border border-[var(--border)]" />
             <p className="text-xs text-[var(--text-muted)]">
               {isArabic ? "الصورة الحالية — ارفع صورة تانية لاستبدالها" : "Current image — upload another to replace it"}
             </p>
@@ -95,7 +95,7 @@ function TeldaQrSection({ isArabic }: { isArabic: boolean }) {
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="px-4 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-sm transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+          className="px-4 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-[var(--radius-lg)] transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
         >
           <Upload size={14} />
           <span>{uploading ? (isArabic ? "جاري الرفع..." : "Uploading…") : (isArabic ? "رفع صورة QR" : "Upload QR Image")}</span>
@@ -161,9 +161,9 @@ function SplitPdfSection({ isArabic }: { isArabic: boolean }) {
   }
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden">
       <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)]">
-        <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
+        <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
           <FileText size={16} />
         </div>
         <div>
@@ -195,7 +195,7 @@ function SplitPdfSection({ isArabic }: { isArabic: boolean }) {
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="px-4 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-sm transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+          className="px-4 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-[var(--radius-lg)] transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
         >
           <Upload size={14} />
           <span>{uploading ? (isArabic ? "جاري الرفع..." : "Uploading…") : (isArabic ? "رفع ملف جديد" : "Upload New File")}</span>
@@ -348,7 +348,7 @@ export default function AdminSettingsPage() {
         <div className="flex items-center gap-3">
           {msg && (
             <span
-              className={`text-xs font-bold px-2.5 py-1 rounded-sm border ${
+              className={`text-xs font-bold px-2.5 py-1 rounded-[var(--radius-sm)] border ${
                 msg.ok
                   ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                   : "bg-red-500/10 border-red-500/30 text-red-400"
@@ -359,9 +359,9 @@ export default function AdminSettingsPage() {
           )}
           <button
             onClick={fetchSettings}
-            className="px-3 py-1.5 border border-[var(--border)] bg-[var(--bg-card)] rounded-sm text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 border border-[var(--border)] bg-[var(--bg-card)] rounded-[var(--radius-md)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <RefreshCw size={13} /> {isArabic ? "تحديث" : "Refresh"}
+            <RefreshCw size={14} /> {isArabic ? "تحديث" : "Refresh"}
           </button>
         </div>
       </div>
@@ -369,7 +369,7 @@ export default function AdminSettingsPage() {
       {loading ? (
         <div className="space-y-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-44 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm animate-pulse" />
+            <div key={i} className="h-44 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] animate-pulse" />
           ))}
         </div>
       ) : (
@@ -379,10 +379,10 @@ export default function AdminSettingsPage() {
           {SETTING_SECTIONS.map(({ label, icon: Icon, description, items }) => (
             <div
               key={label}
-              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden"
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden"
             >
               <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)]">
-                <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
+                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
                   <Icon size={16} />
                 </div>
                 <div>
@@ -416,15 +416,15 @@ export default function AdminSettingsPage() {
                             setData((prev) => ({ ...prev, [key]: e.target.value }))
                           }
                           placeholder={hint}
-                          className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+                          className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
                         />
 
                         <button
                           onClick={() => saveSetting(key, currentValue)}
                           disabled={isSaving}
-                          className="px-3.5 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-sm transition-colors flex items-center gap-1 shrink-0 disabled:opacity-50 cursor-pointer"
+                          className="px-3.5 py-2 bg-[var(--bg-base)] border border-[var(--border)] hover:border-[var(--border-accent)] text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] rounded-[var(--radius-lg)] transition-colors flex items-center gap-1 shrink-0 disabled:opacity-50 cursor-pointer"
                         >
-                          <Save size={13} />
+                          <Save size={14} />
                           <span>{isSaving ? "Saving…" : isArabic ? "حفظ" : "Save"}</span>
                         </button>
                       </div>

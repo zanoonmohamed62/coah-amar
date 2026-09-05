@@ -69,13 +69,13 @@ export function HeroSection() {
           >
             <Link href="#plans" className="btn-primary group py-3.5 px-7">
               <EditableText as="span" sectionId="hero" fieldId="startBtn" value={get("hero", "startBtn", t.hero.startBtn)} />
-              <ArrowIcon size={15} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
+              <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
 
             {canInstall ? (
               <button
                 onClick={triggerInstall}
-                className="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-sm transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-[0_4px_16px_rgba(37,99,235,0.35)] group cursor-pointer border border-blue-400/30"
+                className="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-[var(--radius-lg)] transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-[0_4px_16px_rgba(37,99,235,0.35)] group cursor-pointer border border-blue-400/30"
               >
                 <Smartphone size={16} />
                 <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "ثبّت التطبيق" : "Install App"))}</span>
@@ -83,9 +83,9 @@ export function HeroSection() {
             ) : (
               <Link
                 href="/app"
-                className="px-5 py-3.5 bg-[#0e1626] border border-blue-500/30 text-blue-300 hover:text-white hover:bg-blue-600/20 hover:border-blue-400/60 rounded-sm transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] group"
+                className="px-5 py-3.5 bg-[#0e1626] border border-blue-500/30 text-blue-300 hover:text-white hover:bg-blue-600/20 hover:border-blue-400/60 rounded-[var(--radius-lg)] transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] group"
               >
-                <div className="w-5 h-5 rounded-md overflow-hidden flex-shrink-0 border border-blue-400/40 shadow-sm">
+                <div className="w-5 h-5 rounded-[var(--radius-sm)] overflow-hidden flex-shrink-0 border border-blue-400/40 shadow-sm">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/icons/icon-192.png" alt="X" className="w-full h-full object-cover" />
                 </div>
@@ -142,9 +142,9 @@ export function HeroSection() {
             className="relative w-full max-w-md mx-auto"
           >
             {/* Ambient Backglow */}
-            <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600/20 via-blue-500/10 to-transparent rounded-lg filter blur-xl opacity-70 pointer-events-none" />
+            <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600/20 via-blue-500/10 to-transparent rounded-[var(--radius-xl)] filter blur-xl opacity-70 pointer-events-none" />
 
-            <div className="relative rounded-sm overflow-hidden border border-slate-800/90 bg-[#0d121c] aspect-[3/4] w-full shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] group">
+            <div className="relative rounded-[var(--radius-xl)] overflow-hidden border border-slate-800/90 bg-[#0d121c] aspect-[3/4] w-full shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] group">
               <EditableImage
                 sectionId="hero"
                 fieldId="heroImage"
@@ -158,7 +158,7 @@ export function HeroSection() {
 
               {/* Top registration badge */}
               <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-                <span className="text-[10px] font-mono tracking-widest text-slate-400/80 bg-[#07090e]/80 backdrop-blur-md px-2.5 py-1 rounded border border-white/10">
+                <span className="text-[10px] font-mono tracking-widest text-slate-400/80 bg-[#07090e]/80 backdrop-blur-md px-2.5 py-1 rounded-[var(--radius-sm)] border border-white/10">
                   COACH AMAR · OFFICIAL
                 </span>
                 <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_#3b82f6]" />
@@ -166,7 +166,7 @@ export function HeroSection() {
 
               {/* Bottom Card Content */}
               <div className="absolute bottom-6 left-6 right-6">
-                <span className="text-[0.65rem] font-bold tracking-widest text-blue-300 uppercase bg-blue-500/15 border border-blue-500/30 px-2.5 py-1 rounded-sm inline-block mb-2 backdrop-blur-sm">
+                <span className="text-[0.65rem] font-bold tracking-widest text-blue-300 uppercase bg-blue-500/15 border border-blue-500/30 px-2.5 py-1 rounded-[var(--radius-pill)] inline-block mb-2 backdrop-blur-sm">
                   <EditableText sectionId="hero" fieldId="cardBadge" value={get("hero", "cardBadge", t.hero.cardBadge)} />
                 </span>
                 <p className="text-white text-lg sm:text-xl font-extrabold leading-tight">

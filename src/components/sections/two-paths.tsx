@@ -56,7 +56,7 @@ function SpotCounter({
   const filledLabel = get("pricing", `${fieldPrefix}_spotFilled`, isArabic ? "مكتمل" : "completed");
 
   return (
-    <div className="mt-5 p-3.5 rounded-sm bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/20 shadow-inner">
+    <div className="mt-5 p-3.5 rounded-[var(--radius-md)] bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/20 shadow-inner">
       {/* Top row: Pulse indicator & Claimed Counter */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
@@ -96,7 +96,7 @@ function SpotCounter({
             ? `متبقي ${remaining} مقعد فقط بهذا السعر`
             : `Only ${remaining} spots left at this price`}
         </span>
-        <span className="text-blue-400 font-bold text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+        <span className="text-blue-400 font-bold text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-blue-500/20">
           {pct}% <EditableText as="span" sectionId="pricing" fieldId={`${fieldPrefix}_spotFilled`} value={filledLabel} />
         </span>
       </div>
@@ -147,12 +147,12 @@ export function TwoPathsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="bg-[#0b0f19]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-8 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:border-white/20"
+            className="bg-[#0b0f19]/80 backdrop-blur-xl border border-white/10 rounded-[var(--radius-xl)] p-8 flex flex-col justify-between shadow-2xl transition-all duration-300 hover:border-white/20"
           >
             <div>
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <span className="text-[0.65rem] font-bold tracking-widest text-slate-400 uppercase bg-slate-800/80 px-2.5 py-1 rounded-xl inline-block mb-3 border border-white/5">
+                  <span className="text-[0.65rem] font-bold tracking-widest text-slate-400 uppercase bg-slate-800/80 px-2.5 py-1 rounded-[var(--radius-pill)] inline-block mb-3 border border-white/5">
                     <EditableText sectionId="pricing" fieldId="offer1_badge" value={get("pricing", "offer1_badge", t.twoPaths.offer1.badge)} />
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
@@ -170,7 +170,7 @@ export function TwoPathsSection() {
                         const orig = offer1Price.originalPrice ?? offer1Price.price;
                         const pct = orig > 0 ? Math.round((1 - offer1Price.price / orig) * 100) : 0;
                         return pct > 0 ? (
-                          <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-lg">
+                          <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)]">
                             -{pct}%
                           </span>
                         ) : null;
@@ -188,7 +188,7 @@ export function TwoPathsSection() {
                       Price comes from Products — edit it in /admin/products
                     </p>
                   )}
-                  <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-slate-400 border border-slate-700/80 px-2 py-0.5 rounded-lg inline-block mt-1">
+                  <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-slate-400 border border-slate-700/80 px-2 py-0.5 rounded-[var(--radius-sm)] inline-block mt-1">
                     <EditableText sectionId="pricing" fieldId="offer1_type" value={get("pricing", "offer1_type", t.twoPaths.offer1.type)} />
                   </span>
                 </div>
@@ -215,7 +215,7 @@ export function TwoPathsSection() {
                   {get("pricing", "offer1_features", t.twoPaths.offer1.features.join("\n")).split("\n").map(s => s.trim()).filter(Boolean).map((f, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
                       <div className="w-5 h-5 rounded-full bg-blue-500/15 border border-blue-400/30 flex items-center justify-center shrink-0 mt-0.5 backdrop-blur-sm shadow-[0_0_8px_rgba(59,130,246,0.2)]">
-                        <Check size={11} className="text-blue-400" strokeWidth={2.5} />
+                        <Check size={12} className="text-blue-400" strokeWidth={2.5} />
                       </div>
                       <span>{f}</span>
                     </li>
@@ -227,7 +227,7 @@ export function TwoPathsSection() {
             <div className="mt-4 pt-4 border-t border-slate-800/60">
               <Link
                 href="/checkout/split"
-                className="btn-secondary w-full flex items-center justify-center gap-2 text-center group py-3.5 rounded-xl font-semibold"
+                className="btn-secondary w-full flex items-center justify-center gap-2 text-center group py-3.5 font-semibold"
               >
                 <EditableText as="span" sectionId="pricing" fieldId="offer1_btn" value={get("pricing", "offer1_btn", t.twoPaths.offer1.btn)} />
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
@@ -244,18 +244,18 @@ export function TwoPathsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="rounded-2xl p-8 flex flex-col justify-between relative overflow-hidden bg-[#0f1626]/90 backdrop-blur-xl border-2 border-blue-500/50 shadow-[0_0_50px_rgba(37,99,235,0.25)] transition-all duration-300 hover:border-blue-400/70"
+            className="rounded-[var(--radius-xl)] p-8 flex flex-col justify-between relative overflow-hidden bg-[#0f1626]/90 backdrop-blur-xl border-2 border-blue-500/50 shadow-[0_0_50px_rgba(37,99,235,0.25)] transition-all duration-300 hover:border-blue-400/70"
           >
             {/* Top badge */}
-            <div className={`absolute -top-3 ${isArabic ? "left-6" : "right-6"} bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-[0.65rem] font-extrabold tracking-wider uppercase px-3 py-1 rounded-xl shadow-lg border border-blue-400/30 flex items-center gap-1`}>
-              <Sparkles size={11} />
+            <div className={`absolute -top-3 ${isArabic ? "left-6" : "right-6"} bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-[0.65rem] font-extrabold tracking-wider uppercase px-3 py-1 rounded-[var(--radius-pill)] shadow-lg border border-blue-400/30 flex items-center gap-1`}>
+              <Sparkles size={12} />
               <EditableText as="span" sectionId="pricing" fieldId="offer2_mostPopular" value={get("pricing", "offer2_mostPopular", isArabic ? "الأكثر طلباً" : "MOST POPULAR")} />
             </div>
 
             <div>
               <div className="flex items-start justify-between mb-6 pt-2">
                 <div>
-                  <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-xl inline-block mb-3 backdrop-blur-sm">
+                  <span className="text-[0.65rem] font-bold tracking-widest text-blue-400 uppercase bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-[var(--radius-pill)] inline-block mb-3 backdrop-blur-sm">
                     <EditableText sectionId="pricing" fieldId="offer2_badge" value={get("pricing", "offer2_badge", t.twoPaths.offer2.badge)} />
                   </span>
                   <h3 className="text-2xl font-bold text-white leading-tight">
@@ -273,7 +273,7 @@ export function TwoPathsSection() {
                         const orig = offer2Price.originalPrice ?? offer2Price.price;
                         const pct = orig > 0 ? Math.round((1 - offer2Price.price / orig) * 100) : 0;
                         return pct > 0 ? (
-                          <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-lg">
+                          <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)]">
                             -{pct}%
                           </span>
                         ) : null;
@@ -291,7 +291,7 @@ export function TwoPathsSection() {
                       Price comes from Products — edit it in /admin/products
                     </p>
                   )}
-                  <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-lg inline-block mt-1">
+                  <span className="text-[0.65rem] font-semibold tracking-wider uppercase text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-[var(--radius-sm)] inline-block mt-1">
                     <EditableText sectionId="pricing" fieldId="offer2_type" value={get("pricing", "offer2_type", t.twoPaths.offer2.type)} />
                   </span>
                 </div>
@@ -318,7 +318,7 @@ export function TwoPathsSection() {
                   {get("pricing", "offer2_features", t.twoPaths.offer2.features.join("\n")).split("\n").map(s => s.trim()).filter(Boolean).map((f, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-slate-200 font-medium">
                       <div className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 flex items-center justify-center shrink-0 mt-0.5 backdrop-blur-sm shadow-[0_0_8px_rgba(59,130,246,0.3)]">
-                        <Check size={11} className="text-blue-300" strokeWidth={2.5} />
+                        <Check size={12} className="text-blue-300" strokeWidth={2.5} />
                       </div>
                       <span>{f}</span>
                     </li>
@@ -330,7 +330,7 @@ export function TwoPathsSection() {
             <div className="mt-4 pt-4 border-t border-slate-800/60">
               <Link
                 href="/checkout/coaching"
-                className="btn-primary w-full flex items-center justify-center gap-2 group py-3.5 rounded-xl font-bold"
+                className="btn-primary w-full flex items-center justify-center gap-2 group py-3.5 font-bold"
               >
                 <EditableText as="span" sectionId="pricing" fieldId="offer2_btn" value={get("pricing", "offer2_btn", t.twoPaths.offer2.btn)} />
                 <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />

@@ -132,14 +132,14 @@ export default function OrdersPage() {
       {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         {/* Status Filter Tabs */}
-        <div className="flex flex-wrap gap-1.5 p-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm">
+        <div className="flex flex-wrap gap-1.5 p-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)]">
           {tabs.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setStatusFilter(key)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-sm transition-all ${
+              className={`px-3 py-1.5 text-xs font-bold rounded-[var(--radius-sm)] transition-all ${
                 statusFilter === key
-                  ? "bg-[var(--accent)] text-black shadow-sm"
+                  ? "bg-[var(--accent)] text-black shadow-[var(--shadow-button)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
               }`}
             >
@@ -156,7 +156,7 @@ export default function OrdersPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.searchPlaceholder}
-              className={`w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-sm ${
+              className={`w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] ${
                 isArabic ? "pr-9 pl-3" : "pl-9 pr-3"
               } py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-accent)]`}
             />
@@ -165,7 +165,7 @@ export default function OrdersPage() {
           <select
             value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
-            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-accent)]"
           >
             <option value="all">{t.filterAllMethods}</option>
             <option value="INSTAPAY">InstaPay</option>
@@ -176,7 +176,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Orders Table Container */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-sm">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">
@@ -253,7 +253,7 @@ export default function OrdersPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${conf.bg} ${conf.text} ${conf.border}`}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-[var(--radius-pill)] text-[10px] font-bold border ${conf.bg} ${conf.text} ${conf.border}`}
                         >
                           {conf.label}
                         </span>
@@ -268,19 +268,19 @@ export default function OrdersPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setSelectedOrder(order)}
-                            className="p-1.5 rounded-sm border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
+                            className="p-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
                             title={t.viewDetails}
                           >
-                            <Eye size={13} />
+                            <Eye size={14} />
                           </button>
 
                           {order.customerPhone && (
                             <button
                               onClick={() => openWhatsApp(order)}
-                              className="p-1.5 rounded-sm border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                              className="p-1.5 rounded-[var(--radius-sm)] border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
                               title="WhatsApp"
                             >
-                              <MessageSquare size={13} />
+                              <MessageSquare size={14} />
                             </button>
                           )}
 
@@ -288,7 +288,7 @@ export default function OrdersPage() {
                             <button
                               onClick={() => handleOrderAction(order.orderRef, "confirm")}
                               disabled={acting === order.orderRef}
-                              className="px-2.5 py-1 bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] rounded-sm transition-colors disabled:opacity-50 flex items-center gap-1"
+                              className="px-2.5 py-1 bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] rounded-[var(--radius-sm)] transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
                               <CheckCircle2 size={12} /> {t.approveBtn}
                             </button>
@@ -307,7 +307,7 @@ export default function OrdersPage() {
       {/* Order Detail Modal / Drawer */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-[var(--shadow-card)]">
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-elevated)]">
               <div>
                 <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
@@ -319,7 +319,7 @@ export default function OrdersPage() {
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="p-1.5 rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-base)]"
+                className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-base)]"
               >
                 <X size={16} />
               </button>
@@ -327,7 +327,7 @@ export default function OrdersPage() {
 
             <div className="p-6 space-y-6">
               {/* Customer Info Card */}
-              <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm space-y-3">
+              <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] space-y-3">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
                   <User size={14} className="text-[var(--accent)]" /> {t.customerInfo}
                 </h4>
@@ -362,14 +362,14 @@ export default function OrdersPage() {
 
               {/* Transaction & Plan Info */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm space-y-2">
+                <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] space-y-2">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
                     <Sparkles size={14} className="text-[var(--accent)]" /> {t.colPlan}
                   </h4>
                   <p className="text-sm font-bold text-[var(--text-primary)]">{selectedOrder.product.name}</p>
                 </div>
 
-                <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm space-y-2">
+                <div className="p-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] space-y-2">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
                     <CreditCard size={14} className="text-[var(--accent)]" /> {t.paymentProof}
                   </h4>
@@ -390,7 +390,7 @@ export default function OrdersPage() {
                       href={`/api/media/${selectedOrder.paymentProofId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block mt-2 rounded-sm overflow-hidden border border-[var(--border)] hover:border-[var(--border-accent)] transition-colors"
+                      className="block mt-2 rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)] hover:border-[var(--border-accent)] transition-colors"
                       title={isArabic ? "اضغط لتكبير الصورة" : "Click to enlarge"}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -409,7 +409,7 @@ export default function OrdersPage() {
               </div>
 
               {/* Status Action Buttons */}
-              <div className="p-4 bg-[var(--bg-base)] border border-[var(--border)] rounded-sm space-y-3">
+              <div className="p-4 bg-[var(--bg-base)] border border-[var(--border)] rounded-[var(--radius-md)] space-y-3">
                 <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
                   {t.colActions}
                 </span>
@@ -419,9 +419,9 @@ export default function OrdersPage() {
                     <button
                       onClick={() => handleOrderAction(selectedOrder.orderRef, "confirm")}
                       disabled={acting === selectedOrder.orderRef}
-                      className="flex-1 py-2 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs rounded-sm transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      className="flex-1 py-2 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs rounded-[var(--radius-lg)] transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
-                      <CheckCircle2 size={15} /> {t.approveBtn}
+                      <CheckCircle2 size={16} /> {t.approveBtn}
                     </button>
                   )}
 
@@ -429,9 +429,9 @@ export default function OrdersPage() {
                     <button
                       onClick={() => handleOrderAction(selectedOrder.orderRef, "reject")}
                       disabled={acting === selectedOrder.orderRef}
-                      className="py-2 px-4 bg-red-500/15 border border-red-500/40 hover:bg-red-500/25 text-red-400 font-bold text-xs rounded-sm transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      className="py-2 px-4 bg-red-500/15 border border-red-500/40 hover:bg-red-500/25 text-red-400 font-bold text-xs rounded-[var(--radius-lg)] transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
-                      <XCircle size={15} /> {t.rejectBtn}
+                      <XCircle size={16} /> {t.rejectBtn}
                     </button>
                   )}
 
@@ -439,9 +439,9 @@ export default function OrdersPage() {
                     <button
                       onClick={() => handleOrderAction(selectedOrder.orderRef, "refund")}
                       disabled={acting === selectedOrder.orderRef}
-                      className="py-2 px-4 bg-zinc-700/30 border border-zinc-600 hover:bg-zinc-700/50 text-zinc-300 font-bold text-xs rounded-sm transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      className="py-2 px-4 bg-zinc-700/30 border border-zinc-600 hover:bg-zinc-700/50 text-zinc-300 font-bold text-xs rounded-[var(--radius-lg)] transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
-                      <RotateCcw size={15} /> {t.refundBtn}
+                      <RotateCcw size={16} /> {t.refundBtn}
                     </button>
                   )}
                 </div>

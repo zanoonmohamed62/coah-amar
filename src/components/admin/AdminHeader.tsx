@@ -51,19 +51,19 @@ export function AdminHeader() {
         {/* Language Switcher */}
         <button
           onClick={toggleLang}
-          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-sm border border-[var(--border)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--border-accent)] transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--border-accent)] transition-all cursor-pointer"
           title={isArabic ? "Switch to English" : "التحويل إلى العربية"}
         >
-          <Globe size={13} className="text-[var(--accent)]" />
+          <Globe size={14} className="text-[var(--accent)]" />
           <span className="hidden sm:inline">{isArabic ? "English" : "العربية"}</span>
         </button>
 
         {pendingCount > 0 && (
           <Link
             href="/admin/orders?status=AWAITING_CONFIRMATION"
-            className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors animate-pulse whitespace-nowrap"
+            className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-[var(--radius-pill)] bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors animate-pulse whitespace-nowrap"
           >
-            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+            <span className="w-2 h-2 rounded-[var(--radius-pill)] bg-amber-400 shrink-0"></span>
             <span className="hidden sm:inline">{t.pendingOrders(pendingCount)}</span>
             <span className="sm:hidden">{pendingCount}</span>
           </Link>
@@ -72,20 +72,20 @@ export function AdminHeader() {
         <Link
           href="/"
           target="_blank"
-          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--border)] bg-[var(--bg-elevated)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
         >
-          <ExternalLink size={13} />
+          <ExternalLink size={14} />
           <span>{t.liveSite}</span>
         </Link>
 
         <div className={`hidden sm:flex items-center gap-2 ${isArabic ? "pr-3 border-r" : "pl-3 border-l"} border-[var(--border)]`}>
-          <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)] font-bold text-xs">
+          <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)] font-bold text-xs">
             CA
           </div>
           <div className="hidden lg:block text-start">
             <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">Coach Amar</p>
             <p className="text-[10px] text-[var(--text-muted)] leading-tight flex items-center gap-1">
-              <Shield size={9} className="text-emerald-400" /> {t.superAdmin}
+              <Shield size={11} className="text-emerald-400" /> {t.superAdmin}
             </p>
           </div>
         </div>

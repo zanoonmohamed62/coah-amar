@@ -76,7 +76,7 @@ function LoginForm() {
         {/* Header / Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center justify-center gap-2 mb-4">
-            <div className="w-12 h-12 border border-blue-500/30 bg-blue-500/10 flex items-center justify-center rounded-sm shadow-lg shadow-blue-500/10">
+            <div className="w-12 h-12 border border-blue-500/30 bg-blue-500/10 flex items-center justify-center rounded-[var(--radius-lg)] shadow-lg shadow-blue-500/10">
               <Dumbbell size={24} className="text-blue-400" />
             </div>
           </Link>
@@ -87,10 +87,10 @@ function LoginForm() {
         </div>
 
         {/* Form Container */}
-        <div className="bg-[#0b0f19] border border-slate-800 rounded-sm p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 sm:p-8 space-y-6 shadow-2xl">
           {reason === "unauthorized" && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-sm px-4 py-3 text-xs sm:text-sm text-amber-400 flex items-start gap-2">
-              <ShieldCheck size={15} className="mt-0.5 shrink-0" />
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-md)] px-4 py-3 text-xs sm:text-sm text-amber-400 flex items-start gap-2">
+              <ShieldCheck size={16} className="mt-0.5 shrink-0" />
               <div>
                 <p className="font-bold mb-0.5">
                   {isArabic ? "صفحة مخصصة للأدمن فقط" : "Admin Access Required"}
@@ -104,7 +104,7 @@ function LoginForm() {
             </div>
           )}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-sm px-4 py-3 text-xs sm:text-sm text-red-400">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-[var(--radius-md)] px-4 py-3 text-xs sm:text-sm text-red-400">
               {error}
             </div>
           )}
@@ -124,7 +124,7 @@ function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={isArabic ? "admin@coachair.com أو بريدك" : "admin@coachair.com or your email"}
-                  className="w-full bg-[#07090e] border border-slate-800 rounded-sm pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                  className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                 />
               </div>
             </div>
@@ -143,7 +143,7 @@ function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[#07090e] border border-slate-800 rounded-sm pl-10 pr-10 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
+                  className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] pl-10 pr-10 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
                 />
                 <button
                   type="button"
@@ -167,7 +167,7 @@ function LoginForm() {
                   ? isArabic ? "جاري تسجيل الدخول..." : "Signing in..."
                   : isArabic ? "تسجيل الدخول" : "Sign In"}
               </span>
-              {!loading && <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />}
+              {!loading && <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
 
@@ -177,7 +177,7 @@ function LoginForm() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="w-full px-3 py-2.5 bg-white/95 hover:bg-white text-slate-800 rounded-sm text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-75"
+              className="w-full px-3 py-2.5 bg-white/95 hover:bg-white text-slate-800 rounded-[var(--radius-md)] text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-75"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3.01h3.89c2.28-2.1 3.56-5.18 3.56-8.82z" />

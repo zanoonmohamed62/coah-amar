@@ -100,9 +100,9 @@ export default function AdminOverview() {
     <div className="space-y-8">
       {/* Pending Orders Banner */}
       {stats && stats.pendingOrders > 0 && (
-        <div className="p-4 rounded-sm bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 flex items-center justify-between">
+        <div className="p-4 rounded-[var(--radius-xl)] bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-sm bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <div className="w-9 h-9 rounded-[var(--radius-md)] bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
               <Clock size={18} />
             </div>
             <div>
@@ -116,7 +116,7 @@ export default function AdminOverview() {
           </div>
           <Link
             href="/admin/orders?status=AWAITING_CONFIRMATION"
-            className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs rounded-sm transition-colors flex items-center gap-1.5"
+            className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs rounded-[var(--radius-lg)] transition-colors flex items-center gap-1.5"
           >
             {t.reviewNow} <ArrowActionIcon size={14} />
           </Link>
@@ -127,16 +127,16 @@ export default function AdminOverview() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 bg-[var(--bg-card)] border border-[var(--border)] rounded-sm animate-pulse" />
+            <div key={i} className="h-32 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] animate-pulse" />
           ))
         ) : (
           <>
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-[var(--accent)]/40 transition-colors">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden group hover:border-[var(--accent)]/40 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   {t.monthlyRevenue}
                 </span>
-                <div className="w-8 h-8 rounded-sm bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
                   <TrendingUp size={16} />
                 </div>
               </div>
@@ -149,12 +149,12 @@ export default function AdminOverview() {
               </p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   {t.activeAthletes}
                 </span>
-                <div className="w-8 h-8 rounded-sm bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
                   <Dumbbell size={16} />
                 </div>
               </div>
@@ -166,12 +166,12 @@ export default function AdminOverview() {
               </p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-blue-500/40 transition-colors">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden group hover:border-blue-500/40 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   {t.totalClients}
                 </span>
-                <div className="w-8 h-8 rounded-sm bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-blue-500/10 text-blue-400 flex items-center justify-center">
                   <Users size={16} />
                 </div>
               </div>
@@ -181,12 +181,12 @@ export default function AdminOverview() {
               <p className="text-xs text-[var(--text-muted)] mt-2">{t.totalClientsDesc}</p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-5 relative overflow-hidden group hover:border-purple-500/40 transition-colors">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden group hover:border-purple-500/40 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   {t.allTimeSales}
                 </span>
-                <div className="w-8 h-8 rounded-sm bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-[var(--radius-md)] bg-purple-500/10 text-purple-400 flex items-center justify-center">
                   <ShoppingBag size={16} />
                 </div>
               </div>
@@ -205,10 +205,10 @@ export default function AdminOverview() {
       {/* Mid Section: Quick Actions & Payment Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Action Station */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-6 flex flex-col justify-between">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-6 flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-1 flex items-center gap-2">
-              <Sparkles size={15} className="text-[var(--accent)]" /> {t.quickActions}
+              <Sparkles size={16} className="text-[var(--accent)]" /> {t.quickActions}
             </h3>
             <p className="text-xs text-[var(--text-muted)] mb-5">
               {t.quickActionsDesc}
@@ -217,7 +217,7 @@ export default function AdminOverview() {
             <div className="grid grid-cols-2 gap-3">
               <Link
                 href="/admin/orders"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
               >
                 <ShoppingBag size={16} className="text-[var(--accent)] mb-2 group-hover:scale-110 transition-transform" />
                 <p className="text-xs font-bold text-[var(--text-primary)]">{t.manageOrders}</p>
@@ -226,7 +226,7 @@ export default function AdminOverview() {
 
               <Link
                 href="/admin/customers"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
               >
                 <Users size={16} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
                 <p className="text-xs font-bold text-[var(--text-primary)]">{t.athletesList}</p>
@@ -235,7 +235,7 @@ export default function AdminOverview() {
 
               <Link
                 href="/admin/cms"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
               >
                 <FileText size={16} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
                 <p className="text-xs font-bold text-[var(--text-primary)]">{t.websiteCms}</p>
@@ -244,7 +244,7 @@ export default function AdminOverview() {
 
               <Link
                 href="/admin/settings"
-                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
+                className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--border-accent)] hover:bg-[var(--accent)]/5 transition-all text-start group"
               >
                 <CreditCard size={16} className="text-amber-400 mb-2 group-hover:scale-110 transition-transform" />
                 <p className="text-xs font-bold text-[var(--text-primary)]">{t.paymentConfig}</p>
@@ -262,9 +262,9 @@ export default function AdminOverview() {
         </div>
 
         {/* Payment Channels Breakdown */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-6">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-6">
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-1 flex items-center gap-2">
-            <CreditCard size={15} className="text-[var(--accent)]" /> {t.paymentChannels}
+            <CreditCard size={16} className="text-[var(--accent)]" /> {t.paymentChannels}
           </h3>
           <p className="text-xs text-[var(--text-muted)] mb-5">
             {t.paymentChannelsDesc}
@@ -274,7 +274,7 @@ export default function AdminOverview() {
             <div>
               <div className="flex justify-between text-xs font-semibold mb-1">
                 <span className="text-[var(--text-primary)] flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> {t.instaPayTransfer}
+                  <span className="w-2.5 h-2.5 rounded-[var(--radius-pill)] bg-emerald-400"></span> {t.instaPayTransfer}
                 </span>
                 <span className="text-[var(--text-muted)]">
                   {t.ordersCount(
@@ -283,9 +283,9 @@ export default function AdminOverview() {
                   )}
                 </span>
               </div>
-              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-[var(--radius-pill)] overflow-hidden">
                 <div
-                  className="bg-emerald-400 h-full rounded-full transition-all duration-500"
+                  className="bg-emerald-400 h-full rounded-[var(--radius-pill)] transition-all duration-500"
                   style={{
                     width: `${((stats?.paymentMethods.instapay || 0) / totalPaymentCount) * 100}%`,
                   }}
@@ -296,7 +296,7 @@ export default function AdminOverview() {
             <div>
               <div className="flex justify-between text-xs font-semibold mb-1">
                 <span className="text-[var(--text-primary)] flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span> {t.payPalGateway}
+                  <span className="w-2.5 h-2.5 rounded-[var(--radius-pill)] bg-blue-400"></span> {t.payPalGateway}
                 </span>
                 <span className="text-[var(--text-muted)]">
                   {t.ordersCount(
@@ -305,9 +305,9 @@ export default function AdminOverview() {
                   )}
                 </span>
               </div>
-              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-[var(--radius-pill)] overflow-hidden">
                 <div
-                  className="bg-blue-400 h-full rounded-full transition-all duration-500"
+                  className="bg-blue-400 h-full rounded-[var(--radius-pill)] transition-all duration-500"
                   style={{
                     width: `${((stats?.paymentMethods.paypal || 0) / totalPaymentCount) * 100}%`,
                   }}
@@ -318,7 +318,7 @@ export default function AdminOverview() {
             <div>
               <div className="flex justify-between text-xs font-semibold mb-1">
                 <span className="text-[var(--text-primary)] flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span> {t.teldaDirect}
+                  <span className="w-2.5 h-2.5 rounded-[var(--radius-pill)] bg-purple-400"></span> {t.teldaDirect}
                 </span>
                 <span className="text-[var(--text-muted)]">
                   {t.ordersCount(
@@ -327,9 +327,9 @@ export default function AdminOverview() {
                   )}
                 </span>
               </div>
-              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-[var(--bg-elevated)] h-2 rounded-[var(--radius-pill)] overflow-hidden">
                 <div
-                  className="bg-purple-400 h-full rounded-full transition-all duration-500"
+                  className="bg-purple-400 h-full rounded-[var(--radius-pill)] transition-all duration-500"
                   style={{
                     width: `${((stats?.paymentMethods.telda || 0) / totalPaymentCount) * 100}%`,
                   }}
@@ -338,7 +338,7 @@ export default function AdminOverview() {
             </div>
           </div>
 
-          <div className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm mt-5">
+          <div className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] mt-5">
             <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
               💡 {t.instaPayTip}
             </p>
@@ -346,11 +346,11 @@ export default function AdminOverview() {
         </div>
 
         {/* Active Products */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm p-6 flex flex-col justify-between">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                <ShoppingBag size={15} className="text-[var(--accent)]" /> {t.activePackages}
+                <ShoppingBag size={16} className="text-[var(--accent)]" /> {t.activePackages}
               </h3>
               <Link href="/admin/products" className="text-xs text-[var(--accent)] hover:underline font-semibold">
                 {t.manage}
@@ -364,7 +364,7 @@ export default function AdminOverview() {
               {stats?.products.map((p) => (
                 <div
                   key={p.id}
-                  className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-sm flex items-center justify-between hover:border-[var(--border-accent)] transition-colors"
+                  className="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] flex items-center justify-between hover:border-[var(--border-accent)] transition-colors"
                 >
                   <div>
                     <p className="text-xs font-bold text-[var(--text-primary)]">{p.name}</p>
@@ -385,15 +385,15 @@ export default function AdminOverview() {
 
           <Link
             href="/admin/products"
-            className="w-full mt-4 py-2 border border-dashed border-[var(--border)] hover:border-[var(--border-accent)] rounded-sm text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full mt-4 py-2 border border-dashed border-[var(--border)] hover:border-[var(--border-accent)] rounded-[var(--radius-md)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center gap-1.5 transition-colors"
           >
-            <Plus size={13} /> {t.addNewPlan}
+            <Plus size={14} /> {t.addNewPlan}
           </Link>
         </div>
       </div>
 
       {/* Recent Orders Table */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-sm overflow-hidden shadow-sm">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between">
           <div>
             <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">
@@ -405,7 +405,7 @@ export default function AdminOverview() {
             href="/admin/orders"
             className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
           >
-            {t.viewAllOrders} <ArrowIcon size={13} />
+            {t.viewAllOrders} <ArrowIcon size={14} />
           </Link>
         </div>
 
@@ -462,7 +462,7 @@ export default function AdminOverview() {
                       </td>
                       <td className="px-6 py-3.5">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge.className}`}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-[var(--radius-pill)] text-[10px] font-bold border ${badge.className}`}
                         >
                           {badge.label}
                         </span>
