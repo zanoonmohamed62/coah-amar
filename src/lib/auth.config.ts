@@ -12,7 +12,6 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const role = (auth?.user as unknown as { role?: string })?.role;
       const { pathname } = nextUrl;
 
       // Check inactivity timeout (15 minutes)
@@ -26,18 +25,28 @@ export const authConfig = {
         }
       }
 
-      // Admin routes — require ADMIN role
-      if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+      // Admin API — authentication only. This middleware runs on the Edge, where
+      // there's no DB, so `role` here is whatever the JWT was minted with and can
+      // be up to a session old: a user promoted to ADMIN from /admin/team would
+      // be bounced here while the database already says they're an admin, and an
+      // API call would get an HTML login redirect instead of JSON. Every route
+      // under /api/admin calls requireAdmin(), which checks the role server-side
+      // against the DB, so that is the real gate.
+      if (pathname.startsWith("/api/admin")) {
+        if (!isLoggedIn) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        return true;
+      }
+
+      // Admin pages — same staleness caveat, so a non-admin role only redirects
+      // rather than being treated as authoritative; the pages themselves load
+      // their data through the API routes above, which enforce the real check.
+      if (pathname.startsWith("/admin")) {
         if (!isLoggedIn) {
           const redirectUrl = new URL("/login", nextUrl.origin);
           redirectUrl.searchParams.set("callbackUrl", pathname);
           return Response.redirect(redirectUrl);
-        }
-        if (role !== "ADMIN") {
-          const loginUrl = new URL("/login", nextUrl.origin);
-          loginUrl.searchParams.set("callbackUrl", "/admin");
-          loginUrl.searchParams.set("reason", "unauthorized");
-          return Response.redirect(loginUrl);
         }
         return true;
       }
@@ -64,6 +73,9 @@ export const authConfig = {
       if (trigger === "update") {
         token.lastActivity = Date.now();
       }
+      // Role changes aren't read here — this callback also runs on the Edge,
+      // where there's no DB. The override in auth.ts refreshes token.role from
+      // the database on the Node side.
       return token;
     },
     async session({ session, token }) {

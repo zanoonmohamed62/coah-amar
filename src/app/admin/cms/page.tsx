@@ -105,12 +105,29 @@ export default function CMSPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ updates }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        // Surface what the server actually said. Swallowing it here meant every
+        // failure — an expired session, a permissions problem, a DB error — read
+        // as the same "please try again", which it often wasn't.
+        const data = await res.json().catch(() => null);
+        const reason =
+          typeof data?.error === "string"
+            ? data.error
+            : res.status === 401
+            ? "Your session expired — sign in again."
+            : res.status === 403
+            ? "This account isn't allowed to edit the site."
+            : `Server error (${res.status}).`;
+        throw new Error(reason);
+      }
       setPending({});
       showToast("ok", `Saved ${updates.length} change${updates.length > 1 ? "s" : ""}`);
       iframeRef.current?.contentWindow?.postMessage({ type: "cms-refresh" }, window.location.origin);
-    } catch {
-      showToast("err", "Save failed — please try again.");
+    } catch (err) {
+      showToast(
+        "err",
+        err instanceof Error && err.message ? err.message : "Save failed — please try again."
+      );
     } finally {
       setSaving(false);
     }
