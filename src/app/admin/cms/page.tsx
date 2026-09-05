@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Pencil, Eye, Save, Loader2, ExternalLink, Globe,
-  CheckCircle2, AlertTriangle, RefreshCw, Smartphone, Monitor,
+  CheckCircle2, AlertTriangle, RefreshCw, Smartphone, Monitor, X,
 } from "lucide-react";
 
 type PendingEdit = { sectionId: string; fieldId: string; lang: "en" | "ar"; value: string };
+
+const DRAFT_STORAGE_KEY = "cms-unsaved-edits";
 
 /**
  * The whole CMS is just the real homepage, shown at full size in an iframe.
@@ -27,7 +29,20 @@ export default function CMSPage() {
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [editMode, setEditMode] = useState(true);
   const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop");
-  const [pending, setPending] = useState<Record<string, PendingEdit>>({});
+  // Unsaved edits used to live only in React state, so a reload, a crash, or a
+  // deploy landing mid-session threw away everything not yet saved. They're
+  // mirrored to localStorage (below) and read back here on mount.
+  const [pending, setPending] = useState<Record<string, PendingEdit>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const stored = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!stored) return {};
+      const parsed = JSON.parse(stored) as Record<string, PendingEdit>;
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [iframeReady, setIframeReady] = useState(false);
@@ -37,12 +52,37 @@ export default function CMSPage() {
   const pendingRef = useRef<Record<string, PendingEdit>>({});
   useEffect(() => { pendingRef.current = pending; }, [pending]);
 
+  useEffect(() => {
+    try {
+      if (Object.keys(pending).length === 0) {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      } else {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(pending));
+      }
+    } catch {
+      /* storage full or blocked — the in-memory copy still works */
+    }
+  }, [pending]);
+
+  // Last line of defence for a tab closed or refreshed with edits outstanding.
+  useEffect(() => {
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      if (Object.keys(pendingRef.current).length > 0) e.preventDefault();
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
+
   const dirtyCount = Object.keys(pending).length;
 
   const showToast = useCallback((type: "ok" | "err", msg: string) => {
     setToast({ type, msg });
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 3000);
+    // Errors stay until dismissed — they carry a reason worth reading, and
+    // auto-hiding one made failures look like nothing had happened at all.
+    if (type === "ok") {
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    }
   }, []);
 
   const iframeSrc = `${page}?cms_edit=${editMode ? "1" : "0"}&cms_lang=${lang}`;
@@ -124,10 +164,11 @@ export default function CMSPage() {
       showToast("ok", `Saved ${updates.length} change${updates.length > 1 ? "s" : ""}`);
       iframeRef.current?.contentWindow?.postMessage({ type: "cms-refresh" }, window.location.origin);
     } catch (err) {
-      showToast(
-        "err",
-        err instanceof Error && err.message ? err.message : "Save failed — please try again."
-      );
+      const reason =
+        err instanceof Error && err.message ? err.message : "Save failed — please try again.";
+      // Say the edits are safe: they're in localStorage, so the natural panic
+      // reaction (reload, or redo everything) isn't necessary.
+      showToast("err", `${reason} Your ${dirtyCount} edit${dirtyCount === 1 ? "" : "s"} are kept here — nothing is lost.`);
     } finally {
       setSaving(false);
     }
@@ -145,14 +186,27 @@ export default function CMSPage() {
         {/* Toast */}
         {toast && (
           <div
-            className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-[var(--radius-md)] border text-sm font-semibold shadow-[var(--shadow-card)] ${
+            className={`fixed top-4 right-4 z-50 flex items-start gap-2 max-w-sm px-4 py-3 rounded-[var(--radius-md)] border text-sm font-semibold shadow-[var(--shadow-card)] ${
               toast.type === "ok"
                 ? "bg-emerald-950 border-emerald-500/50 text-emerald-300"
                 : "bg-red-950 border-red-500/50 text-red-300"
             }`}
           >
-            {toast.type === "ok" ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
-            {toast.msg}
+            {toast.type === "ok" ? (
+              <CheckCircle2 size={15} className="shrink-0 mt-0.5" />
+            ) : (
+              <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+            )}
+            <span className="flex-1 leading-relaxed">{toast.msg}</span>
+            {toast.type === "err" && (
+              <button
+                onClick={() => setToast(null)}
+                className="shrink-0 mt-0.5 text-red-400 hover:text-red-200"
+                aria-label="Dismiss"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         )}
 
