@@ -67,7 +67,12 @@ look like a real production marketing site. `/admin` and `/app` are still reacha
 
 ### Public site
 - `/` — landing page, all sections in `src/components/sections/`, content sourced from CMS
-  (`SiteContent`) via `useSiteContent()` with `translations.ts` as fallback.
+  (`SiteContent`) via `useSiteContent()` with `translations.ts` as fallback. Order (see
+  `src/app/page.tsx`): hero → trust → problem → pricing → howItWorks → coach → **finalCta → faq →
+  testimonials**. The closing CTA deliberately precedes the FAQ and testimonials: the testimonial
+  cards are still placeholders ("Awaiting results…") and were previously the last thing a visitor
+  saw before deciding. The hero's third stat (`stat3*`, "Client Rating") is not rendered — it had
+  no real data and showed a literal `0`; its CMS fields are kept for when real ratings exist.
 - `/checkout/split`, `/checkout/coaching` — the two checkout funnels every homepage CTA links to.
 - `/checkout/upload-proof` — the durable per-order payment page (transfer details, proof upload,
   live status). Scoped by the order's `accessToken`, reachable without a session.
@@ -110,8 +115,8 @@ them and why.
   `/api/orders/[orderRef]` (full detail for the customer's payment page, token-scoped),
   `/api/orders/[orderRef]/proof` (screenshot upload, token-scoped, all payment methods),
   `/api/admin/orders` (list/confirm/reject/refund).
-- **PayPal**: retired. `/api/webhooks/paypal` and `/api/paypal/capture` answer `410 Gone` and do
-  nothing — see the payment state machine below.
+- **PayPal**: no routes. The webhook and capture endpoints were deleted — see the payment state
+  machine below.
 - **Paymob**: `/api/webhooks/paymob` still exists (signature-verified) but is unreachable — no
   checkout-initiation code, no merchant account. Out of scope, see Known gaps.
 - **Customer** (`requireCustomer`): `/api/customer/orders`, `/api/customer/entitlements`.
@@ -216,15 +221,17 @@ reused order lands on the right page.
 - **PayPal**: identical manual path to InstaPay and Telda. The customer pays through the
   `paypal_link` PayPal.me URL from Settings, uploads a screenshot, and an admin confirms. The old
   automated flow (approval-URL redirect → `/checkout/return` → `POST /api/paypal/capture` →
-  `/api/webhooks/paypal`) was **deliberately retired**: it needed a PayPal Business account the
-  user doesn't have, and it carried a real activation bug (see below). `src/lib/paypal.ts` is
-  retained but unused; `/api/webhooks/paypal` and `/api/paypal/capture` now answer `410 Gone`, and
-  `/checkout/return` just forwards old links to the order's payment page.
+  `/api/webhooks/paypal`) was **deliberately removed**: it needed a PayPal Business account the
+  user doesn't have, and it carried a real activation bug (see below). `src/lib/paypal.ts`,
+  `/api/webhooks/paypal` and `/api/paypal/capture` are all deleted; `/checkout/return` survives
+  only to forward old links to the order's payment page.
 
-  The retired webhook's bug, recorded so it isn't reintroduced: it called
-  `entitlement.create` unconditionally, but `Entitlement.orderId` is unique — so PayPal's normal
-  webhook retry raised a unique violation that rolled back the whole transaction, reverting
-  `CONFIRMED` and leaving a customer who had genuinely paid with no access at all.
+  The removed webhook's bug, recorded so it isn't reintroduced if PayPal automation is ever
+  rebuilt: it called `entitlement.create` unconditionally, but `Entitlement.orderId` is unique —
+  so PayPal's normal webhook retry raised a unique violation that rolled back the whole
+  transaction, reverting `CONFIRMED` and leaving a customer who had genuinely paid with no access
+  at all. Any revival must make activation idempotent, as the orderId-keyed check in
+  `/api/admin/orders` now is.
 - **Paymob**: out of scope, not pursued (no merchant account, user wants to avoid the Egyptian
   KYC/paperwork). The webhook code exists but nothing triggers it.
 

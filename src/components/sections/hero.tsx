@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
@@ -108,28 +107,25 @@ export function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.45 }}
-            className="flex items-center gap-6 sm:gap-8 pt-6 border-t border-slate-800/80 max-w-xl"
+            className="flex items-center justify-center gap-8 sm:gap-10 pt-6 border-t border-slate-800/80 max-w-xl"
           >
-            <div>
+            <div className="text-center">
               <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 <EditableText sectionId="hero" fieldId="stat1Value" value={get("hero", "stat1Value", t.hero.stat1Value)} />
               </p>
               <p className="text-xs text-slate-400 mt-0.5 font-medium"><EditableText sectionId="hero" fieldId="stat1Label" value={get("hero", "stat1Label", t.hero.stat1Label)} /></p>
             </div>
             <div className="w-px h-9 bg-slate-800" />
-            <div>
+            <div className="text-center">
               <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 <EditableText sectionId="hero" fieldId="stat2Value" value={get("hero", "stat2Value", t.hero.stat2Value)} />
               </p>
               <p className="text-xs text-slate-400 mt-0.5 font-medium"><EditableText sectionId="hero" fieldId="stat2Label" value={get("hero", "stat2Label", t.hero.stat2Label)} /></p>
             </div>
-            <div className="w-px h-9 bg-slate-800" />
-            <div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-blue-400 tracking-tight">
-                <EditableText sectionId="hero" fieldId="stat3Value" value={get("hero", "stat3Value", t.hero.stat3Value)} />
-              </p>
-              <p className="text-xs text-slate-400 mt-0.5 font-medium"><EditableText sectionId="hero" fieldId="stat3Label" value={get("hero", "stat3Label", t.hero.stat3Label)} /></p>
-            </div>
+            {/* The third stat ("Client Rating") is intentionally not rendered: it
+                had no real number behind it and displayed a literal 0, which reads
+                as a zero-star rating. Its stat3* fields stay in translations.ts and
+                the CMS so it can be restored once there are real ratings. */}
           </motion.div>
         </div>
 

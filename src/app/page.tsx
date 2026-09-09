@@ -18,9 +18,14 @@ export default function HomePage() {
       <SectionWrapper sectionId="pricing"><TwoPathsSection /></SectionWrapper>
       <SectionWrapper sectionId="howItWorks"><HowItWorksSection /></SectionWrapper>
       <SectionWrapper sectionId="coach"><CoachSection /></SectionWrapper>
-      <SectionWrapper sectionId="testimonials"><TestimonialsSection /></SectionWrapper>
-      <SectionWrapper sectionId="faq"><FAQSection /></SectionWrapper>
+      {/* The closing CTA sits here, straight after the coach section, so the
+          page asks for the sale while interest is highest. Testimonials are
+          still placeholders ("Awaiting results…") and would otherwise be the
+          last thing a visitor read before deciding — so they run after the CTA,
+          below the FAQ. */}
       <SectionWrapper sectionId="finalCta"><FinalCTASection /></SectionWrapper>
+      <SectionWrapper sectionId="faq"><FAQSection /></SectionWrapper>
+      <SectionWrapper sectionId="testimonials"><TestimonialsSection /></SectionWrapper>
     </>
   );
 }
