@@ -125,7 +125,13 @@ export default function PdfCanvas({ isArabic }: Props) {
       // the screen and waste space on a phone.
       const targetWidth = Math.max(containerWidth * zoom, 280);
       const computedScale = targetWidth / baseViewport.width;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Cap at 1.5x on phones rather than 2x. Pixel count grows with the
+      // square, so 2x costs ~78% more work and memory per page than 1.5x for a
+      // difference that is not visible on a small screen — and that cost is
+      // paid on every page draw, which is what makes the plan feel heavy.
+      // Desktop keeps 2x, where there is headroom for it.
+      const isPhone = window.innerWidth < 768;
+      const dpr = Math.min(window.devicePixelRatio || 1, isPhone ? 1.5 : 2);
 
       // Bake DPR into the viewport so pdfjs handles all scaling internally.
       // Never call ctx.setTransform(dpr) separately — that causes double-scaling
@@ -165,7 +171,9 @@ export default function PdfCanvas({ isArabic }: Props) {
       drawWatermark(ctx, dprViewport.width, dprViewport.height, watermarkText);
 
       // Build annotation (link) overlay (use CSS-sized viewport for positions)
-      const annotations = await page.getAnnotations();
+      // "display" only — the default also pulls print-intent annotations, which
+      // this viewer never uses and which cost time on every page draw.
+      const annotations = await page.getAnnotations({ intent: "display" });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       annotations.forEach((anno: any) => {
         if (anno.subtype !== "Link" || !anno.rect) return;
@@ -264,7 +272,9 @@ export default function PdfCanvas({ isArabic }: Props) {
       cMapUrl: "/pdfjs/cmaps/cmaps/",
       cMapPacked: true,
       standardFontDataUrl: "/pdfjs/standard_fonts/standard_fonts/",
-      enableXfa: true,
+      // XFA is for interactive forms; this plan has none, and parsing for it
+      // costs time on every open.
+      enableXfa: false,
       // Render fonts directly onto canvas instead of CSS @font-face.
       // Fixes glyph width mismatches that cause garbled letter spacing.
       disableFontFace: true,
@@ -318,53 +328,62 @@ export default function PdfCanvas({ isArabic }: Props) {
       // paying customer would show it to the next account signed in on that
       // browser — including one that had never bought anything. The server
       // always refused GET /api/split; the viewer just never asked.
-      const probe = await probeSplitAccess();
-      if (probe.state === "denied") {
-        // Revoked, expired, or never entitled: drop anything held locally so
-        // the file cannot be read again from this device.
-        await clearOtherUsersCache("");
-        setStatus("no-access");
-        return;
-      }
-
-      // Remove copies belonging to other accounts on this device.
-      await clearOtherUsersCache(userId);
-
+      // Start the access probe and read the cache at the same time. The probe
+      // used to be awaited first, so even with the file already on the device
+      // nothing appeared until the server answered — which is why an "already
+      // downloaded" plan still felt like it was loading every time.
+      const probePromise = probeSplitAccess();
       const [cachedBuf, cachedVersion] = await Promise.all([
         getCachedPdf(userId),
         getCachedVersion(userId),
       ]);
 
-      // Offline: the probe couldn't run, so fall back to this user's own cached
-      // copy. It was only ever written after an authenticated, entitled fetch.
-      if (probe.state === "offline") {
-        if (cachedBuf) {
-          await openPdf(pdfjsLib, cachedBuf);
-          return;
-        }
-        throw new Error("offline-no-cache");
-      }
-
       if (cachedBuf) {
+        // Draw immediately from the local copy. It was only ever written after
+        // an authenticated, entitled fetch, so showing it while the probe is
+        // still in flight does not widen access — and the probe below still
+        // pulls it straight back off screen if this session is not entitled.
         await openPdf(pdfjsLib, cachedBuf);
 
-        // Access is already confirmed; this only refreshes a stale version.
-        if (cachedVersion !== probe.version) {
-          void (async () => {
-            try {
-              const res = await fetch("/api/split", { cache: "no-store" });
-              if (!res.ok) return;
-              const fresh = await res.arrayBuffer();
-              if (fresh.byteLength === 0) return;
-              await savePdfToCache(userId, fresh, probe.version);
-              await openPdf(pdfjsLib, fresh);
-            } catch { /* keep showing the cached copy */ }
-          })();
-        }
+        void (async () => {
+          const probe = await probePromise;
+          if (probe.state === "denied") {
+            // Revoked, expired, or a different account: hide it again and drop
+            // every local copy so it cannot be read from this device.
+            await clearOtherUsersCache("");
+            pdfRef.current = null;
+            setNumPages(0);
+            setStatus("no-access");
+            return;
+          }
+          if (probe.state === "offline") return; // keep showing the cached copy
+
+          await clearOtherUsersCache(userId);
+          if (cachedVersion === probe.version) return; // already current
+
+          try {
+            const res = await fetch("/api/split", { cache: "no-store" });
+            if (!res.ok) return;
+            const fresh = await res.arrayBuffer();
+            if (fresh.byteLength === 0) return;
+            await savePdfToCache(userId, fresh, probe.version);
+            await openPdf(pdfjsLib, fresh);
+          } catch { /* keep showing the cached copy */ }
+        })();
         return;
       }
 
-      // No cache yet — must fetch before anything can render.
+      // Nothing cached — the probe has to settle before anything can be shown.
+      const probe = await probePromise;
+      if (probe.state === "denied") {
+        await clearOtherUsersCache("");
+        setStatus("no-access");
+        return;
+      }
+      if (probe.state === "offline") throw new Error("offline-no-cache");
+
+      await clearOtherUsersCache(userId);
+
       const res = await fetch("/api/split", { cache: "no-store" });
       if (res.status === 403 || res.status === 401) {
         setStatus("no-access");
@@ -608,7 +627,7 @@ export default function PdfCanvas({ isArabic }: Props) {
               // which is visually noisy and makes the plan harder to read than
               // it is on paper. Pages now butt directly against each other and
               // read as one scroll.
-              className="relative bg-white w-full border-b border-black/10 last:border-b-0"
+              className="relative bg-white w-full"
               // Reserve the page's height even before it is drawn, so the
               // scrollbar is correct from the start and scrolling never jumps
               // as pages render in and out of the window.

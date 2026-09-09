@@ -1,42 +1,145 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Deep luxury matte obsidian gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d18"/>
+      <stop offset="50%" stop-color="#05070d"/>
+      <stop offset="100%" stop-color="#020306"/>
+    </linearGradient>
+
+    <!-- Volumetric electric core lighting -->
+    <radialGradient id="coreGlow" cx="50%" cy="42%" r="50%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.4"/>
+      <stop offset="35%" stop-color="#2563eb" stop-opacity="0.22"/>
+      <stop offset="70%" stop-color="#1d4ed8" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Athletic X Primary Metallic Cobalt Gradient -->
+    <linearGradient id="xGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="25%" stop-color="#0ea5e9"/>
+      <stop offset="65%" stop-color="#2563eb"/>
       <stop offset="100%" stop-color="#1d4ed8"/>
     </linearGradient>
-    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.8"/>
-      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.3"/>
+
+    <!-- High-gloss surface bevel highlight -->
+    <linearGradient id="bevelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.75"/>
+      <stop offset="30%" stop-color="#93c5fd" stop-opacity="0.4"/>
+      <stop offset="70%" stop-color="#3b82f6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0c1322"/>
-      <stop offset="100%" stop-color="#050811"/>
+
+    <!-- Chrome specular glint for top facets -->
+    <linearGradient id="glint" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="50%" stop-color="#7dd3fc" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.1"/>
     </linearGradient>
-    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="16" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+
+    <!-- Multi-stage neon bloom filter -->
+    <filter id="neonAura" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <!-- Realistic depth shadow filter -->
+    <filter id="depthShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.85"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#0284c7" flood-opacity="0.35"/>
     </filter>
   </defs>
 
-  <!-- Background container -->
-  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
-  <rect width="504" height="504" x="4" y="4" rx="96" fill="none" stroke="#1e293b" stroke-width="6"/>
+  <!-- 1. Full-bleed background (ensures 100% seamless PWA maskable rendering) -->
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
 
-  <!-- Group to shift X up -->
-  <g transform="translate(0, -40)">
-    <!-- Subtle glow behind the X -->
-    <g filter="url(#neonGlow)" opacity="0.6">
-      <path d="M120 120 L220 256 L120 392 H190 L256 300 L322 392 H392 L292 256 L392 120 H322 L256 212 L190 120 Z" fill="url(#glowGrad)"/>
-    </g>
+  <!-- 2. Volumetric atmospheric blue glow -->
+  <rect width="512" height="512" fill="url(#coreGlow)"/>
 
-    <!-- Main Athletic Bold "X" -->
-    <path d="M125 125 L225 256 L125 387 H195 L256 298 L317 387 H387 L287 256 L387 125 H317 L256 214 L195 125 Z" fill="url(#blueGrad)"/>
-
-    <!-- Sharp Inner Accent Highlight -->
-    <path d="M150 140 L240 256 L150 372 H175 L256 268 L337 372 H362 L272 256 L362 140 H337 L256 244 L175 140 Z" fill="#93c5fd" opacity="0.4"/>
+  <!-- 3. High-tech athletic geometry guides (subtle luxury detail) -->
+  <g opacity="0.04" stroke="#ffffff">
+    <circle cx="256" cy="216" r="165" fill="none" stroke-width="1.5" stroke-dasharray="4 6"/>
+    <circle cx="256" cy="216" r="105" fill="none" stroke-width="1"/>
+    <line x1="256" y1="50" x2="256" y2="380" stroke-width="1" stroke-dasharray="4 4"/>
   </g>
 
-  <!-- SPLIT Text -->
-  <text x="256" y="420" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="68" fill="#ffffff" text-anchor="middle" letter-spacing="12">SPLIT</text>
+  <!-- 4. Subtle inner luxury chassis border (inside safe zone) -->
+  <rect x="18" y="18" width="476" height="476" rx="98" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.1"/>
+
+  <!-- ══════════════════════════════════════════════════
+       THE ICONIC ATHLETIC "X" (Restored Geometry + Premium Polish)
+       ══════════════════════════════════════════════════ -->
+  <g transform="translate(0, -42)">
+    <!-- Electric Neon Underglow -->
+    <path
+      d="M120 120 L220 256 L120 392 H190 L256 300 L322 392 H392 L292 256 L392 120 H322 L256 212 L190 120 Z"
+      fill="#0284c7"
+      filter="url(#neonAura)"
+      opacity="0.85"
+    />
+
+    <!-- Main Athletic "X" with 3D drop shadow -->
+    <g filter="url(#depthShadow)">
+      <!-- Base Athletic Body -->
+      <path
+        d="M125 125 L225 256 L125 387 H195 L256 298 L317 387 H387 L287 256 L387 125 H317 L256 214 L195 125 Z"
+        fill="url(#xGrad)"
+      />
+
+      <!-- Sharp Inner Accent Highlight Facet -->
+      <path
+        d="M150 140 L240 256 L150 372 H175 L256 268 L337 372 H362 L272 256 L362 140 H337 L256 244 L175 140 Z"
+        fill="url(#bevelGrad)"
+      />
+
+      <!-- Chrome Specular Top-Edge Highlights (Upper Arms) -->
+      <path
+        d="M125 125 L195 125 L256 214 L317 125 L387 125"
+        fill="none"
+        stroke="url(#glint)"
+        stroke-width="3.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+
+      <!-- Precision Center Convergence Diamond -->
+      <polygon
+        points="256,234 274,256 256,278 238,256"
+        fill="#ffffff"
+        opacity="0.45"
+      />
+    </g>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════
+       "SPLIT" WORDMARK (Maskable Safe: Y=412, Width ~220px fits circle & squircle)
+       ══════════════════════════════════════════════════ -->
+  <g transform="translate(0, 0)">
+    <!-- Soft atmospheric glow behind text -->
+    <text
+      x="256"
+      y="414"
+      font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      font-weight="900"
+      font-size="52"
+      fill="#0284c7"
+      text-anchor="middle"
+      letter-spacing="10"
+      filter="url(#neonAura)"
+      opacity="0.7"
+    >SPLIT</text>
+
+    <!-- Crisp pure white athletic typography -->
+    <text
+      x="256"
+      y="414"
+      font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      font-weight="900"
+      font-size="52"
+      fill="#ffffff"
+      text-anchor="middle"
+      letter-spacing="10"
+    >SPLIT</text>
+  </g>
 </svg>
