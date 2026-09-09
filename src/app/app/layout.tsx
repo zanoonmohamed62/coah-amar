@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { AppSidebar } from "@/components/client/AppSidebar";
 import { useLanguage } from "@/lib/language-context";
 import { PWAProvider } from "@/components/PWAProvider";
@@ -16,63 +16,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // Auto sign-out after 15 minutes of inactivity
   useSessionTimeout();
 
-  // ── Anti-screenshot / anti-share hardening ──────────────────────────────
-  useEffect(() => {
-    const blockKeys = (e: KeyboardEvent) => {
-      const key = e.key?.toLowerCase();
-      if (
-        key === "printscreen" ||
-        (e.ctrlKey && key === "p") ||
-        (e.ctrlKey && key === "s") ||
-        (e.metaKey && key === "s") ||
-        (e.ctrlKey && e.shiftKey && key === "s") ||
-        (e.metaKey && e.shiftKey && key === "3") ||
-        (e.metaKey && e.shiftKey && key === "4") ||
-        (e.metaKey && e.shiftKey && key === "5")
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-    };
-
-    const blockContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      return false;
-    };
-
-    document.addEventListener("keydown", blockKeys, { capture: true });
-    document.addEventListener("contextmenu", blockContextMenu);
-
-    return () => {
-      document.removeEventListener("keydown", blockKeys, { capture: true });
-      document.removeEventListener("contextmenu", blockContextMenu);
-    };
-  }, []);
+  // Screenshot/keyboard blocking was removed here too. A browser cannot stop an
+  // OS-level capture, so it never prevented a leak — it only disabled
+  // right-click, text selection and Ctrl+S for paying customers, and blocked
+  // ordinary phone gestures. The per-viewer watermark on every rendered page is
+  // what actually makes a leaked copy traceable.
 
   return (
     <>
       <PWAProvider />
       <SplitPrefetcher />
 
-      <style>{`
-        .app-shell * {
-          -webkit-touch-callout: none !important;
-          -webkit-user-select: none !important;
-          user-select: none !important;
-          -webkit-user-drag: none !important;
-        }
-        @media print {
-          .app-shell { display: none !important; }
-          body::after {
-            content: "هذا المحتوى محمي ولا يمكن طباعته.";
-            display: block;
-            text-align: center;
-            padding: 4rem;
-            font-size: 1.5rem;
-          }
-        }
-      `}</style>
 
       <div
         dir={dir}

@@ -21,25 +21,26 @@ import {
 // be refused (and to keep a non-buyer's device from downloading 2.8MB for
 // nothing) — it is a courtesy, not the security boundary.
 export function SplitPrefetcher() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (status !== "authenticated" || startedRef.current) return;
+    if (status !== "authenticated" || !userId || startedRef.current) return;
     startedRef.current = true;
 
     // Never block first paint — let the portal render, then fetch quietly.
     const timer = setTimeout(() => {
-      void prefetch();
+      void prefetch(userId);
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [status]);
+  }, [status, userId]);
 
   return null;
 }
 
-async function prefetch() {
+async function prefetch(userId: string) {
   try {
     console.log("[SplitPrefetcher] Starting prefetch...");
 
@@ -68,8 +69,8 @@ async function prefetch() {
 
     // 2. Skip the download when the cached copy is already current.
     const [cached, cachedVersion, currentVersion] = await Promise.all([
-      getCachedPdf(),
-      getCachedVersion(),
+      getCachedPdf(userId),
+      getCachedVersion(userId),
       fetchCurrentVersion(),
     ]);
     const isStale =
@@ -102,7 +103,7 @@ async function prefetch() {
       return;
     }
 
-    await savePdfToCache(buf, currentVersion ?? "legacy");
+    await savePdfToCache(userId, buf, currentVersion ?? "legacy");
     console.log("[SplitPrefetcher] ✅ PDF cached successfully!", buf.byteLength, "bytes");
   } catch (err) {
     console.error("[SplitPrefetcher] Error:", err);

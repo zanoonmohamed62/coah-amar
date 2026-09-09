@@ -7,7 +7,8 @@ import { useSettings } from "@/lib/use-settings";
 import {
   getCachedPdf,
   getCachedVersion,
-  fetchCurrentVersion,
+  probeSplitAccess,
+  clearOtherUsersCache,
   savePdfToCache,
 } from "@/lib/split-cache";
 
@@ -48,8 +49,11 @@ interface Props {
 
 export default function PdfCanvas({ isArabic }: Props) {
   const session = useSession()?.data;
-  const user = session?.user as { name?: string; email?: string } | undefined;
+  const user = session?.user as { id?: string; name?: string; email?: string } | undefined;
   const watermarkText = user?.email || user?.name || "";
+  // The cache is keyed by user id so one account's downloaded copy is never
+  // readable by another account signed in on the same device.
+  const userId = user?.id ?? "";
   const getSetting = useSettings();
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
   const viewerRef   = useRef<HTMLDivElement>(null);
@@ -65,55 +69,18 @@ export default function PdfCanvas({ isArabic }: Props) {
   const [errMsg, setErrMsg] = useState("");
   const [numPages, setNumPages] = useState(0);
   const [scaleMultiplier, setScaleMultiplier] = useState(1);
-  const [isBlurred, setIsBlurred] = useState(false);
 
-  // 1. Anti-Screenshot & DRM
-  useEffect(() => {
-    const handleBlur = () => setIsBlurred(true);
-    const handleFocus = () => setIsBlurred(false);
-    const handleVisibility = () => setIsBlurred(document.hidden);
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Block PrintScreen, F10, Ctrl+P, Ctrl+S, CMD+Shift+3, CMD+Shift+4, CMD+Shift+S
-      if (
-        e.key === "PrintScreen" ||
-        e.key === "F10" ||
-        (e.ctrlKey && (e.key === "p" || e.key === "s" || e.key === "c")) ||
-        (e.metaKey && e.shiftKey && (e.key === "3" || e.key === "4" || e.key === "5" || e.key === "s"))
-      ) {
-        e.preventDefault();
-        
-        // Synchronous DOM Hiding (Faster than OS screen buffer capture)
-        if (viewerRef.current) {
-          viewerRef.current.style.opacity = "0";
-          viewerRef.current.style.visibility = "hidden";
-        }
-        
-        setIsBlurred(true);
-        
-        // Restore after 2 seconds
-        setTimeout(() => {
-          if (viewerRef.current) {
-            viewerRef.current.style.opacity = "1";
-            viewerRef.current.style.visibility = "visible";
-          }
-          setIsBlurred(false);
-        }, 2000);
-      }
-    };
-
-    window.addEventListener("blur", handleBlur);
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("blur", handleBlur);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
+  // Screenshot blocking was removed deliberately.
+  //
+  // It could not work: a browser cannot stop the operating system's capture,
+  // so anyone could still photograph the screen with a second phone or use the
+  // OS snipping tool. What it did do was hide the plan for two seconds whenever
+  // the window lost focus — which fired constantly on a phone (notification,
+  // app switch, screen rotate) and blanked the plan mid-set. It also blocked
+  // Ctrl+C and text selection for paying customers.
+  //
+  // The real deterrent is the per-viewer watermark drawn on every page above:
+  // it makes any leaked copy traceable to the account that opened it.
 
   // Render a single page with annotation links
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -261,46 +228,74 @@ export default function PdfCanvas({ isArabic }: Props) {
       // pdfjs v4 uses .mjs worker
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 
+      // No user id means no session yet — nothing to read and nothing to key a
+      // cache by.
+      if (!userId) {
+        setStatus("no-access");
+        return;
+      }
+
+      // Ask the server first, before anything from IndexedDB reaches the
+      // screen. A cached PDF used to be rendered immediately and only
+      // *afterwards* revalidated, so a device that had cached the file for a
+      // paying customer would show it to the next account signed in on that
+      // browser — including one that had never bought anything. The server
+      // always refused GET /api/split; the viewer just never asked.
+      const probe = await probeSplitAccess();
+      if (probe.state === "denied") {
+        // Revoked, expired, or never entitled: drop anything held locally so
+        // the file cannot be read again from this device.
+        await clearOtherUsersCache("");
+        setStatus("no-access");
+        return;
+      }
+
+      // Remove copies belonging to other accounts on this device.
+      await clearOtherUsersCache(userId);
+
       const [cachedBuf, cachedVersion] = await Promise.all([
-        getCachedPdf(),
-        getCachedVersion(),
+        getCachedPdf(userId),
+        getCachedVersion(userId),
       ]);
+
+      // Offline: the probe couldn't run, so fall back to this user's own cached
+      // copy. It was only ever written after an authenticated, entitled fetch.
+      if (probe.state === "offline") {
+        if (cachedBuf) {
+          await openPdf(pdfjsLib, cachedBuf);
+          return;
+        }
+        throw new Error("offline-no-cache");
+      }
 
       if (cachedBuf) {
         await openPdf(pdfjsLib, cachedBuf);
 
-        // Background freshness check — never blocks what's on screen, and is a
-        // no-op offline (fetchCurrentVersion resolves null on failure).
-        void (async () => {
-          try {
-            const currentVersion = await fetchCurrentVersion();
-            if (
-              currentVersion === null ||
-              cachedVersion === null ||
-              currentVersion === cachedVersion
-            ) return;
-
-            const res = await fetch("/api/split", { cache: "no-store" });
-            if (!res.ok) return;
-            const fresh = await res.arrayBuffer();
-            if (fresh.byteLength === 0) return;
-            await savePdfToCache(fresh, currentVersion);
-            await openPdf(pdfjsLib, fresh);
-          } catch { /* keep showing the cached copy */ }
-        })();
+        // Access is already confirmed; this only refreshes a stale version.
+        if (cachedVersion !== probe.version) {
+          void (async () => {
+            try {
+              const res = await fetch("/api/split", { cache: "no-store" });
+              if (!res.ok) return;
+              const fresh = await res.arrayBuffer();
+              if (fresh.byteLength === 0) return;
+              await savePdfToCache(userId, fresh, probe.version);
+              await openPdf(pdfjsLib, fresh);
+            } catch { /* keep showing the cached copy */ }
+          })();
+        }
         return;
       }
 
       // No cache yet — must fetch before anything can render.
-      const currentVersion = await fetchCurrentVersion();
       const res = await fetch("/api/split", { cache: "no-store" });
-      if (res.status === 403) {
+      if (res.status === 403 || res.status === 401) {
         setStatus("no-access");
         return;
       }
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const buf = await res.arrayBuffer();
-      await savePdfToCache(buf, currentVersion ?? "legacy");
+      await savePdfToCache(userId, buf, probe.version);
       await openPdf(pdfjsLib, buf);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -308,7 +303,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       setErrMsg(msg);
       setStatus("error");
     }
-  }, [openPdf]);
+  }, [openPdf, userId]);
 
   useEffect(() => {
     loadDocument();
@@ -390,30 +385,12 @@ export default function PdfCanvas({ isArabic }: Props) {
       <div
         ref={viewerRef}
         className="no-print-pdf flex-1 w-full overflow-y-auto bg-[#070a0f] flex flex-col items-center gap-5 p-4 relative"
-        onContextMenu={(e) => e.preventDefault()}
-        onCopy={(e) => e.preventDefault()}
+        // Pages are drawn to <canvas>, so there is no selectable text to copy
+        // anyway; dragging the canvas out as an image is the one thing worth
+        // preventing, and it costs the customer nothing.
         onDragStart={(e) => e.preventDefault()}
-        style={{ userSelect: "none", WebkitUserSelect: "none" }}
       >
-        {isBlurred && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl">
-            <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-[var(--radius-xl)] flex flex-col items-center max-w-sm text-center">
-              <div className="w-16 h-16 bg-red-500/20 rounded-[var(--radius-pill)] flex items-center justify-center mb-4">
-                <span className="text-3xl">🚫</span>
-              </div>
-              <h2 className="text-xl font-black text-red-500 mb-2">
-                {isArabic ? "تصوير الشاشة محظور" : "Screenshots Disabled"}
-              </h2>
-              <p className="text-sm text-red-400/80 font-medium">
-                {isArabic 
-                  ? "لأسباب تتعلق بحقوق الملكية الفكرية، لا يُسمح بتصوير أو نسخ محتوى الجدول."
-                  : "For copyright reasons, taking screenshots or copying this material is strictly prohibited."}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className={`flex flex-col items-center gap-5 w-full transition-all duration-300 ${isBlurred ? 'opacity-0 scale-95 pointer-events-none blur-xl' : 'opacity-100 scale-100'}`}>
+        <div className="flex flex-col items-center gap-5 w-full">
           {status === "loading" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070a0f] z-10">
               <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
