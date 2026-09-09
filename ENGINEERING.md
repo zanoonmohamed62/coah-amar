@@ -31,8 +31,8 @@ NextAuth v5, JWT session strategy, two providers, both in `src/lib/auth.ts`:
   out of curiosity or for a marketing incentive becomes a `User` row the admin can see/target in
   Admin → Customers, even with zero orders). Signing in with Google **does not** grant PDF access
   by itself — `/api/split`'s `hasSplitAccess()` check is entirely separate and still requires an
-  ACTIVE, non-expired `Entitlement`, created only by a real purchase (PayPal auto-confirm or admin
-  manual confirm of an InstaPay/Telda screenshot). A marketing banner (`GoogleLeadBanner.tsx`,
+  ACTIVE, non-expired `Entitlement`, created only by a real purchase (an admin manually confirming
+  an InstaPay/Telda/PayPal screenshot — every method is manual). A marketing banner (`GoogleLeadBanner.tsx`,
   shown on public pages only, 5s delay, 7-day dismiss cooldown via localStorage) invites
   unauthenticated visitors to sign in with Google for a "15% off" incentive — today this is lead
   capture only, no coupon/discount code is actually issued or enforced at checkout; a human
@@ -69,7 +69,10 @@ look like a real production marketing site. `/admin` and `/app` are still reacha
 - `/` — landing page, all sections in `src/components/sections/`, content sourced from CMS
   (`SiteContent`) via `useSiteContent()` with `translations.ts` as fallback.
 - `/checkout/split`, `/checkout/coaching` — the two checkout funnels every homepage CTA links to.
-- `/checkout/return` — PayPal return page: captures the payment, polls for webhook confirmation.
+- `/checkout/upload-proof` — the durable per-order payment page (transfer details, proof upload,
+  live status). Scoped by the order's `accessToken`, reachable without a session.
+- `/checkout/return` — retired PayPal return page; now just forwards old links to
+  `/checkout/upload-proof`.
 - `/login` — Credentials + Google sign-in.
 
 ### Customer portal (`/app`, requires auth)
@@ -103,11 +106,12 @@ them and why.
 - **Split PDF** (`requireCustomer` + entitlement check): `/api/split` (streams the PDF bytes),
   `/api/split/version` (cheap version marker so `PdfCanvas` can tell when its IndexedDB cache is
   stale without re-downloading).
-- **Orders**: `/api/orders` (`POST` creates; `GET ?orderRef=` is a lightweight status poll used by
-  the PayPal return page), `/api/admin/orders` (list/confirm/reject/refund).
-- **PayPal**: `/api/webhooks/paypal` (signature-verified, activates the order on
-  `PAYMENT.CAPTURE.COMPLETED`), `/api/paypal/capture` (called by `/checkout/return` right after
-  the customer approves, to actually trigger the capture — see payment state machine below).
+- **Orders**: `/api/orders` (`POST` creates; `GET ?orderRef=` is a lightweight status poll),
+  `/api/orders/[orderRef]` (full detail for the customer's payment page, token-scoped),
+  `/api/orders/[orderRef]/proof` (screenshot upload, token-scoped, all payment methods),
+  `/api/admin/orders` (list/confirm/reject/refund).
+- **PayPal**: retired. `/api/webhooks/paypal` and `/api/paypal/capture` answer `410 Gone` and do
+  nothing — see the payment state machine below.
 - **Paymob**: `/api/webhooks/paymob` still exists (signature-verified) but is unreachable — no
   checkout-initiation code, no merchant account. Out of scope, see Known gaps.
 - **Customer** (`requireCustomer`): `/api/customer/orders`, `/api/customer/entitlements`.
@@ -193,18 +197,34 @@ explicitly out of scope (WhatsApp-only).
   `sendOrderConfirmationEmail` asking for a WhatsApp payment screenshot) → admin manually reviews
   and confirms in `/admin/orders` → `CONFIRMED`, `User`+`Entitlement` created then,
   `sendAccessGrantedEmail` sent.
+
+**All three methods are manual** — there is exactly one process. Orders are created directly as
+`AWAITING_CONFIRMATION` (no method starts at `PENDING` any more), every method can upload a proof
+screenshot, and nothing activates an entitlement except an admin pressing Confirm. This is a
+constraint, not a preference: InstaPay's IPN is operated by the CBE/EBC with no merchant API for a
+personal handle, and Telda has no merchant API at all.
+
+Duplicate-order guard: `POST /api/orders` reuses an existing `PENDING`/`AWAITING_CONFIRMATION`
+order for the same (customerEmail, productId) within 24h and returns it with `reused: true`,
+instead of creating a second one. The `orderRef` idempotency check alone can't cover this — the
+checkout page mints a fresh ref on every page load, so a customer returning via the browser's Back
+button after paying would otherwise land a duplicate in the admin queue. Both checkout pages
+redirect using `data.order.orderRef` from the response, never the locally generated ref, so a
+reused order lands on the right page.
 - **Telda**: identical manual path to InstaPay (previously auto-confirmed instantly with zero
   verification — fixed).
-- **PayPal**: `POST /api/orders` creates the order `PENDING` and calls `createPayPalOrder()`
-  (`src/lib/paypal.ts`, charges in EUR since PayPal doesn't settle EGP — 19€/119€, matching the
-  site's advertised conversion) to get an approval URL; the checkout page redirects the browser
-  there. On return, `/checkout/return` calls `POST /api/paypal/capture` with the PayPal order
-  token to actually capture the payment, then polls `GET /api/orders?orderRef=` for the webhook
-  (`/api/webhooks/paypal`) to flip the order to `CONFIRMED` and create `User`+`Entitlement`. If
-  PayPal isn't configured (`PAYPAL_CLIENT_ID`/`SECRET` unset), `/api/orders` returns a 503 rather
-  than silently failing. **Requires a PayPal Business account** (the user currently has a personal
-  account) — code is ready, needs real credentials + a configured webhook subscription to go live;
-  buildable/testable against PayPal sandbox in the meantime.
+- **PayPal**: identical manual path to InstaPay and Telda. The customer pays through the
+  `paypal_link` PayPal.me URL from Settings, uploads a screenshot, and an admin confirms. The old
+  automated flow (approval-URL redirect → `/checkout/return` → `POST /api/paypal/capture` →
+  `/api/webhooks/paypal`) was **deliberately retired**: it needed a PayPal Business account the
+  user doesn't have, and it carried a real activation bug (see below). `src/lib/paypal.ts` is
+  retained but unused; `/api/webhooks/paypal` and `/api/paypal/capture` now answer `410 Gone`, and
+  `/checkout/return` just forwards old links to the order's payment page.
+
+  The retired webhook's bug, recorded so it isn't reintroduced: it called
+  `entitlement.create` unconditionally, but `Entitlement.orderId` is unique — so PayPal's normal
+  webhook retry raised a unique violation that rolled back the whole transaction, reverting
+  `CONFIRMED` and leaving a customer who had genuinely paid with no access at all.
 - **Paymob**: out of scope, not pursued (no merchant account, user wants to avoid the Egyptian
   KYC/paperwork). The webhook code exists but nothing triggers it.
 

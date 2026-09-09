@@ -57,7 +57,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-[var(--radius-lg)] overflow-hidden flex-shrink-0 shadow-[0_2px_10px_rgba(37,99,235,0.25)] border border-white/10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/icon.svg" alt="Amar X Split" className="w-full h-full object-contain" />
+              <img src="/icons/logo-amar.png" alt="Coach Amar" className="w-full h-full object-cover" />
             </div>
             <span
               className="font-bold tracking-wider uppercase text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors hidden sm:inline"

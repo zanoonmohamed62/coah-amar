@@ -28,7 +28,7 @@ export function Footer() {
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 rounded-[var(--radius-sm)] overflow-hidden flex-shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/icon.svg" alt="Amar X Split" className="w-full h-full object-contain" />
+                <img src="/icons/logo-amar.png" alt="Coach Amar" className="w-full h-full object-cover" />
               </div>
               <span
                 className="font-bold tracking-wider uppercase text-sm"

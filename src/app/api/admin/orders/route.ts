@@ -113,8 +113,16 @@ export async function PUT(req: NextRequest) {
 
     const isCoaching = order.product.type === ProductType.PERSONAL_COACHING;
     const expiresAt = isCoaching ? new Date(Date.now() + 90 * 86400000) : null;
-    const existing = await tx.entitlement.findFirst({
-      where: { userId: user.id, productId: order.productId },
+
+    // Keyed on this order, not on (user, product): Entitlement.orderId is
+    // unique, so one entitlement belongs to exactly one order. Checking
+    // (user, product) instead meant a customer who bought a second product, or
+    // renewed coaching after it expired, paid and silently received nothing —
+    // an older row for that pair made this skip the create. Keying on the order
+    // also makes confirming the same order twice a no-op rather than a unique
+    // violation that rolls the whole transaction back.
+    const existing = await tx.entitlement.findUnique({
+      where: { orderId: order.id },
     });
     if (!existing) {
       await tx.entitlement.create({

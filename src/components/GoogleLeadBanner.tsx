@@ -123,9 +123,9 @@ export function GoogleLeadBanner() {
                   <div className="w-12 h-12 rounded-2xl bg-[#05070e] border border-blue-500/30 p-1.5 shadow-[0_0_16px_rgba(37,99,235,0.25)] flex items-center justify-center flex-shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src="/icons/icon.svg"
-                      alt="Amar X-Split"
-                      className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)]"
+                      src="/icons/logo-amar.png"
+                      alt="Coach Amar"
+                      className="w-full h-full object-cover rounded-xl drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)]"
                     />
                   </div>
                   <div>

@@ -87,7 +87,7 @@ export function HeroSection() {
               >
                 <div className="w-5 h-5 rounded-[var(--radius-sm)] overflow-hidden flex-shrink-0 border border-blue-400/40 shadow-sm">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/icons/icon-192.png" alt="X" className="w-full h-full object-cover" />
+                  <img src="/icons/icon-192.png" alt="Coach Amar" className="w-full h-full object-cover" />
                 </div>
                 <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "تطبيق المتدربين X App" : "Customer X App"))}</span>
               </Link>

@@ -34,9 +34,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  if (order.paymentMethod === "PAYPAL") {
-    return NextResponse.json({ error: "PayPal orders are confirmed automatically — no proof needed." }, { status: 400 });
-  }
+  // Every method — PayPal included — is confirmed manually from a screenshot,
+  // so no payment method is excluded from uploading one here.
   if (order.status !== "AWAITING_CONFIRMATION") {
     return NextResponse.json({ error: "This order is no longer awaiting payment confirmation." }, { status: 400 });
   }

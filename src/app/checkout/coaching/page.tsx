@@ -124,18 +124,18 @@ export default function CoachingCheckoutPage() {
       }
 
       const data = await res.json();
-      if (data.approvalUrl) {
-        window.location.href = data.approvalUrl;
-        return;
-      }
 
       // Hand off to the order page rather than showing success from local state:
       // everything the customer still needs (where to pay, proof upload, status)
       // lives at a URL they can reload, close and come back to.
+      //
+      // Use the ref the server returned, not the one generated here: when the
+      // customer already has an open order for this product the server hands
+      // that one back instead of creating a second, and its ref is not `ref`.
       router.push(
-        `/checkout/upload-proof?orderRef=${encodeURIComponent(ref)}&token=${encodeURIComponent(
-          data.order.accessToken
-        )}`
+        `/checkout/upload-proof?orderRef=${encodeURIComponent(
+          data.order.orderRef
+        )}&token=${encodeURIComponent(data.order.accessToken)}`
       );
       return;
     } catch (err: unknown) {

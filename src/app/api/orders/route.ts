@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { createOrderSchema } from "@/lib/validations";
 import { OrderStatus, PaymentMethod } from "@prisma/client";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
-import { createPayPalOrder, isPayPalConfigured } from "@/lib/paypal";
 
 const FIELD_LABELS: Record<string, string> = {
   name: "الاسم",
@@ -46,19 +45,37 @@ export async function POST(req: NextRequest) {
   const existing = await db.order.findUnique({ where: { orderRef } });
   if (existing) return NextResponse.json({ order: existing }, { status: 200 });
 
+  // Same customer, same product, still waiting to be confirmed → hand back the
+  // order they already have instead of creating a second one. orderRef alone
+  // can't catch this: the checkout page mints a fresh one on every page load,
+  // so a customer who leaves to pay and comes back with the browser's Back
+  // button (rather than their order link) submits a brand-new ref and would
+  // otherwise land a duplicate in the admin queue for the same payment.
+  // Scoped to 24h so a genuine repurchase later is never blocked.
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const openOrder = await db.order.findFirst({
+    where: {
+      customerEmail: email.toLowerCase(),
+      productId,
+      status: { in: [OrderStatus.PENDING, OrderStatus.AWAITING_CONFIRMATION] },
+      createdAt: { gt: dayAgo },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  if (openOrder) {
+    return NextResponse.json({ order: openOrder, reused: true }, { status: 200 });
+  }
+
   // The customer-facing order pages are reachable without a session, so their
   // access check is this token — not orderRef, which the browser generates from
   // a timestamp plus 4 characters and is therefore guessable.
   const accessToken = randomBytes(32).toString("base64url");
 
-  const isPaypal = paymentMethod === "PAYPAL";
-
-  // PayPal is verified-payment only — no order is created until we know PayPal can
-  // actually take the customer to checkout. InstaPay and Telda are both manual
-  // (screenshot + admin review), same as each other.
-  if (isPaypal && !isPayPalConfigured()) {
-    return NextResponse.json({ error: "PayPal is not available right now. Please choose InstaPay or Telda." }, { status: 503 });
-  }
+  // All three payment methods are manual: the customer transfers, uploads a
+  // screenshot, and an admin confirms. There is no automated verification path
+  // for any of them — InstaPay and Telda have no merchant API for a personal
+  // handle, and PayPal was deliberately moved onto the same manual flow so
+  // there is exactly one process to operate and reason about.
 
   // Find existing user by email
   const existingUser = await db.user.findUnique({ where: { email: email.toLowerCase() } });
@@ -72,7 +89,7 @@ export async function POST(req: NextRequest) {
       amount: product.price,
       currency: product.currency,
       paymentMethod: paymentMethod as PaymentMethod,
-      status: isPaypal ? OrderStatus.PENDING : OrderStatus.AWAITING_CONFIRMATION,
+      status: OrderStatus.AWAITING_CONFIRMATION,
       isRenewal,
       customerName: name,
       customerEmail: email.toLowerCase(),
@@ -89,42 +106,23 @@ export async function POST(req: NextRequest) {
     await redis.del("admin:stats");
   } catch {}
 
-  let approvalUrl: string | undefined;
-
-  if (isPaypal) {
-    try {
-      const { NEXT_PUBLIC_APP_URL } = process.env;
-      const appUrl = NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
-      const result = await createPayPalOrder({
-        orderRef,
-        productType: product.type,
-        productName: product.name,
-        returnUrl: `${appUrl}/checkout/return?orderRef=${encodeURIComponent(orderRef)}&at=${encodeURIComponent(accessToken)}`,
-        cancelUrl: `${appUrl}/checkout/return?orderRef=${encodeURIComponent(orderRef)}&at=${encodeURIComponent(accessToken)}&cancelled=1`,
-      });
-      approvalUrl = result.approvalUrl;
-    } catch (err) {
-      console.error("createPayPalOrder failed:", err);
-      await db.order.update({ where: { orderRef }, data: { status: OrderStatus.FAILED } });
-      return NextResponse.json({ error: "Could not start PayPal checkout. Please try again." }, { status: 502 });
-    }
-  } else {
-    // InstaPay / Telda — manual: ask the customer to confirm payment on WhatsApp.
-    try {
-      const { sendOrderConfirmationEmail } = await import("@/lib/email");
-      await sendOrderConfirmationEmail({
-        to: email, name, orderRef, accessToken,
-        productName: product.name,
-        amount: String(product.price / 100),
-        paymentMethod,
-      });
-    } catch (err) {
-      console.error("sendOrderConfirmationEmail failed:", err);
-    }
+  // Every method is manual, so every order gets the same email: a link back to
+  // its own payment page, which is where the transfer details and the proof
+  // upload live.
+  try {
+    const { sendOrderConfirmationEmail } = await import("@/lib/email");
+    await sendOrderConfirmationEmail({
+      to: email, name, orderRef, accessToken,
+      productName: product.name,
+      amount: String(product.price / 100),
+      paymentMethod,
+    });
+  } catch (err) {
+    console.error("sendOrderConfirmationEmail failed:", err);
   }
 
   return NextResponse.json(
-    { order, product, approvalUrl },
+    { order, product },
     {
       status: 201,
       headers: { "X-RateLimit-Remaining": String(remaining) },

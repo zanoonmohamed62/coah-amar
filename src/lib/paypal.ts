@@ -1,5 +1,18 @@
 import { ProductType } from "@prisma/client";
 
+// UNUSED as of the move to fully-manual confirmation. PayPal is now paid via the
+// PayPal.me link in Settings, like InstaPay and Telda: the customer transfers,
+// uploads a screenshot, and an admin confirms the order. Nothing calls the
+// PayPal REST API any more.
+//
+// Kept (rather than deleted) only as the starting point if automated PayPal
+// checkout is ever restored. If it is, note the bug that made the old flow
+// unsafe: the webhook created an Entitlement unconditionally, and since
+// Entitlement.orderId is unique, PayPal's normal webhook retry hit a unique
+// violation that rolled back the whole transaction — leaving a paying customer
+// with no access and the order still unconfirmed. Any revival must make
+// activation idempotent (see the orderId-keyed check in /api/admin/orders).
+
 // PayPal does not settle in EGP. Charge in EUR using the same conversion already
 // advertised on the site (299 EGP -> 11 EUR, 1,499 EGP -> 71 EUR) rather than a
 // live FX rate — these are the two only products and the numbers are fixed.

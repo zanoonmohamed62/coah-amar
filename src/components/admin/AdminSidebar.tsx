@@ -43,11 +43,33 @@ export function AdminSidebar() {
       : []),
   ];
 
+  // Every payment method is confirmed by hand, so this badge is the queue the
+  // admin actually works from. Refreshing it only on navigation meant an order
+  // that arrived while /admin sat open stayed invisible until something else
+  // was clicked — so poll, and refresh on tab focus for the common case of
+  // coming back to an already-open admin tab.
   useEffect(() => {
-    fetch("/api/admin/orders?status=AWAITING_CONFIRMATION")
-      .then((r) => r.json())
-      .then((d) => setPendingOrders(d.orders?.length || 0))
-      .catch(() => {});
+    let cancelled = false;
+
+    const load = () => {
+      fetch("/api/admin/orders?status=AWAITING_CONFIRMATION")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!cancelled && d) setPendingOrders(d.orders?.length || 0);
+        })
+        .catch(() => {});
+    };
+
+    load();
+    const id = setInterval(load, 60_000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [pathname]);
 
   const ArrowIcon = isArabic ? ChevronLeft : ChevronRight;
