@@ -60,7 +60,15 @@ export default function MySplitPage() {
         </a>
       </div>
 
-      <div ref={containerRef} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)] flex flex-col flex-1" style={{ minHeight: "75vh" }}>
+      {/* Edge-to-edge on a phone: the rounded card, border and shadow are kept
+          for the desktop layout but dropped on mobile, where they only shrink
+          the readable width of the plan. -mx-4 cancels the portal's own page
+          padding so the pages reach the screen edges. */}
+      <div
+        ref={containerRef}
+        className="bg-[var(--bg-card)] flex flex-col flex-1 overflow-hidden -mx-4 sm:mx-0 sm:border sm:border-[var(--border)] sm:rounded-[var(--radius-xl)] sm:shadow-[var(--shadow-card)]"
+        style={{ minHeight: "75vh" }}
+      >
         <div className="px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-blue-400" />

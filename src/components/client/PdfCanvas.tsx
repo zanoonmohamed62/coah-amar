@@ -120,7 +120,10 @@ export default function PdfCanvas({ isArabic }: Props) {
       const page = await pdf.getPage(pageNum);
       const baseViewport = page.getViewport({ scale: 1 });
 
-      const targetWidth = Math.max((containerWidth - 32) * zoom, 280);
+      // Full container width — the viewer no longer has padding around the
+      // pages, so subtracting for it here would leave the plan narrower than
+      // the screen and waste space on a phone.
+      const targetWidth = Math.max(containerWidth * zoom, 280);
       const computedScale = targetWidth / baseViewport.width;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
@@ -530,13 +533,13 @@ export default function PdfCanvas({ isArabic }: Props) {
       <div
         ref={viewerRef}
         onScroll={handleScroll}
-        className="no-print-pdf flex-1 w-full overflow-y-auto bg-[#070a0f] flex flex-col items-center gap-5 p-4 relative"
+        className="no-print-pdf flex-1 w-full overflow-y-auto bg-[#070a0f] flex flex-col items-center relative"
         // Pages are drawn to <canvas>, so there is no selectable text to copy
         // anyway; dragging the canvas out as an image is the one thing worth
         // preventing, and it costs the customer nothing.
         onDragStart={(e) => e.preventDefault()}
       >
-        <div className="flex flex-col items-center gap-5 w-full">
+        <div className="flex flex-col items-center w-full">
           {status === "loading" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070a0f] z-10">
               <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
@@ -600,7 +603,12 @@ export default function PdfCanvas({ isArabic }: Props) {
               key={i}
               id={`pdf-page-${i + 1}`}
               ref={(el) => { pageRefs.current[i] = el; }}
-              className="relative rounded-[var(--radius-md)] overflow-hidden shadow-[var(--shadow-card)] bg-white w-full border border-white/5"
+              // No card treatment: rounded corners, a border and a shadow on
+              // every page turned a continuous document into 19 separate cards,
+              // which is visually noisy and makes the plan harder to read than
+              // it is on paper. Pages now butt directly against each other and
+              // read as one scroll.
+              className="relative bg-white w-full border-b border-black/10 last:border-b-0"
               // Reserve the page's height even before it is drawn, so the
               // scrollbar is correct from the start and scrolling never jumps
               // as pages render in and out of the window.

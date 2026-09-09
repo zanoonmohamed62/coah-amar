@@ -49,14 +49,14 @@ export const metadata: Metadata = {
     "Personalized training, nutrition, and coaching built around your goals. Choose from a structured training plan or full personal coaching with Coach Amar.",
   icons: {
     icon: [
-      { url: "/favicon.ico?v=4", sizes: "any" },
-      { url: "/icons/icon-192.png?v=4", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png?v=4", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.ico?v=5", sizes: "any" },
+      { url: "/icons/icon-192.png?v=5", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png?v=5", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png?v=4", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png?v=5", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/favicon.ico?v=4",
+    shortcut: "/favicon.ico?v=5",
   },
   keywords: [
     "fitness coaching",
@@ -94,10 +94,10 @@ export default function RootLayout({
     >
       <head>
         {/* PWA & Icons */}
-        <link rel="manifest" href="/manifest.json?v=4" />
-        <link rel="icon" href="/favicon.ico?v=4" sizes="any" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=4" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4" />
+        <link rel="manifest" href="/manifest.json?v=5" />
+        <link rel="icon" href="/favicon.ico?v=5" sizes="any" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=5" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5" />
         <meta name="theme-color" content="#2563eb" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
