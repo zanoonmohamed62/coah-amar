@@ -178,7 +178,21 @@ export default function ProductsPage() {
     setSaving(false);
   }
 
+  // Hiding a product removes it from GET /api/products entirely, which takes it
+  // off the homepage AND leaves both checkout pages unable to resolve a product
+  // — the customer gets "Product not loaded. Please refresh the page." and the
+  // buy button does nothing. That is a full sales outage, and the button used to
+  // be labelled "Deactivate Offer", which reads like it only ends a discount.
+  // So hiding asks first; re-showing is harmless and does not.
   async function toggleActive(id: string, currentStatus: boolean) {
+    if (currentStatus) {
+      const ok = window.confirm(
+        isArabic
+          ? "إخفاء المنتج هيوقف الشراء تماماً — هيختفي من الصفحة الرئيسية وصفحة الدفع، والعميل مش هيقدر يشتريه.\n\nده مش إلغاء الخصم. تأكيد؟"
+          : "Hiding this product stops sales completely — it disappears from the homepage and checkout, and customers cannot buy it.\n\nThis is NOT how you end a discount. Continue?"
+      );
+      if (!ok) return;
+    }
     try {
       await fetch(`/api/admin/products/${id}`, {
         method: "PUT",
@@ -259,7 +273,15 @@ export default function ProductsPage() {
                             ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
                             : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700"
                         }`}
-                        title={p.isActive ? "Deactivate Offer" : "Activate Offer"}
+                        title={
+                          p.isActive
+                            ? isArabic
+                              ? "إخفاء المنتج من الموقع (بيوقف الشراء)"
+                              : "Hide product from the site (stops sales)"
+                            : isArabic
+                            ? "إظهار المنتج على الموقع"
+                            : "Show product on the site"
+                        }
                       >
                         {p.isActive ? <Eye size={14} /> : <EyeOff size={14} />}
                       </button>
@@ -273,6 +295,20 @@ export default function ProductsPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* A hidden product is invisible to customers and its checkout
+                      page is broken, but the card only dimmed slightly — easy to
+                      miss, and it silently costs sales. Say it outright. */}
+                  {!p.isActive && (
+                    <div className="mb-3 flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-[var(--radius-md)] px-3 py-2">
+                      <EyeOff size={13} className="text-red-400 shrink-0 mt-0.5" />
+                      <p className="text-[11px] font-bold text-red-400 leading-snug">
+                        {isArabic
+                          ? "مخفي — الشراء واقف. اضغط العين لإظهاره."
+                          : "Hidden — sales are stopped. Click the eye to show it."}
+                      </p>
+                    </div>
+                  )}
 
                   <h3 className="text-lg font-black text-[var(--text-primary)] tracking-tight mb-1">
                     {p.name}

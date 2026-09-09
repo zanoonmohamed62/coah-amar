@@ -12,9 +12,13 @@ import {
   CreditCard,
   User,
   Sparkles,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 
 type Order = {
   id: string;
@@ -51,6 +55,14 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [acting, setActing] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  const { data: session } = useSession();
+  // Deleting an order destroys a payment record, so it is limited to the owner
+  // — the same restriction customer deletion already uses.
+  const canDelete = isSuperAdminEmail(session?.user?.email);
 
   const { lang, isArabic } = useLanguage();
   const t = adminTranslations[lang].orders;
@@ -106,6 +118,36 @@ export default function OrdersPage() {
       }
     } catch {}
     setActing(null);
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(
+        `/api/admin/orders?orderRef=${encodeURIComponent(deleteTarget.orderRef)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setDeleteError(
+          typeof data?.error === "string"
+            ? data.error
+            : isArabic
+            ? "تعذّر حذف الطلب."
+            : "Could not delete the order."
+        );
+        setDeleting(false);
+        return;
+      }
+      setDeleteTarget(null);
+      if (selectedOrder?.orderRef === deleteTarget.orderRef) setSelectedOrder(null);
+      fetchOrders();
+    } catch {
+      setDeleteError(isArabic ? "حصل خطأ، حاول تاني." : "Something went wrong, please try again.");
+    }
+    setDeleting(false);
   }
 
   const openWhatsApp = (order: Order) => {
@@ -269,6 +311,18 @@ export default function OrdersPage() {
                       <MessageSquare size={16} />
                     </button>
                   )}
+                  {canDelete && (
+                    <button
+                      onClick={() => {
+                        setDeleteTarget(order);
+                        setDeleteError("");
+                      }}
+                      aria-label={isArabic ? "حذف الطلب" : "Delete order"}
+                      className="min-h-11 px-4 rounded-[var(--radius-md)] border border-red-500/30 text-red-400 bg-red-500/10 flex items-center justify-center active:bg-red-500/20"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
 
                 {order.status === "AWAITING_CONFIRMATION" && (
@@ -402,6 +456,19 @@ export default function OrdersPage() {
                               className="px-2.5 py-1 bg-emerald-400 hover:bg-emerald-300 text-black font-black text-[11px] rounded-[var(--radius-sm)] transition-colors disabled:opacity-50 flex items-center gap-1"
                             >
                               <CheckCircle2 size={12} /> {t.approveBtn}
+                            </button>
+                          )}
+
+                          {canDelete && (
+                            <button
+                              onClick={() => {
+                                setDeleteTarget(order);
+                                setDeleteError("");
+                              }}
+                              className="p-1.5 rounded-[var(--radius-sm)] border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                              title={isArabic ? "حذف الطلب" : "Delete order"}
+                            >
+                              <Trash2 size={14} />
                             </button>
                           )}
                         </div>
@@ -556,6 +623,75 @@ export default function OrdersPage() {
                     </button>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation. Deleting an order is irreversible and also revokes
+          the entitlement it created, so the customer loses access to what they
+          bought — it names the order and says that plainly before proceeding. */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[var(--bg-card)] border border-red-500/30 rounded-[var(--radius-xl)] w-full max-w-md shadow-[var(--shadow-card)]">
+            <div className="p-5 border-b border-[var(--border)] flex items-center justify-between bg-red-500/5">
+              <h3 className="text-sm font-black uppercase tracking-wider text-red-400 flex items-center gap-2">
+                <AlertTriangle size={16} />
+                {isArabic ? "حذف الطلب" : "Delete order"}
+              </h3>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                aria-label={isArabic ? "إغلاق" : "Close"}
+                className="min-w-9 min-h-9 flex items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                {isArabic
+                  ? "هيتم حذف الطلب ده نهائياً، ومعاه صلاحية الوصول اللي اتعملت منه — يعني العميل هيفقد الوصول للمنتج. مش ممكن التراجع."
+                  : "This permanently deletes the order and the access it granted — the customer will lose access to what they bought. This cannot be undone."}
+              </p>
+
+              <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[var(--radius-md)] p-3 space-y-1">
+                <p className="font-mono text-xs font-bold text-[var(--text-primary)] break-all">
+                  {deleteTarget.orderRef}
+                </p>
+                <p className="text-xs text-[var(--text-secondary)]">{deleteTarget.customerName}</p>
+                <p className="text-[11px] text-[var(--text-muted)] break-all">
+                  {deleteTarget.customerEmail}
+                </p>
+                <p className="text-xs font-bold text-[var(--text-primary)] pt-1">
+                  {(deleteTarget.amount / 100).toLocaleString()} {deleteTarget.currency}
+                </p>
+              </div>
+
+              {deleteError && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-[var(--radius-md)] px-3 py-2">
+                  {deleteError}
+                </p>
+              )}
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  {tCommon.cancel ?? (isArabic ? "إلغاء" : "Cancel")}
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex-1 min-h-11 rounded-[var(--radius-md)] bg-red-500 hover:bg-red-400 text-white text-xs font-black disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 size={14} />
+                  {deleting
+                    ? isArabic ? "جاري الحذف…" : "Deleting…"
+                    : isArabic ? "حذف نهائي" : "Delete permanently"}
+                </button>
               </div>
             </div>
           </div>

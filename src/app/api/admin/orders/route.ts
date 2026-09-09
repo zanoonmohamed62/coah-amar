@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth-guard";
 import { OrderStatus, EntitlementStatus, Role, ProductType } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { redis } from "@/lib/redis";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -163,4 +164,50 @@ export async function PUT(req: NextRequest) {
   } catch {}
 
   return NextResponse.json({ success: true });
+}
+
+// Permanently remove a single order. Restricted to the super admin, like
+// customer deletion, because it destroys a payment record: the order, its
+// entitlement (so the customer loses access to what that order bought), and the
+// uploaded payment screenshot row.
+//
+// This exists because there was no way to remove one order at all — the only
+// cleanup available was scripts/reset-test-orders.ts, which deletes *every*
+// order in the database and is far too blunt for removing a single test row.
+export async function DELETE(req: NextRequest) {
+  const { error, session } = await requireAdmin();
+  if (error) return error;
+  if (!isSuperAdminEmail(session.user?.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const orderRef = req.nextUrl.searchParams.get("orderRef");
+  if (!orderRef) {
+    return NextResponse.json({ error: "orderRef is required" }, { status: 400 });
+  }
+
+  const order = await db.order.findUnique({
+    where: { orderRef },
+    select: { id: true, paymentProofId: true },
+  });
+  if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+  await db.$transaction(async (tx) => {
+    // Entitlement.orderId is a required relation, so it has to go first.
+    await tx.entitlement.deleteMany({ where: { orderId: order.id } });
+    await tx.order.delete({ where: { id: order.id } });
+    // The proof row is only ever referenced by this order. The file on disk is
+    // left in place: deleting it is not reversible and not required to remove
+    // the order from the admin's queue.
+    if (order.paymentProofId) {
+      await tx.mediaAsset.deleteMany({ where: { id: order.paymentProofId } });
+    }
+  });
+
+  // Dashboard revenue and counts are derived from what was just deleted.
+  try {
+    await redis.del("admin:stats");
+  } catch {}
+
+  return NextResponse.json({ ok: true });
 }
