@@ -133,12 +133,16 @@ export default function PdfCanvas({ isArabic }: Props) {
       // Physical canvas pixels = dpr * CSS pixels
       canvas.width  = Math.floor(dprViewport.width);
       canvas.height = Math.floor(dprViewport.height);
-      canvas.style.width  = `${Math.floor(viewport.width)}px`;
-      canvas.style.height = `${Math.floor(viewport.height)}px`;
+      // Fill the wrapper rather than setting a fixed pixel width. The wrapper
+      // already reserves this page's box via aspect-ratio, and a hard px width
+      // here would disagree with it by a pixel or two on some widths — enough
+      // to shift the layout as each page finishes drawing.
+      canvas.style.width  = "100%";
+      canvas.style.height = "100%";
 
-      // Match overlay to CSS size
-      overlay.style.width  = `${Math.floor(viewport.width)}px`;
-      overlay.style.height = `${Math.floor(viewport.height)}px`;
+      // The overlay is absolutely positioned over the wrapper (inset-0), so it
+      // already matches the page box. Link rectangles below are placed as
+      // percentages of the viewport so they stay aligned at any width.
       overlay.innerHTML = "";
 
       const ctx = canvas.getContext("2d");
@@ -169,8 +173,15 @@ export default function PdfCanvas({ isArabic }: Props) {
         const w = Math.abs(rect[2] - rect[0]);
         const h = Math.abs(rect[3] - rect[1]);
 
+        // Percentages, not pixels: the canvas now fills its wrapper rather than
+        // being sized in px, so a px-positioned link would drift out of place
+        // whenever the rendered width and the wrapper width differ slightly.
+        const pct = (v: number, total: number) => `${(v / total) * 100}%`;
+
         const a = document.createElement("a");
-        a.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;cursor:pointer;`;
+        a.style.cssText =
+          `position:absolute;left:${pct(x, viewport.width)};top:${pct(y, viewport.height)};` +
+          `width:${pct(w, viewport.width)};height:${pct(h, viewport.height)};cursor:pointer;`;
 
         if (anno.url) {
           a.href = anno.url;
