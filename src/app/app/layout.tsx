@@ -34,7 +34,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       >
         {/* Mobile Header — sits below the drawer (z-50) and its scrim (z-40)
             so an open sidebar covers it instead of bleeding through. */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-[var(--bg-card)] border-b border-[var(--border)] z-30">
+        {/* Sticky so it behaves like a native title bar rather than scrolling
+            away with the content. */}
+        <header className="md:hidden sticky top-0 flex items-center justify-between p-4 bg-[var(--bg-card)]/95 backdrop-blur-md border-b border-[var(--border)] z-30">
           <div className="font-extrabold tracking-tight text-[var(--text-primary)]">
             COACH <span className="text-[var(--accent)]">AMAR</span>
           </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Outfit, Cairo, Alexandria } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/navbar";
@@ -30,6 +30,17 @@ const alexandria = Alexandria({
   variable: "--font-alexandria",
   display: "swap",
 });
+
+// viewport-fit=cover is what lets env(safe-area-inset-*) return real values, so
+// the installed PWA can paint under the notch and home indicator instead of
+// leaving the browser's white letterbox bars that make it look like a web page.
+// themeColor also colours the status bar in standalone mode.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#07090e",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://amarel7ewety.com"),

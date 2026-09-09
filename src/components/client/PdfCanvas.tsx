@@ -69,6 +69,12 @@ export default function PdfCanvas({ isArabic }: Props) {
   const [errMsg, setErrMsg] = useState("");
   const [numPages, setNumPages] = useState(0);
   const [scaleMultiplier, setScaleMultiplier] = useState(1);
+  // Which page is on screen, and where the customer left off last time. Kept in
+  // a ref as well so renderAll can prioritise it without re-creating itself on
+  // every scroll.
+  const [currentPage, setCurrentPage] = useState(1);
+  const currentPageRef = useRef(1);
+  const restoredRef = useRef(false);
 
   // Screenshot blocking was removed deliberately.
   //
@@ -185,7 +191,17 @@ export default function PdfCanvas({ isArabic }: Props) {
   const renderAll = useCallback(async () => {
     if (!pdfRef.current || !viewerRef.current) return;
     const containerW = viewerRef.current.clientWidth;
-    for (let i = 1; i <= pdfRef.current.numPages; i++) {
+    // Render the page nearest the viewport first so a phone shows something
+    // immediately instead of waiting on every earlier page in order.
+    const total = pdfRef.current.numPages;
+    const order: number[] = [];
+    const start = Math.min(Math.max(currentPageRef.current, 1), total);
+    order.push(start);
+    for (let d = 1; d < total; d++) {
+      if (start + d <= total) order.push(start + d);
+      if (start - d >= 1) order.push(start - d);
+    }
+    for (const i of order) {
       await renderPage(i, containerW, scaleMultiplier);
     }
   }, [renderPage, scaleMultiplier]);
@@ -337,13 +353,67 @@ export default function PdfCanvas({ isArabic }: Props) {
 
   const handleZoom = (d: number) => setScaleMultiplier((p) => Math.min(Math.max(+(p + d).toFixed(2), 0.7), 2.0));
 
+  // Track which page is on screen, and remember it per user so reopening the
+  // plan returns to where the customer stopped instead of page 1 — the whole
+  // point when you are working through a split set by set.
+  const storageKey = userId ? `amar-split-page:${userId}` : "";
+
+  const handleScroll = useCallback(() => {
+    const el = viewerRef.current;
+    if (!el) return;
+    const mid = el.scrollTop + el.clientHeight / 2;
+    let page = 1;
+    for (let i = 0; i < canvasRefs.current.length; i++) {
+      const c = canvasRefs.current[i];
+      if (!c) continue;
+      if (c.offsetTop <= mid) page = i + 1;
+      else break;
+    }
+    if (page !== currentPageRef.current) {
+      currentPageRef.current = page;
+      setCurrentPage(page);
+      if (storageKey) {
+        try { localStorage.setItem(storageKey, String(page)); } catch { /* private mode */ }
+      }
+    }
+  }, [storageKey]);
+
+  // Jump back to the remembered page once the document is on screen.
+  useEffect(() => {
+    if (status !== "ready" || numPages === 0 || restoredRef.current || !storageKey) return;
+    restoredRef.current = true;
+
+    let saved = 1;
+    try { saved = parseInt(localStorage.getItem(storageKey) || "1", 10) || 1; } catch { /* ignore */ }
+    if (saved <= 1 || saved > numPages) return;
+
+    // Wait a frame so the canvases have their final heights.
+    const id = setTimeout(() => {
+      const target = canvasRefs.current[saved - 1];
+      if (target && viewerRef.current) {
+        viewerRef.current.scrollTop = target.offsetTop - 12;
+        currentPageRef.current = saved;
+        setCurrentPage(saved);
+      }
+    }, 120);
+    return () => clearTimeout(id);
+  }, [status, numPages, storageKey]);
+
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 relative">
       {/* Toolbar */}
       <div className="px-4 py-2 border-b border-[var(--border)] bg-[#0b0f17] flex items-center justify-between text-xs shrink-0 z-20 select-none">
         {/* Offline caching is deliberately silent — the customer shouldn't have
             to think about downloads, so no status badge is shown here. */}
-        <div className="flex items-center gap-2" />
+        {/* Page position — the plan is long, and without this there is no way
+            to tell where you are or that the last page was remembered. */}
+        <div className="flex items-center gap-2">
+          {status === "ready" && numPages > 0 && (
+            <span className="text-[11px] font-mono text-[var(--text-muted)] tabular-nums px-2 py-1 rounded-[var(--radius-sm)] bg-white/5 border border-white/10">
+              {currentPage} / {numPages}
+            </span>
+          )}
+        </div>
         {/* Zoom controls. Sized min-w/h-10 (40px) rather than the p-1 they used
             to be (~22px): this is the toolbar of the actual product, used on a
             phone in a gym, and a 22px target is not reliably tappable. */}
@@ -384,6 +454,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       <style dangerouslySetInnerHTML={{ __html: `@media print { .no-print-pdf { display: none !important; } }` }} />
       <div
         ref={viewerRef}
+        onScroll={handleScroll}
         className="no-print-pdf flex-1 w-full overflow-y-auto bg-[#070a0f] flex flex-col items-center gap-5 p-4 relative"
         // Pages are drawn to <canvas>, so there is no selectable text to copy
         // anyway; dragging the canvas out as an image is the one thing worth

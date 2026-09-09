@@ -420,3 +420,35 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+
+/* ── Installed-app (standalone) polish ──────────────────────────────────────
+   These only apply when the PWA is launched from the home screen, so the
+   browser experience is untouched.
+
+   The portal looked like a web page in an app frame mainly because content ran
+   under the notch and the home indicator. viewport-fit=cover (set in
+   layout.tsx) makes these insets real; padding by them is what makes it sit
+   like a native screen. */
+@media (display-mode: standalone) {
+  .app-shell {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* No text cursor / callout on long-press for chrome elements, the way a
+     native app behaves. Inputs and the PDF page area keep normal behaviour. */
+  .app-shell header,
+  .app-shell nav,
+  .app-shell button {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Stop the whole shell rubber-banding vertically; individual scrollers still
+     scroll normally. */
+  html, body {
+    overscroll-behavior-y: none;
+  }
+}
