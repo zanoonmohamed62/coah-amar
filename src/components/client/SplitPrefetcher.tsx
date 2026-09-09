@@ -27,6 +27,10 @@ export function SplitPrefetcher() {
 
   useEffect(() => {
     if (status !== "authenticated" || !userId || startedRef.current) return;
+    // The viewer downloads and caches the plan itself. Prefetching while it is
+    // on screen just competes with it for bandwidth and CPU on the one screen
+    // where responsiveness matters most.
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/app/my-split")) return;
     startedRef.current = true;
 
     // Never block first paint — let the portal render, then fetch quietly.
@@ -42,16 +46,13 @@ export function SplitPrefetcher() {
 
 async function prefetch(userId: string) {
   try {
-    console.log("[SplitPrefetcher] Starting prefetch...");
 
     // 1. Only proceed for a customer who actually has active access.
     const entRes = await fetch("/api/customer/entitlements", { cache: "no-store" });
     if (!entRes.ok) {
-      console.log("[SplitPrefetcher] Entitlements fetch failed:", entRes.status);
       return;
     }
     const { entitlements } = await entRes.json();
-    console.log("[SplitPrefetcher] Entitlements received:", entitlements?.length, "items");
 
     const hasActive =
       Array.isArray(entitlements) &&
@@ -65,7 +66,6 @@ async function prefetch(userId: string) {
       );
       return;
     }
-    console.log("[SplitPrefetcher] Active entitlement found, checking cache...");
 
     // 2. Skip the download when the cached copy is already current.
     const [cached, cachedVersion, currentVersion] = await Promise.all([
@@ -75,36 +75,23 @@ async function prefetch(userId: string) {
     ]);
     const isStale =
       currentVersion !== null && cachedVersion !== null && currentVersion !== cachedVersion;
-    
-    console.log("[SplitPrefetcher] Cache state:", {
-      hasCached: !!cached,
-      cachedSize: cached?.byteLength ?? 0,
-      cachedVersion,
-      currentVersion,
-      isStale,
-    });
 
     if (cached && !isStale) {
-      console.log("[SplitPrefetcher] Cache is current, skipping download.");
       return;
     }
 
     // 3. Fetch and store. A 403 here (entitlement revoked between the two
     //    calls, say) simply means nothing gets cached.
-    console.log("[SplitPrefetcher] Downloading PDF from /api/split...");
     const res = await fetch("/api/split", { cache: "no-store" });
     if (!res.ok) {
-      console.log("[SplitPrefetcher] PDF fetch failed:", res.status);
       return;
     }
     const buf = await res.arrayBuffer();
     if (buf.byteLength === 0) {
-      console.log("[SplitPrefetcher] PDF response was empty.");
       return;
     }
 
     await savePdfToCache(userId, buf, currentVersion ?? "legacy");
-    console.log("[SplitPrefetcher] ✅ PDF cached successfully!", buf.byteLength, "bytes");
   } catch (err) {
     console.error("[SplitPrefetcher] Error:", err);
   }
