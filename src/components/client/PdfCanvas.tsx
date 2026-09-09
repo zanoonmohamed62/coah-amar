@@ -84,7 +84,11 @@ export default function PdfCanvas({ isArabic }: Props) {
   // Aspect ratio of page 1, used to reserve height for pages that are not
   // rendered yet. Without it the placeholders have no height, the document
   // collapses, and scrolling jumps around.
-  const [pageAspect, setPageAspect] = useState(1.414); // A4 portrait default
+  // Overwritten with page 1's real ratio as soon as the document opens; this is
+  // only the value used for the first paint. 16:9 landscape, matching the plan
+  // — the previous A4-portrait default (1.414) was 2.5x too tall, so every page
+  // box started far too large and then snapped shorter once measured.
+  const [pageAspect, setPageAspect] = useState(0.5625);
 
   // Screenshot blocking was removed deliberately.
   //
