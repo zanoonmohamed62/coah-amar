@@ -67,7 +67,6 @@ export default function PdfCanvas({ isArabic }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderTasks = useRef<{ [key: number]: any }>({});
   const resizeTimer = useRef<NodeJS.Timeout | null>(null);
-  const scrollRenderTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "no-access">("loading");
   const [errMsg, setErrMsg] = useState("");
@@ -139,9 +138,14 @@ export default function PdfCanvas({ isArabic }: Props) {
       const viewport = page.getViewport({ scale: computedScale });
       const dprViewport = page.getViewport({ scale: computedScale * dpr });
 
-      // Physical canvas pixels = dpr * CSS pixels
-      canvas.width  = Math.floor(dprViewport.width);
-      canvas.height = Math.floor(dprViewport.height);
+      // Draw into an off-screen canvas, then blit the finished page across in
+      // one step. Assigning canvas.width clears it to transparent, so rendering
+      // straight into the visible canvas made the page flash white for the
+      // whole render — which is what looked like the page vanishing and
+      // reloading. The visible canvas is only touched once the page is ready.
+      const off = document.createElement("canvas");
+      off.width  = Math.floor(dprViewport.width);
+      off.height = Math.floor(dprViewport.height);
       // Fill the wrapper rather than setting a fixed pixel width. The wrapper
       // already reserves this page's box via aspect-ratio, and a hard px width
       // here would disagree with it by a pixel or two on some widths — enough
@@ -149,17 +153,12 @@ export default function PdfCanvas({ isArabic }: Props) {
       canvas.style.width  = "100%";
       canvas.style.height = "100%";
 
-      // The overlay is absolutely positioned over the wrapper (inset-0), so it
-      // already matches the page box. Link rectangles below are placed as
-      // percentages of the viewport so they stay aligned at any width.
-      overlay.innerHTML = "";
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+      const offCtx = off.getContext("2d");
+      if (!offCtx) return;
       // No manual ctx.setTransform — pdfjs owns the transform
 
       const task = page.render({
-        canvasContext: ctx,
+        canvasContext: offCtx,
         viewport: dprViewport,
         intent: "display",
       });
@@ -168,7 +167,20 @@ export default function PdfCanvas({ isArabic }: Props) {
       await task.promise;
       renderTasks.current[pageIndex] = null;
 
-      drawWatermark(ctx, dprViewport.width, dprViewport.height, watermarkText);
+      drawWatermark(offCtx, dprViewport.width, dprViewport.height, watermarkText);
+
+      // Page is complete — swap it in. Only now does the visible canvas change,
+      // so it never shows a partially drawn or empty page.
+      canvas.width  = off.width;
+      canvas.height = off.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(off, 0, 0);
+
+      // Rebuild the link overlay against the freshly drawn page. Cleared here
+      // rather than before the render so the old links stay clickable while the
+      // new page is still being drawn.
+      overlay.innerHTML = "";
 
       // Build annotation (link) overlay (use CSS-sized viewport for positions)
       // "display" only — the default also pulls print-intent annotations, which
@@ -226,7 +238,14 @@ export default function PdfCanvas({ isArabic }: Props) {
   // on a phone that is hundreds of MB, which is what made scrolling stutter,
   // and every zoom tap re-rendered the whole document. One page ahead and one
   // behind is enough to scroll smoothly.
-  const RENDER_WINDOW = 1;
+  // Pages to keep drawn either side of the current one. Two, not one: with a
+  // window of one the next page was freed the moment it stopped being adjacent,
+  // so scrolling forward showed a blank page that then had to redraw — the
+  // "page goes white and loads again" behaviour.
+  const RENDER_WINDOW = 2;
+  // Pages are only freed once they are this far away, so a page that just left
+  // the window is not discarded the instant you scroll back to it.
+  const KEEP_WINDOW = 4;
 
   const renderVisible = useCallback(async () => {
     if (!pdfRef.current || !viewerRef.current) return;
@@ -234,13 +253,12 @@ export default function PdfCanvas({ isArabic }: Props) {
     const total = pdfRef.current.numPages;
     const center = Math.min(Math.max(currentPageRef.current, 1), total);
 
-    const from = Math.max(1, center - RENDER_WINDOW);
-    const to = Math.min(total, center + RENDER_WINDOW);
-
-    // Free anything outside the window. Setting width/height to 0 is what
-    // actually releases the backing bitmap; hiding the element does not.
+    // Free only what is well outside the window. Setting width/height to 0 is
+    // what actually releases the backing bitmap; hiding the element does not.
+    const keepFrom = Math.max(1, center - KEEP_WINDOW);
+    const keepTo = Math.min(total, center + KEEP_WINDOW);
     for (let i = 1; i <= total; i++) {
-      if (i >= from && i <= to) continue;
+      if (i >= keepFrom && i <= keepTo) continue;
       const c = canvasRefs.current[i - 1];
       if (c && c.width !== 0) {
         c.width = 0;
@@ -249,7 +267,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       }
     }
 
-    // Draw the current page first, then its neighbours.
+    // Draw the current page first, then outward.
     const order = [center];
     for (let d = 1; d <= RENDER_WINDOW; d++) {
       if (center + d <= total) order.push(center + d);
@@ -259,8 +277,14 @@ export default function PdfCanvas({ isArabic }: Props) {
     for (const i of order) {
       const key = `${i}:${scaleMultiplier}:${containerW}`;
       if (renderedRef.current.get(i) === key) continue;
-      await renderPage(i, containerW, scaleMultiplier);
+      // Claim the page before awaiting, so an overlapping call triggered by
+      // more scrolling doesn't start rendering the same page a second time.
       renderedRef.current.set(i, key);
+      try {
+        await renderPage(i, containerW, scaleMultiplier);
+      } catch {
+        renderedRef.current.delete(i);
+      }
     }
   }, [renderPage, scaleMultiplier]);
 
@@ -468,10 +492,11 @@ export default function PdfCanvas({ isArabic }: Props) {
       if (storageKey) {
         try { localStorage.setItem(storageKey, String(page)); } catch { /* private mode */ }
       }
-      // Draw the page that just came into view (and drop far-away ones).
-      // Debounced so a fast flick doesn't queue a render per page crossed.
-      if (scrollRenderTimer.current) clearTimeout(scrollRenderTimer.current);
-      scrollRenderTimer.current = setTimeout(() => { void renderVisible(); }, 120);
+      // Draw immediately rather than after a debounce. The 120ms wait meant the
+      // next page stayed blank until scrolling stopped, which read as the page
+      // disappearing and reloading. renderVisible skips pages already drawn at
+      // the current size, so calling it often is cheap.
+      void renderVisible();
     }
   }, [storageKey, renderVisible]);
 
