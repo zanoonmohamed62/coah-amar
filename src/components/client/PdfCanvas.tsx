@@ -60,21 +60,32 @@ export default function PdfCanvas({ isArabic }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfRef      = useRef<any>(null);
   const canvasRefs  = useRef<(HTMLCanvasElement | null)[]>([]);
+  // The page wrappers keep their height even when the canvas inside is freed,
+  // so scroll position is measured against these, not the canvases.
+  const pageRefs    = useRef<(HTMLDivElement | null)[]>([]);
   const overlayRefs = useRef<(HTMLDivElement | null)[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderTasks = useRef<{ [key: number]: any }>({});
   const resizeTimer = useRef<NodeJS.Timeout | null>(null);
+  const scrollRenderTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "no-access">("loading");
   const [errMsg, setErrMsg] = useState("");
   const [numPages, setNumPages] = useState(0);
   const [scaleMultiplier, setScaleMultiplier] = useState(1);
   // Which page is on screen, and where the customer left off last time. Kept in
-  // a ref as well so renderAll can prioritise it without re-creating itself on
+  // a ref as well so renderVisible can prioritise it without re-creating itself on
   // every scroll.
   const [currentPage, setCurrentPage] = useState(1);
   const currentPageRef = useRef(1);
   const restoredRef = useRef(false);
+  // What each page was last drawn at (page -> "page:zoom:width"), so scrolling
+  // back to an already-correct page is free instead of a re-render.
+  const renderedRef = useRef<Map<number, string>>(new Map());
+  // Aspect ratio of page 1, used to reserve height for pages that are not
+  // rendered yet. Without it the placeholders have no height, the document
+  // collapses, and scrolling jumps around.
+  const [pageAspect, setPageAspect] = useState(1.414); // A4 portrait default
 
   // Screenshot blocking was removed deliberately.
   //
@@ -188,21 +199,46 @@ export default function PdfCanvas({ isArabic }: Props) {
     }
   }, [watermarkText]);
 
-  const renderAll = useCallback(async () => {
+  // Only pages near the viewport are drawn. Rendering all of them at 2x DPR
+  // meant a 19-page plan held ~19 full-resolution bitmaps in memory at once —
+  // on a phone that is hundreds of MB, which is what made scrolling stutter,
+  // and every zoom tap re-rendered the whole document. One page ahead and one
+  // behind is enough to scroll smoothly.
+  const RENDER_WINDOW = 1;
+
+  const renderVisible = useCallback(async () => {
     if (!pdfRef.current || !viewerRef.current) return;
     const containerW = viewerRef.current.clientWidth;
-    // Render the page nearest the viewport first so a phone shows something
-    // immediately instead of waiting on every earlier page in order.
     const total = pdfRef.current.numPages;
-    const order: number[] = [];
-    const start = Math.min(Math.max(currentPageRef.current, 1), total);
-    order.push(start);
-    for (let d = 1; d < total; d++) {
-      if (start + d <= total) order.push(start + d);
-      if (start - d >= 1) order.push(start - d);
+    const center = Math.min(Math.max(currentPageRef.current, 1), total);
+
+    const from = Math.max(1, center - RENDER_WINDOW);
+    const to = Math.min(total, center + RENDER_WINDOW);
+
+    // Free anything outside the window. Setting width/height to 0 is what
+    // actually releases the backing bitmap; hiding the element does not.
+    for (let i = 1; i <= total; i++) {
+      if (i >= from && i <= to) continue;
+      const c = canvasRefs.current[i - 1];
+      if (c && c.width !== 0) {
+        c.width = 0;
+        c.height = 0;
+        renderedRef.current.delete(i);
+      }
     }
+
+    // Draw the current page first, then its neighbours.
+    const order = [center];
+    for (let d = 1; d <= RENDER_WINDOW; d++) {
+      if (center + d <= total) order.push(center + d);
+      if (center - d >= 1) order.push(center - d);
+    }
+
     for (const i of order) {
+      const key = `${i}:${scaleMultiplier}:${containerW}`;
+      if (renderedRef.current.get(i) === key) continue;
       await renderPage(i, containerW, scaleMultiplier);
+      renderedRef.current.set(i, key);
     }
   }, [renderPage, scaleMultiplier]);
 
@@ -223,6 +259,17 @@ export default function PdfCanvas({ isArabic }: Props) {
 
     const pdf = await loadingTask.promise;
     pdfRef.current = pdf;
+
+    // Measure page 1 so unrendered pages can reserve the right height. Assume
+    // a uniform page size — true for this plan, and only affects placeholders.
+    try {
+      const first = await pdf.getPage(1);
+      const vp = first.getViewport({ scale: 1 });
+      if (vp.width > 0) setPageAspect(vp.height / vp.width);
+    } catch { /* keep the A4 default */ }
+
+    // A newly opened document has nothing drawn yet.
+    renderedRef.current.clear();
     setNumPages(pdf.numPages);
     setStatus("ready");
   }, []);
@@ -330,10 +377,10 @@ export default function PdfCanvas({ isArabic }: Props) {
 
   useEffect(() => {
     if (status === "ready" && numPages > 0) {
-      const t = setTimeout(() => renderAll(), 60);
+      const t = setTimeout(() => renderVisible(), 60);
       return () => clearTimeout(t);
     }
-  }, [status, numPages, renderAll]);
+  }, [status, numPages, renderVisible]);
 
   // Debounced resize
   useEffect(() => {
@@ -345,13 +392,24 @@ export default function PdfCanvas({ isArabic }: Props) {
       if (Math.abs(w - lastW) < 10) return;
       lastW = w;
       if (resizeTimer.current) clearTimeout(resizeTimer.current);
-      resizeTimer.current = setTimeout(() => renderAll(), 250);
+      resizeTimer.current = setTimeout(() => {
+        // Width changed, so every drawn page is the wrong size now.
+        renderedRef.current.clear();
+        void renderVisible();
+      }, 250);
     });
     ro.observe(viewerRef.current);
     return () => { ro.disconnect(); if (resizeTimer.current) clearTimeout(resizeTimer.current); };
-  }, [status, renderAll]);
+  }, [status, renderVisible]);
 
-  const handleZoom = (d: number) => setScaleMultiplier((p) => Math.min(Math.max(+(p + d).toFixed(2), 0.7), 2.0));
+  const handleZoom = (d: number) =>
+    setScaleMultiplier((p) => Math.min(Math.max(+(p + d).toFixed(2), 0.7), 2.0));
+
+  // Anything already drawn is now at the wrong size, so drop the record and let
+  // renderVisible redraw the window. Only ~3 pages are affected, not all 19.
+  useEffect(() => {
+    renderedRef.current.clear();
+  }, [scaleMultiplier]);
 
   // Track which page is on screen, and remember it per user so reopening the
   // plan returns to where the customer stopped instead of page 1 — the whole
@@ -363,10 +421,12 @@ export default function PdfCanvas({ isArabic }: Props) {
     if (!el) return;
     const mid = el.scrollTop + el.clientHeight / 2;
     let page = 1;
-    for (let i = 0; i < canvasRefs.current.length; i++) {
-      const c = canvasRefs.current[i];
-      if (!c) continue;
-      if (c.offsetTop <= mid) page = i + 1;
+    // Measured against the wrappers: they keep their reserved height even while
+    // the canvas inside is freed, so this stays correct for undrawn pages.
+    for (let i = 0; i < pageRefs.current.length; i++) {
+      const p = pageRefs.current[i];
+      if (!p) continue;
+      if (p.offsetTop <= mid) page = i + 1;
       else break;
     }
     if (page !== currentPageRef.current) {
@@ -375,8 +435,12 @@ export default function PdfCanvas({ isArabic }: Props) {
       if (storageKey) {
         try { localStorage.setItem(storageKey, String(page)); } catch { /* private mode */ }
       }
+      // Draw the page that just came into view (and drop far-away ones).
+      // Debounced so a fast flick doesn't queue a render per page crossed.
+      if (scrollRenderTimer.current) clearTimeout(scrollRenderTimer.current);
+      scrollRenderTimer.current = setTimeout(() => { void renderVisible(); }, 120);
     }
-  }, [storageKey]);
+  }, [storageKey, renderVisible]);
 
   // Jump back to the remembered page once the document is on screen.
   useEffect(() => {
@@ -521,8 +585,17 @@ export default function PdfCanvas({ isArabic }: Props) {
           )}
 
           {status === "ready" && Array.from({ length: numPages }, (_, i) => (
-            <div key={i} id={`pdf-page-${i + 1}`} className="relative rounded-[var(--radius-md)] overflow-hidden shadow-[var(--shadow-card)] bg-white max-w-full border border-white/5">
-              <canvas ref={(el) => { canvasRefs.current[i] = el; }} style={{ display: "block", maxWidth: "100%" }} />
+            <div
+              key={i}
+              id={`pdf-page-${i + 1}`}
+              ref={(el) => { pageRefs.current[i] = el; }}
+              className="relative rounded-[var(--radius-md)] overflow-hidden shadow-[var(--shadow-card)] bg-white w-full border border-white/5"
+              // Reserve the page's height even before it is drawn, so the
+              // scrollbar is correct from the start and scrolling never jumps
+              // as pages render in and out of the window.
+              style={{ aspectRatio: `1 / ${pageAspect}`, maxWidth: `${100 * scaleMultiplier}%` }}
+            >
+              <canvas ref={(el) => { canvasRefs.current[i] = el; }} style={{ display: "block", width: "100%" }} />
               <div ref={(el) => { overlayRefs.current[i] = el; }} className="absolute inset-0 z-10" />
             </div>
           ))}
