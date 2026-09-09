@@ -61,8 +61,21 @@ jobs:
           node-version: 20
           cache: npm
 
+      # `npm install`, not `npm ci`. The lockfile is generated on Windows, where
+      # npm never resolves the wasm32 optional dependencies of
+      # @tailwindcss/oxide-wasm32-wasi and @unrs/resolver-binding-wasm32-wasi —
+      # so their @emnapi/core and @emnapi/runtime entries are absent, and `npm
+      # ci` on Linux rejects the whole lockfile as out of sync. Regenerating the
+      # lockfile does not fix it (npm on Windows produces the same gap) and
+      # rewriting it on Linux would churn ~1,300 lines and drift every time it is
+      # next touched from Windows.
+      #
+      # `npm install` resolves those platform packages on the runner instead of
+      # failing. The tradeoff is that CI is no longer byte-locked to the
+      # lockfile; the deploy uses `npm install` on the VPS too, so this matches
+      # what production actually installs.
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
 
       - name: Generate Prisma client
         run: npx prisma generate
@@ -76,18 +89,56 @@ jobs:
       - name: Seed a row, then re-run the migration guard against it
         run: |
           set -e
+          # Actually insert an order, and drop accessToken first, to recreate the
+          # exact production state that broke six deploys: a non-empty orders
+          # table missing the column. Without a real row this proves nothing —
+          # adding a UNIQUE NOT NULL column to an *empty* table always succeeds,
+          # so the earlier version of this step passed whether the bug was
+          # present or not.
           node -e '
             const { Client } = require("pg");
             (async () => {
               const c = new Client({ connectionString: process.env.DATABASE_URL });
               await c.connect();
+              await c.query(`ALTER TABLE orders DROP COLUMN IF EXISTS "accessToken"`);
+              await c.query(`
+                INSERT INTO products (id, name, slug, type, price, currency, "isActive", "sortOrder", "createdAt", "updatedAt")
+                VALUES ($1, $2, $3, $4::"ProductType", $5, $6, true, 0, NOW(), NOW())
+                ON CONFLICT (slug) DO NOTHING
+              `, ["ci-prod-1", "CI Product", "ci-product", "TRAINING_PLAN", 10000, "EGP"]);
+              await c.query(`
+                INSERT INTO orders (id, "productId", "orderRef", amount, currency, "paymentMethod", status,
+                                    "isRenewal", "customerName", "customerEmail", "customerPhone",
+                                    "createdAt", "updatedAt")
+                VALUES ($1, $2, $3, $4, $5, $6::"PaymentMethod", $7::"OrderStatus", false, $8, $9, $10, NOW(), NOW())
+                ON CONFLICT ("orderRef") DO NOTHING
+              `, ["ci-order-1", "ci-prod-1", "CI-LEGACY-001", 10000, "EGP", "INSTAPAY",
+                  "AWAITING_CONFIRMATION", "CI Legacy", "ci-legacy@example.com", "+200000000000"]);
               const { rows } = await c.query("SELECT COUNT(*)::int AS n FROM orders");
-              console.log("orders rows before:", rows[0].n);
+              console.log("orders rows before migration:", rows[0].n);
+              if (rows[0].n < 1) { console.error("expected at least one seeded order"); process.exit(1); }
               await c.end();
             })().catch((e) => { console.error(e.message); process.exit(1); });
           '
           node scripts/pre-push-migrate.js
           npx prisma db push
+          # The seeded row must have come out with a real, unique accessToken.
+          node -e '
+            const { Client } = require("pg");
+            (async () => {
+              const c = new Client({ connectionString: process.env.DATABASE_URL });
+              await c.connect();
+              const { rows } = await c.query(
+                `SELECT "orderRef", "accessToken" FROM orders WHERE "orderRef" = $1`,
+                ["CI-LEGACY-001"]
+              );
+              await c.end();
+              if (!rows.length) { console.error("seeded order disappeared"); process.exit(1); }
+              const token = rows[0].accessToken;
+              if (!token) { console.error("accessToken was not backfilled"); process.exit(1); }
+              console.log("backfilled accessToken OK (length " + token.length + ")");
+            })().catch((e) => { console.error(e.message); process.exit(1); });
+          '
 
       # Products drive checkout; an empty products table takes the buy button
       # down entirely. Run the guard on a fresh database (creates both), then
@@ -116,10 +167,9 @@ jobs:
                 console.error("Missing active product(s):", missing.join(", "));
                 process.exit(1);
               }
-              if (rows.length !== want.length) {
-                console.error(`Expected ${want.length} active products, found ${rows.length}`);
-                process.exit(1);
-              }
+              // Both real slugs must be present and active. Not an exact count:
+              // the migration step above seeds its own "ci-product" row, and an
+              // exact match would fail on that rather than on a real regression.
               console.log("active products OK:", slugs.join(", "));
             })().catch((e) => { console.error(e.message); process.exit(1); });
           '
