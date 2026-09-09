@@ -25,6 +25,20 @@
 
 const { Client } = require("pg");
 
+// Load .env.local / .env the same way prisma.config.ts does. This script is run
+// as a bare `node scripts/...` from the deploy, which — unlike `npx prisma` —
+// does not load them on its own, so DATABASE_URL would otherwise be undefined
+// on the VPS even though it is configured correctly. An already-set environment
+// variable always wins; dotenv does not overwrite.
+try {
+  const dotenv = require("dotenv");
+  dotenv.config({ path: ".env.local" });
+  dotenv.config({ path: ".env" });
+} catch {
+  // dotenv missing (or no env files present) is fine when DATABASE_URL is
+  // already exported, as it is in CI.
+}
+
 /**
  * Each entry: add the column if missing, fill existing rows, then enforce the
  * constraints. `fillExpr` must be valid SQL that produces a distinct value per
