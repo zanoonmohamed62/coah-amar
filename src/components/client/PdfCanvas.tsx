@@ -349,17 +349,34 @@ export default function PdfCanvas({ isArabic }: Props) {
         {/* Offline caching is deliberately silent — the customer shouldn't have
             to think about downloads, so no status badge is shown here. */}
         <div className="flex items-center gap-2" />
-        <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-[var(--radius-sm)] border border-white/10">
-          <button onClick={() => handleZoom(-0.15)} className="p-1 hover:bg-white/10 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-white transition-colors">
-            <ZoomOut size={14} />
+        {/* Zoom controls. Sized min-w/h-10 (40px) rather than the p-1 they used
+            to be (~22px): this is the toolbar of the actual product, used on a
+            phone in a gym, and a 22px target is not reliably tappable. */}
+        <div className="flex items-center gap-1 bg-white/5 px-1.5 py-1 rounded-[var(--radius-md)] border border-white/10">
+          <button
+            onClick={() => handleZoom(-0.15)}
+            aria-label={isArabic ? "تصغير" : "Zoom out"}
+            className="min-w-10 min-h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-white transition-colors"
+          >
+            <ZoomOut size={16} />
           </button>
-          <span className="text-[10px] font-mono text-[var(--text-muted)] w-9 text-center">{Math.round(scaleMultiplier * 100)}%</span>
-          <button onClick={() => handleZoom(0.15)} className="p-1 hover:bg-white/10 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-white transition-colors">
-            <ZoomIn size={14} />
+          <span className="text-[11px] font-mono text-[var(--text-muted)] w-10 text-center tabular-nums">
+            {Math.round(scaleMultiplier * 100)}%
+          </span>
+          <button
+            onClick={() => handleZoom(0.15)}
+            aria-label={isArabic ? "تكبير" : "Zoom in"}
+            className="min-w-10 min-h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-white transition-colors"
+          >
+            <ZoomIn size={16} />
           </button>
           {scaleMultiplier !== 1 && (
-            <button onClick={() => setScaleMultiplier(1)} className="p-1 hover:bg-white/10 rounded-[var(--radius-sm)] text-blue-400 transition-colors ml-1">
-              <RotateCcw size={14} />
+            <button
+              onClick={() => setScaleMultiplier(1)}
+              aria-label={isArabic ? "إعادة الحجم" : "Reset zoom"}
+              className="min-w-10 min-h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded-[var(--radius-sm)] text-blue-400 transition-colors"
+            >
+              <RotateCcw size={16} />
             </button>
           )}
         </div>

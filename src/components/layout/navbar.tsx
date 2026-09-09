@@ -117,16 +117,18 @@ export function Navbar() {
 
           {/* Mobile buttons */}
           <div className="md:hidden flex items-center gap-2">
+            {/* Both controls are min-h-11 (44px) — the smallest target that is
+                reliably tappable on a phone. They were py-1 / p-1 (~24px). */}
             <button
               onClick={toggleLang}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-sm)] border border-[var(--border)] glass text-xs font-medium text-[var(--text-secondary)]"
+              className="flex items-center gap-1.5 px-3 min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] glass text-xs font-medium text-[var(--text-secondary)] active:bg-white/5"
             >
-              <Globe size={12} className="text-[var(--accent)]" />
+              <Globe size={14} className="text-[var(--accent)]" />
               <span>{lang === "en" ? "عربي" : "EN"}</span>
             </button>
 
             <button
-              className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors p-1"
+              className="min-w-11 min-h-11 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-secondary)] hover:text-[var(--accent)] active:bg-white/5 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >

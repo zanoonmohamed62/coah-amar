@@ -175,8 +175,119 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Orders Table Container */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
+      {/* ── Mobile: card list ──────────────────────────────────────────────
+          The table below has nine columns; on a phone that means pinching and
+          scrolling sideways to reach the Confirm button — on the screen used to
+          confirm every payment. Same data, stacked, with full-width actions. */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4"
+            >
+              <div className="h-4 bg-[var(--bg-elevated)] rounded animate-pulse mb-2" />
+              <div className="h-3 w-2/3 bg-[var(--bg-elevated)] rounded animate-pulse" />
+            </div>
+          ))
+        ) : orders.length === 0 ? (
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-8 text-center">
+            <p className="text-sm font-semibold text-[var(--text-muted)]">{t.noOrdersFound}</p>
+          </div>
+        ) : (
+          orders.map((order) => {
+            const conf = statusConfig[order.status] || {
+              label: order.status,
+              bg: "bg-zinc-500/10",
+              text: "text-zinc-400",
+              border: "border-zinc-500/30",
+            };
+            const meth = methodConfig[order.paymentMethod] || {
+              label: order.paymentMethod,
+              color: "text-[var(--text-primary)]",
+            };
+
+            return (
+              <div
+                key={order.id}
+                className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4 space-y-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    className="font-mono text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] text-start break-all"
+                  >
+                    {order.orderRef}
+                  </button>
+                  <span
+                    className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-[var(--radius-pill)] text-[10px] font-bold border ${conf.bg} ${conf.text} ${conf.border}`}
+                  >
+                    {conf.label}
+                  </span>
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{order.customerName}</p>
+                  <p className="text-[11px] text-[var(--text-muted)] break-all">{order.customerEmail}</p>
+                  {order.customerPhone && (
+                    <p className="text-[11px] text-[var(--text-muted)] font-mono">{order.customerPhone}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-3 text-xs pt-2 border-t border-[var(--border)]">
+                  <span className="text-[var(--text-secondary)]">{order.product.name}</span>
+                  <span className="font-bold text-[var(--text-primary)] tabular-nums">
+                    {(order.amount / 100).toLocaleString()} {order.currency}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 text-[11px] text-[var(--text-muted)]">
+                  <span className={`font-bold ${meth.color}`}>{meth.label}</span>
+                  <span>
+                    {new Date(order.createdAt).toLocaleDateString(isArabic ? "ar-EG" : "en-GB", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                </div>
+
+                {/* min-h-11 ≈ 44px, the smallest reliably tappable target. */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    className="flex-1 min-h-11 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text-secondary)] text-xs font-bold flex items-center justify-center gap-1.5 active:bg-[var(--bg-elevated)]"
+                  >
+                    <Eye size={14} /> {t.viewDetails}
+                  </button>
+
+                  {order.customerPhone && (
+                    <button
+                      onClick={() => openWhatsApp(order)}
+                      aria-label="WhatsApp"
+                      className="min-h-11 px-4 rounded-[var(--radius-md)] border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 flex items-center justify-center active:bg-emerald-500/20"
+                    >
+                      <MessageSquare size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {order.status === "AWAITING_CONFIRMATION" && (
+                  <button
+                    onClick={() => handleOrderAction(order.orderRef, "confirm")}
+                    disabled={acting === order.orderRef}
+                    className="w-full min-h-11 bg-emerald-400 active:bg-emerald-300 text-black font-black text-sm rounded-[var(--radius-md)] disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 size={16} /> {t.approveBtn}
+                  </button>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Orders Table Container — desktop only; the cards above cover mobile */}
+      <div className="hidden md:block bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">

@@ -87,9 +87,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             aria-label={isArabic ? "القائمة" : "Menu"}
-            className="p-2 bg-[var(--bg-elevated)] rounded-[var(--radius-sm)] text-[var(--text-primary)]"
+            className="min-w-11 min-h-11 flex items-center justify-center bg-[var(--bg-elevated)] rounded-[var(--radius-md)] text-[var(--text-primary)] active:opacity-80"
           >
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </header>
 

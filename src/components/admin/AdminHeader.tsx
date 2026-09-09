@@ -34,10 +34,10 @@ export function AdminHeader() {
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={toggleMobile}
-          className="md:hidden shrink-0 p-1.5 -ml-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          className="md:hidden shrink-0 -ms-2 min-w-11 min-h-11 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:bg-[var(--bg-elevated)]"
           aria-label="Open menu"
         >
-          <Menu size={20} />
+          <Menu size={22} />
         </button>
         <div className="min-w-0">
           <h1 className="text-base sm:text-xl font-black tracking-tight text-[var(--text-primary)] truncate">

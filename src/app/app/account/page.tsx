@@ -67,7 +67,7 @@ export default function AccountPage() {
       {expiringEntitlements.map(e => (
         <div key={e.id} className="bg-[var(--bg-card)] border border-yellow-500/30 rounded-[var(--radius-xl)] p-4 flex items-center gap-3">
           <Clock size={16} className="text-yellow-400 shrink-0" />
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               {e.product.name} {isArabic ? `ينتهي خلال ${e.daysLeft} يوم` : `expires in ${e.daysLeft} days`}
             </p>
@@ -98,7 +98,7 @@ export default function AccountPage() {
             .map(e => (
               <div key={e.id} className="flex items-center gap-3 px-5 py-3 border-b border-[var(--border)] last:border-0">
                 <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[var(--text-primary)]">{e.product.name}</p>
                   <p className="text-xs text-[var(--text-muted)]">{isArabic ? "مفعل ومتاح للتصفح" : "Active & unlocked"}</p>
                 </div>
@@ -125,7 +125,7 @@ export default function AccountPage() {
         ) : (
           orders.map(o => (
             <div key={o.id} className="flex items-center gap-3 px-5 py-3 border-b border-[var(--border)] last:border-0 text-xs">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="font-semibold text-[var(--text-primary)]">{o.product.name}</p>
                 <p className="text-[11px] text-[var(--text-muted)] font-mono">{o.orderRef}</p>
               </div>

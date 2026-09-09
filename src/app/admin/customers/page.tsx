@@ -224,8 +224,115 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Directory Table */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
+      {/* ── Mobile: card list ──────────────────────────────────────────────
+          Same rows as the table below, stacked so nothing needs sideways
+          scrolling, with actions sized for a thumb. */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4"
+            >
+              <div className="h-4 bg-[var(--bg-elevated)] rounded animate-pulse mb-2" />
+              <div className="h-3 w-2/3 bg-[var(--bg-elevated)] rounded animate-pulse" />
+            </div>
+          ))
+        ) : filteredCustomers.length === 0 ? (
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-8 text-center">
+            <p className="text-sm font-semibold text-[var(--text-muted)]">{t.noAthletes}</p>
+          </div>
+        ) : (
+          filteredCustomers.map((cust) => {
+            const mismatched = [...new Set(
+              cust.orders
+                .map((o) => o.customerEmail?.toLowerCase())
+                .filter((e) => e && e !== cust.email.toLowerCase())
+            )];
+
+            return (
+              <div
+                key={cust.id}
+                className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4 space-y-3"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 shrink-0 rounded-[var(--radius-sm)] bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs">
+                    {cust.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-[var(--text-primary)] truncate">{cust.name}</p>
+                    <p className="text-[11px] text-[var(--text-muted)] break-all">{cust.email}</p>
+                  </div>
+                </div>
+
+                {cust.phone && (
+                  <p className="text-[11px] text-[var(--text-muted)] font-mono">{cust.phone}</p>
+                )}
+
+                {mismatched.length > 0 && (
+                  <p className="inline-flex items-start gap-1 text-[10px] font-bold text-amber-400 leading-snug">
+                    <AlertTriangle size={11} className="shrink-0 mt-0.5" />
+                    <span>
+                      {isArabic
+                        ? `إيميل الطلب مختلف: ${mismatched.join(", ")}`
+                        : `Order email mismatch: ${mismatched.join(", ")}`}
+                    </span>
+                  </p>
+                )}
+
+                {cust.entitlements.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {cust.entitlements.map((e) => (
+                      <span
+                        key={e.id}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-pill)] text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                      >
+                        <Dumbbell size={11} /> {e.product.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 pt-1 border-t border-[var(--border)] mt-1">
+                  <span className="flex-1 text-[11px] text-[var(--text-muted)]">
+                    {new Date(cust.createdAt).toLocaleDateString(isArabic ? "ar-EG" : "en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+
+                  {cust.phone && (
+                    <button
+                      onClick={() => openWhatsApp(cust.phone!, cust.name)}
+                      aria-label="WhatsApp"
+                      className="min-h-11 px-4 rounded-[var(--radius-md)] border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 flex items-center justify-center active:bg-emerald-500/20"
+                    >
+                      <MessageSquare size={16} />
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={() => {
+                        setDeleteTarget(cust);
+                        setDeleteConfirmText("");
+                        setDeleteError("");
+                      }}
+                      aria-label={t.deleteAthlete}
+                      className="min-h-11 px-4 rounded-[var(--radius-md)] border border-red-500/30 text-red-400 bg-red-500/10 flex items-center justify-center active:bg-red-500/20"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Directory Table — desktop only; the cards above cover mobile */}
+      <div className="hidden md:block bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">

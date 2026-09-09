@@ -110,7 +110,69 @@ export default function TeamPage() {
         </button>
       </div>
 
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
+      {/* Mobile: card list, so the admin roster is readable without scrolling
+          the table sideways. */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4"
+            >
+              <div className="h-4 bg-[var(--bg-elevated)] rounded animate-pulse" />
+            </div>
+          ))
+        ) : (
+          admins.map((a) => {
+            const isSelf = a.id === currentUserId;
+            return (
+              <div
+                key={a.id}
+                className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4 space-y-3"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 shrink-0 rounded-[var(--radius-sm)] bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
+                    <ShieldCheck size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-[var(--text-primary)] truncate">
+                      {a.name}
+                      {isSelf && (
+                        <span className="ms-2 text-[10px] font-bold text-[var(--accent)]">
+                          {isArabic ? "(إنت)" : "(you)"}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[11px] text-[var(--text-muted)] break-all">{a.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1 border-t border-[var(--border)]">
+                  <span className="flex-1 text-[11px] text-[var(--text-muted)]">
+                    {new Date(a.createdAt).toLocaleDateString(isArabic ? "ar-EG" : "en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                  {!isSelf && (
+                    <button
+                      onClick={() => handleRemove(a.id)}
+                      disabled={removingId === a.id}
+                      aria-label={isArabic ? "إزالة صلاحية الأدمن" : "Remove admin access"}
+                      className="min-h-11 px-4 rounded-[var(--radius-md)] border border-red-500/30 text-red-400 bg-red-500/10 flex items-center justify-center active:bg-red-500/20 disabled:opacity-50"
+                    >
+                      <UserMinus size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden md:block bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)]">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead className="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] font-bold">
