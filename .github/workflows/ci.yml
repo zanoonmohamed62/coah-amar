@@ -89,6 +89,41 @@ jobs:
           node scripts/pre-push-migrate.js
           npx prisma db push
 
+      # Products drive checkout; an empty products table takes the buy button
+      # down entirely. Run the guard on a fresh database (creates both), then
+      # again (must be a clean no-op), and assert the API contract holds.
+      - name: Verify the product guard is correct and idempotent
+        run: |
+          set -e
+          echo "--- first run: should create both products ---"
+          node scripts/ensure-products.js
+          echo "--- second run: should change nothing ---"
+          node scripts/ensure-products.js
+          echo "--- assert both slugs exist and are active ---"
+          node -e '
+            const { Client } = require("pg");
+            (async () => {
+              const c = new Client({ connectionString: process.env.DATABASE_URL });
+              await c.connect();
+              const { rows } = await c.query(
+                `SELECT slug FROM products WHERE "isActive" = true ORDER BY slug`
+              );
+              const slugs = rows.map((r) => r.slug);
+              await c.end();
+              const want = ["personal-coaching", "training-split"];
+              const missing = want.filter((s) => !slugs.includes(s));
+              if (missing.length) {
+                console.error("Missing active product(s):", missing.join(", "));
+                process.exit(1);
+              }
+              if (rows.length !== want.length) {
+                console.error(`Expected ${want.length} active products, found ${rows.length}`);
+                process.exit(1);
+              }
+              console.log("active products OK:", slugs.join(", "));
+            })().catch((e) => { console.error(e.message); process.exit(1); });
+          '
+
       - name: Type check
         run: npx tsc --noEmit
 

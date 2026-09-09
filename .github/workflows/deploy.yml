@@ -82,6 +82,14 @@ jobs:
               # granting blanket permission on every deploy.
               echo "🗄️ Pushing DB schema..."
               npx prisma db push
+
+              # Checkout is dead without at least one active product: /api/products
+              # returns [], neither checkout page can resolve a productId, and the
+              # customer is stuck on "Product not loaded. Please refresh the page."
+              # This only creates a product whose slug is missing, and never
+              # overwrites prices on an existing row — those belong to the admin.
+              echo "🛒 Verifying sellable products exist..."
+              node scripts/ensure-products.js
             fi
 
             # Build application
