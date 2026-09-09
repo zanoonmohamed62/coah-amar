@@ -36,6 +36,30 @@ const SPLIT_TAKEN = 56;
 const COACHING_TAKEN = 16;
 const TOTAL_SPOTS = 100;
 
+function AnimatedNumber({ value, duration = 750 }: { value: number; duration?: number }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    let frameId: number;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.round(value * ease));
+      if (progress < 1) {
+        frameId = requestAnimationFrame(step);
+      }
+    };
+
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
+  }, [value, duration]);
+
+  return <span>{count}</span>;
+}
+
 function SpotCounter({
   taken,
   total = 100,
@@ -51,7 +75,7 @@ function SpotCounter({
 }) {
   const remaining = Math.max(0, total - taken);
   const pct = Math.round((taken / total) * 100);
-  const badgeLabel = get("pricing", `${fieldPrefix}_spotBadge`, isArabic ? "دفعة الخصم (أول 100 مشترك)" : "Discount Batch (First 100)");
+  const badgeLabel = get("pricing", `${fieldPrefix}_spotBadge`, isArabic ? "دفعة الخصم (أول 100 مشترك)" : "40% Discount Batch (First 100)");
   const claimedLabel = get("pricing", `${fieldPrefix}_spotClaimed`, isArabic ? "مشترك" : "claimed");
   const filledLabel = get("pricing", `${fieldPrefix}_spotFilled`, isArabic ? "مكتمل" : "completed");
 
@@ -70,7 +94,7 @@ function SpotCounter({
         </div>
         <div className="text-right">
           <span className="text-xs font-black text-white tracking-wide">
-            {taken}/{total}
+            <AnimatedNumber value={taken} duration={750} />/{total}
           </span>
           <span className="text-[10px] text-slate-400 ml-1 font-semibold">
             <EditableText sectionId="pricing" fieldId={`${fieldPrefix}_spotClaimed`} value={claimedLabel} />
@@ -79,14 +103,16 @@ function SpotCounter({
       </div>
 
       {/* Sleek Gradient Progress Bar */}
-      <div className="h-2 bg-slate-900/90 rounded-full p-[1px] border border-slate-800/80 overflow-hidden">
+      <div className="h-2 bg-[#080d1a] rounded-full border border-slate-800/90 overflow-hidden relative shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]">
         <motion.div
           initial={{ width: 0 }}
           whileInView={{ width: `${pct}%` }}
           viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-          className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-        />
+          transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 shadow-[0_0_10px_rgba(59,130,246,0.6)] relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] bg-[length:200%_100%] animate-[shimmer_2.5s_infinite]" />
+        </motion.div>
       </div>
 
       {/* Bottom Info: Remaining count & percent badge */}
@@ -96,8 +122,8 @@ function SpotCounter({
             ? `متبقي ${remaining} مقعد فقط بهذا السعر`
             : `Only ${remaining} spots left at this price`}
         </span>
-        <span className="text-blue-400 font-bold text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-blue-500/20">
-          {pct}% <EditableText as="span" sectionId="pricing" fieldId={`${fieldPrefix}_spotFilled`} value={filledLabel} />
+        <span className="text-blue-400 font-bold text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-blue-500/20 flex items-center gap-0.5">
+          <AnimatedNumber value={pct} duration={750} />% <EditableText as="span" sectionId="pricing" fieldId={`${fieldPrefix}_spotFilled`} value={filledLabel} />
         </span>
       </div>
     </div>
@@ -119,6 +145,42 @@ export function TwoPathsSection() {
   // then back on. Once resolved, only shows while the promo is actually active.
   const splitPromoActive = offer1Price?.promoActive ?? true;
   const coachingPromoActive = offer2Price?.promoActive ?? true;
+
+  const origPrice1 = offer1Price?.originalPrice
+    ? `${offer1Price.originalPrice / 100} ${offer1Price.currency}`
+    : isArabic
+    ? "٤٩٩ ج.م"
+    : "499 EGP";
+
+  const curPrice1 = offer1Price
+    ? `${offer1Price.price / 100} ${offer1Price.currency}`
+    : isArabic
+    ? "٢٩٩ ج.م"
+    : "299 EGP";
+
+  const discountPct1 = (() => {
+    const orig = offer1Price?.originalPrice ?? 49900;
+    const cur = offer1Price?.price ?? 29900;
+    return orig > cur ? Math.round((1 - cur / orig) * 100) : 40;
+  })();
+
+  const origPrice2 = offer2Price?.originalPrice
+    ? `${(offer2Price.originalPrice / 100).toLocaleString()} ${offer2Price.currency}`
+    : isArabic
+    ? "٢,٤٩٩ ج.م"
+    : "2,499 EGP";
+
+  const curPrice2 = offer2Price
+    ? `${(offer2Price.price / 100).toLocaleString()} ${offer2Price.currency}`
+    : isArabic
+    ? "١,٤٩٩ ج.م"
+    : "1,499 EGP";
+
+  const discountPct2 = (() => {
+    const orig = offer2Price?.originalPrice ?? 249900;
+    const cur = offer2Price?.price ?? 149900;
+    return orig > cur ? Math.round((1 - cur / orig) * 100) : 40;
+  })();
 
   return (
     <section id="plans" className="section-padding px-6">
@@ -161,28 +223,28 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer1_sub" value={get("pricing", "offer1_sub", t.twoPaths.offer1.sub)} /></p>
                 </div>
                 <div className="text-right">
-                  {splitPromoActive && offer1Price && (
-                    <div className="flex items-center gap-2 justify-end mb-1">
-                      <span className="text-xs text-slate-400 line-through">
-                        {(offer1Price.originalPrice ?? offer1Price.price) / 100} {offer1Price.currency}
-                      </span>
-                      {(() => {
-                        const orig = offer1Price.originalPrice ?? offer1Price.price;
-                        const pct = orig > 0 ? Math.round((1 - offer1Price.price / orig) * 100) : 0;
-                        return pct > 0 ? (
-                          <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)]">
-                            -{pct}%
-                          </span>
-                        ) : null;
-                      })()}
-                    </div>
-                  )}
-                  <div className="flex items-baseline gap-1.5 justify-end">
-                    <p className="text-3xl font-extrabold text-white">
-                      {offer1Price ? `${offer1Price.price / 100} ${offer1Price.currency}` : (isArabic ? "٢٩٩ ج.م" : "299 EGP")}
-                    </p>
-                    <span className="text-sm font-normal text-slate-400">/ 11 €</span>
+                  {/* Original price crossed out with EUR equivalent */}
+                  <div className="flex items-center justify-end mb-1">
+                    <span className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
+                      {origPrice1} / 19 €
+                    </span>
                   </div>
+
+                  {/* Current price with -40% badge */}
+                  <div className="flex items-center gap-2 justify-end">
+                    {discountPct1 > 0 && (
+                      <span className="text-[11px] font-bold bg-blue-500/15 border border-blue-500/30 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)] shadow-[0_0_10px_rgba(59,130,246,0.15)] shrink-0">
+                        -{discountPct1}%
+                      </span>
+                    )}
+                    <div className="flex items-baseline gap-1.5">
+                      <p className="text-3xl font-extrabold text-white tracking-tight">
+                        {curPrice1}
+                      </p>
+                      <span className="text-sm font-normal text-slate-400">/ 11 €</span>
+                    </div>
+                  </div>
+
                   {cmsEditing && (
                     <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
                       Price comes from Products — edit it in /admin/products
@@ -264,28 +326,28 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer2_sub" value={get("pricing", "offer2_sub", t.twoPaths.offer2.sub)} /></p>
                 </div>
                 <div className="text-right">
-                  {coachingPromoActive && offer2Price && (
-                    <div className="flex items-center gap-2 justify-end mb-1">
-                      <span className="text-xs text-slate-400 line-through">
-                        {(offer2Price.originalPrice ?? offer2Price.price) / 100} {offer2Price.currency}
-                      </span>
-                      {(() => {
-                        const orig = offer2Price.originalPrice ?? offer2Price.price;
-                        const pct = orig > 0 ? Math.round((1 - offer2Price.price / orig) * 100) : 0;
-                        return pct > 0 ? (
-                          <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)]">
-                            -{pct}%
-                          </span>
-                        ) : null;
-                      })()}
-                    </div>
-                  )}
-                  <div className="flex items-baseline gap-1.5 justify-end">
-                    <p className="text-3xl font-extrabold text-blue-400">
-                      {offer2Price ? `${offer2Price.price / 100} ${offer2Price.currency}` : (isArabic ? "١,٤٩٩ ج.م" : "1,499 EGP")}
-                    </p>
-                    <span className="text-sm font-normal text-slate-400">/ 71 €</span>
+                  {/* Original price crossed out with EUR equivalent */}
+                  <div className="flex items-center justify-end mb-1">
+                    <span className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
+                      {origPrice2} / 119 €
+                    </span>
                   </div>
+
+                  {/* Current price with -40% badge */}
+                  <div className="flex items-center gap-2 justify-end">
+                    {discountPct2 > 0 && (
+                      <span className="text-[11px] font-bold bg-blue-500/15 border border-blue-500/30 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)] shadow-[0_0_10px_rgba(59,130,246,0.15)] shrink-0">
+                        -{discountPct2}%
+                      </span>
+                    )}
+                    <div className="flex items-baseline gap-1.5">
+                      <p className="text-3xl font-extrabold text-blue-400 tracking-tight">
+                        {curPrice2}
+                      </p>
+                      <span className="text-sm font-normal text-slate-400">/ 71 €</span>
+                    </div>
+                  </div>
+
                   {cmsEditing && (
                     <p className="text-[10px] text-blue-400 mt-1 max-w-[140px] leading-tight">
                       Price comes from Products — edit it in /admin/products

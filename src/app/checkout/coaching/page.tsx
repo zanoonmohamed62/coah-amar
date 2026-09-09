@@ -301,13 +301,15 @@ export default function CoachingCheckoutPage() {
                       <span>{spotsTaken}/{totalSpots} {isArabic ? "مشترك" : "claimed"}</span>
                       <span className="text-blue-400">{totalSpots - spotsTaken} {isArabic ? "متبقي" : "left"}</span>
                     </div>
-                    <div className="h-2 bg-slate-900 rounded-full p-[1px] border border-slate-800 overflow-hidden">
+                    <div className="h-2 bg-[#080d1a] rounded-full border border-slate-800/90 overflow-hidden relative shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${(spotsTaken / totalSpots) * 100}%` }}
-                        transition={{ duration: 1.2, ease: "easeOut" }}
-                        className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-                      />
+                        transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+                        className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 shadow-[0_0_10px_rgba(59,130,246,0.6)] relative overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] bg-[length:200%_100%] animate-[shimmer_2.5s_infinite]" />
+                      </motion.div>
                     </div>
                   </div>
                 </div>
