@@ -224,13 +224,12 @@ export function TwoPathsSection() {
                 </div>
                 <div className="text-right">
                   {/* Original price crossed out with EUR equivalent */}
-                  <div className="flex items-center justify-end gap-1.5 mb-1">
-                    <span dir="ltr" className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
-                      {origPrice1}
-                    </span>
-                    <span dir="ltr" className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
-                      / 19 €
-                    </span>
+                  <div className="flex items-center justify-end mb-1">
+                    <div dir="ltr" className="inline-flex items-center gap-1.5 line-through text-slate-500 tracking-tight">
+                      <span className="text-sm sm:text-base font-semibold">€ 19</span>
+                      <span className="text-xs sm:text-sm text-slate-600 font-normal">/</span>
+                      <span className="text-xs sm:text-sm font-medium">{origPrice1}</span>
+                    </div>
                   </div>
 
                   {/* Current price with -40% badge */}
@@ -240,11 +239,12 @@ export function TwoPathsSection() {
                         -{discountPct1}%
                       </span>
                     )}
-                    <div className="flex items-baseline gap-1.5">
+                    <div dir="ltr" className="flex items-baseline gap-2">
+                      <span className="text-lg sm:text-xl font-bold text-slate-300">€ 11</span>
+                      <span className="text-base text-slate-500 font-normal">/</span>
                       <p className="text-3xl font-extrabold text-white tracking-tight">
                         {curPrice1}
                       </p>
-                      <span className="text-sm font-normal text-slate-400">/ 11 €</span>
                     </div>
                   </div>
 
@@ -330,13 +330,12 @@ export function TwoPathsSection() {
                 </div>
                 <div className="text-right">
                   {/* Original price crossed out with EUR equivalent */}
-                  <div className="flex items-center justify-end gap-1.5 mb-1">
-                    <span dir="ltr" className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
-                      {origPrice2}
-                    </span>
-                    <span dir="ltr" className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
-                      / 119 €
-                    </span>
+                  <div className="flex items-center justify-end mb-1">
+                    <div dir="ltr" className="inline-flex items-center gap-1.5 line-through text-slate-500 tracking-tight">
+                      <span className="text-sm sm:text-base font-semibold">€ 119</span>
+                      <span className="text-xs sm:text-sm text-slate-600 font-normal">/</span>
+                      <span className="text-xs sm:text-sm font-medium">{origPrice2}</span>
+                    </div>
                   </div>
 
                   {/* Current price with -40% badge */}
@@ -346,11 +345,12 @@ export function TwoPathsSection() {
                         -{discountPct2}%
                       </span>
                     )}
-                    <div className="flex items-baseline gap-1.5">
+                    <div dir="ltr" className="flex items-baseline gap-2">
+                      <span className="text-lg sm:text-xl font-bold text-blue-300">€ 71</span>
+                      <span className="text-base text-slate-500 font-normal">/</span>
                       <p className="text-3xl font-extrabold text-blue-400 tracking-tight">
                         {curPrice2}
                       </p>
-                      <span className="text-sm font-normal text-slate-400">/ 71 €</span>
                     </div>
                   </div>
 
