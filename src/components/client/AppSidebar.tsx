@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { forgetOfflineSplit } from "@/lib/split-cache";
 import {
   LayoutDashboard,
   FileText,
@@ -207,7 +208,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
         </a>
 
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={async () => { await forgetOfflineSplit(); signOut({ callbackUrl: "/login" }); }}
           title={isCollapsed ? (isArabic ? "تسجيل الخروج" : "Sign Out") : undefined}
           className={`w-full flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >

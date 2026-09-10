@@ -142,8 +142,13 @@ export async function clearOtherUsersCache(userId: string): Promise<void> {
       const keysReq = store.getAllKeys();
       keysReq.onsuccess = () => {
         const mine = new Set([pdfKey(userId), versionKey(userId)]);
+        // This user's rendered page images stay too. With an empty userId the
+        // prefix matches nothing (real ids are never empty), so everything goes.
+        const myPages = `${PAGE_PREFIX}${userId}:`;
         for (const k of keysReq.result) {
-          if (typeof k === "string" && !mine.has(k)) store.delete(k);
+          if (typeof k !== "string" || mine.has(k)) continue;
+          if (userId && k.startsWith(myPages)) continue;
+          store.delete(k);
         }
       };
       tx.oncomplete = () => res();
@@ -152,4 +157,134 @@ export async function clearOtherUsersCache(userId: string): Promise<void> {
   } catch {
     /* best-effort */
   }
+}
+
+
+// ── Rendered page images ────────────────────────────────────────────────────
+//
+// The PDF itself is not what the viewer shows. Drawing a page with pdf.js is
+// slow on a phone (hundreds of ms per page, on the main thread), so redrawing
+// pages as they scrolled in and out is what made the plan lag and flash. Each
+// page is now rasterised once, stored here as a JPEG, and displayed as a plain
+// <img> from then on — native, smooth scrolling with no pdf.js work at all.
+//
+// Keyed by user, PDF version and raster width: a new upload or a very different
+// screen width simply produces new images, and prunePageImages drops the old
+// set. The viewer's watermark is baked into each image, which is fine because
+// the images are per-user like the PDF they came from.
+const PAGE_PREFIX = "amarx-split-page-v1:";
+
+function pageKey(userId: string, version: string, width: number, page: number) {
+  return `${PAGE_PREFIX}${userId}:${version}:${width}:${page}`;
+}
+
+type StoredImage = { type: string; data: ArrayBuffer };
+
+/** One read transaction for every page; null where a page is not cached yet. */
+export async function getPageImages(
+  userId: string, version: string, width: number, count: number
+): Promise<(Blob | null)[]> {
+  const out: (Blob | null)[] = new Array(count).fill(null);
+  if (!userId || count <= 0) return out;
+  try {
+    const db = await openIDB();
+    await new Promise<void>((res) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const store = tx.objectStore(IDB_STORE);
+      for (let i = 0; i < count; i++) {
+        const r = store.get(pageKey(userId, version, width, i + 1));
+        r.onsuccess = () => {
+          const v = r.result as StoredImage | undefined;
+          if (v && v.data instanceof ArrayBuffer && v.data.byteLength > 0) {
+            out[i] = new Blob([v.data], { type: v.type || "image/jpeg" });
+          }
+        };
+      }
+      tx.oncomplete = () => res();
+      tx.onerror = () => res();
+    });
+  } catch {
+    /* best-effort: missing pages are simply rendered again */
+  }
+  return out;
+}
+
+export async function savePageImage(
+  userId: string, version: string, width: number, page: number, blob: Blob
+): Promise<void> {
+  if (!userId) return;
+  try {
+    // Stored as bytes + type rather than a Blob: Blobs in IndexedDB have been
+    // unreliable on older iOS Safari, which is exactly where this has to work.
+    const data = await blob.arrayBuffer();
+    const db = await openIDB();
+    await new Promise<void>((res) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      const value: StoredImage = { type: blob.type || "image/jpeg", data };
+      tx.objectStore(IDB_STORE).put(value, pageKey(userId, version, width, page));
+      tx.oncomplete = () => res();
+      tx.onerror = () => res();
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Drop this user's page images from any other version or width. */
+export async function prunePageImages(userId: string, version: string, width: number): Promise<void> {
+  if (!userId) return;
+  try {
+    const db = await openIDB();
+    const keep = `${PAGE_PREFIX}${userId}:${version}:${width}:`;
+    const mine = `${PAGE_PREFIX}${userId}:`;
+    await new Promise<void>((res) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      const store = tx.objectStore(IDB_STORE);
+      const keysReq = store.getAllKeys();
+      keysReq.onsuccess = () => {
+        for (const k of keysReq.result) {
+          if (typeof k === "string" && k.startsWith(mine) && !k.startsWith(keep)) store.delete(k);
+        }
+      };
+      tx.oncomplete = () => res();
+      tx.onerror = () => res();
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
+// ── Offline identity ────────────────────────────────────────────────────────
+//
+// Offline, the session request fails, next-auth reports "unauthenticated", and
+// the viewer has no user id to find the cached plan by — so the offline copy
+// could never be opened, and a failed session refresh on returning to the app
+// would pull the plan off screen. The last signed-in id is remembered here and
+// used only when the session cannot be reached at all. A confirmed sign-out
+// (the server answering "no session") or signing out through the app forgets
+// it and the cached plan.
+const LAST_USER_KEY = "amar-split-last-user";
+
+export type RememberedUser = { id: string; label: string };
+
+/** `label` is the watermark text (email), so an offline copy is still marked. */
+export function rememberSplitUser(userId: string, label: string) {
+  try { localStorage.setItem(LAST_USER_KEY, JSON.stringify({ id: userId, label })); } catch { /* ignore */ }
+}
+
+export function getRememberedSplitUser(): RememberedUser | null {
+  try {
+    const raw = localStorage.getItem(LAST_USER_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Partial<RememberedUser>;
+    return typeof v.id === "string" && v.id ? { id: v.id, label: typeof v.label === "string" ? v.label : "" } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Call on sign-out: nothing of the plan should stay readable on the device. */
+export async function forgetOfflineSplit(): Promise<void> {
+  try { localStorage.removeItem(LAST_USER_KEY); } catch { /* ignore */ }
+  await clearOtherUsersCache("");
 }

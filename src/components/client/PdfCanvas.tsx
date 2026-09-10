@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Loader2, WifiOff, Lock, MessageCircle } from "lucide-react";
 import { useSettings } from "@/lib/use-settings";
@@ -10,26 +11,48 @@ import {
   probeSplitAccess,
   clearOtherUsersCache,
   savePdfToCache,
+  getPageImages,
+  savePageImage,
+  prunePageImages,
+  rememberSplitUser,
+  getRememberedSplitUser,
+  forgetOfflineSplit,
 } from "@/lib/split-cache";
 
-// IndexedDB access lives in @/lib/split-cache so the background prefetcher
-// (SplitPrefetcher) and this viewer share one set of keys and can't drift.
+// ─────────────────────────────────────────────────────────────────────────────
+// How the plan is shown
+//
+// The PDF is not drawn while you read. Each page is rasterised with pdf.js
+// once, stored on the device as a JPEG (per user, per PDF version), and shown
+// as a plain <img>. Scrolling is then ordinary image scrolling — the browser
+// does it natively and smoothly, with nothing to redraw and nothing to wipe.
+//
+// Drawing pages live with pdf.js as they scrolled into view was what made the
+// plan lag (each page costs hundreds of milliseconds on a phone, on the main
+// thread) and flash (pages far from the screen were freed to save memory, so
+// coming back to one meant a blank page until it redrew). With the images
+// cached, reopening the plan — online or offline — shows every page at once.
+//
+// pdf.js is still used for three things: rendering a page the first time,
+// reading the in-plan links, and drawing a sharper copy of the page on screen
+// when the customer zooms in past what the stored image can show.
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Deters leaks by making any copy traceable to the customer who viewed it.
-// Drawn fresh onto every rendered page from the live session — never baked
-// into a stored file — so it can't be captured once and stripped for reuse.
+// Sized relative to the page so it looks the same at any resolution.
 function drawWatermark(ctx: CanvasRenderingContext2D, width: number, height: number, text: string) {
   if (!text) return;
+  const u = width / 600; // proportions tuned on a 600px-wide page
   ctx.save();
   ctx.globalAlpha = 0.1;
   ctx.fillStyle = "#3b82f6";
-  ctx.font = "bold 13px sans-serif";
+  ctx.font = `bold ${Math.max(10, Math.round(13 * u))}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   const angle = -Math.PI / 6;
-  const stepX = 240;
-  const stepY = 130;
+  const stepX = 240 * u;
+  const stepY = 130 * u;
 
   for (let y = -stepY; y < height + stepY; y += stepY) {
     for (let x = -stepX; x < width + stepX; x += stepX) {
@@ -43,338 +66,328 @@ function drawWatermark(ctx: CanvasRenderingContext2D, width: number, height: num
   ctx.restore();
 }
 
+type PageLink = { left: number; top: number; width: number; height: number; url?: string; dest?: unknown };
+
+// Pages either side of the current one that get their image attached. The
+// rest keep their reserved box but no decoded bitmap, which bounds memory on a
+// long plan; six pages ahead is far more than a scroll can outrun.
+const IMG_WINDOW = 6;
+const MIN_SCALE = 1;
+const MAX_SCALE = 4;
+const DOUBLE_TAP_SCALE = 2.5;
+// Upper bound for any single page bitmap (~20MB), so deep zoom can't exhaust a
+// phone's memory. Past it the resolution is lowered instead.
+const MAX_CANVAS_PIXELS = 5_000_000;
+const HINT_KEY = "amar-split-zoom-hint";
+
+// Stored-image width in device pixels: enough for the screen at fit-width,
+// rounded to a bucket so small width changes reuse the same cached set.
+function rasterWidthFor(cssWidth: number): number {
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const w = Math.ceil((cssWidth * dpr) / 256) * 256;
+  return Math.min(Math.max(w, 1024), 2048);
+}
+
+const nextTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function drawPage(pdf: any, pageNum: number, width: number, label: string): Promise<HTMLCanvasElement | null> {
+  const page = await pdf.getPage(pageNum);
+  const base = page.getViewport({ scale: 1 });
+  let scale = width / base.width;
+  const area = base.width * scale * base.height * scale;
+  if (area > MAX_CANVAS_PIXELS) scale *= Math.sqrt(MAX_CANVAS_PIXELS / area);
+  // Bake the resolution into the viewport so pdf.js handles all scaling —
+  // a separate ctx.setTransform garbles glyph spacing.
+  const viewport = page.getViewport({ scale });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.floor(viewport.width);
+  canvas.height = Math.floor(viewport.height);
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) return null;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  await page.render({ canvasContext: ctx, viewport, intent: "display" }).promise;
+  drawWatermark(ctx, canvas.width, canvas.height, label);
+  page.cleanup();
+  return canvas;
+}
+
+function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.9));
+}
+
 interface Props {
   isArabic: boolean;
 }
 
 export default function PdfCanvas({ isArabic }: Props) {
-  const session = useSession()?.data;
-  const user = session?.user as { id?: string; name?: string; email?: string } | undefined;
-  const watermarkText = user?.email || user?.name || "";
-  // The cache is keyed by user id so one account's downloaded copy is never
-  // readable by another account signed in on the same device.
-  const userId = user?.id ?? "";
+  // ── Who is reading ────────────────────────────────────────────────────────
+  // Offline, next-auth cannot reach the session endpoint and reports
+  // "unauthenticated", which used to leave the viewer with no user to find the
+  // cached plan by. It also briefly reports "loading" on every open, and the
+  // viewer used to treat that as "no access" and flash the lock screen. So:
+  // wait while loading; use the session when there is one; and when the session
+  // can't be reached, fall back to the account last signed in on this device.
+  // A server that answers "no session" (a real sign-out) clears that fallback
+  // and the cached plan.
+  const { data: session, status: sessionStatus } = useSession();
+  const sessionUser = session?.user as { id?: string; name?: string; email?: string } | undefined;
+  const [signedOut, setSignedOut] = useState(false);
+  const authedId = sessionStatus === "authenticated" ? (sessionUser?.id ?? "") : "";
+  const authedLabel = sessionUser?.email || sessionUser?.name || "";
+  const remembered = sessionStatus === "unauthenticated" && !signedOut ? getRememberedSplitUser() : null;
+  const userId = authedId || remembered?.id || "";
+  const watermarkText = authedId ? authedLabel : (remembered?.label ?? "");
+  const identityPending = sessionStatus === "loading";
+
+  useEffect(() => {
+    if (authedId) rememberSplitUser(authedId, authedLabel);
+  }, [authedId, authedLabel]);
+
+  useEffect(() => {
+    if (sessionStatus !== "unauthenticated") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/session", { cache: "no-store" });
+        if (!res.ok) return; // server trouble — not evidence of a sign-out
+        const data = await res.json().catch(() => undefined);
+        if (cancelled) return;
+        if (data === null || (data && typeof data === "object" && !("user" in data && data.user))) {
+          await forgetOfflineSplit();
+          if (!cancelled) setSignedOut(true);
+        }
+      } catch {
+        /* offline: keep reading as the remembered account */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [sessionStatus]);
+
   const getSetting = useSettings();
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
-  const viewerRef   = useRef<HTMLDivElement>(null);
+
+  const viewerRef = useRef<HTMLDivElement>(null);
+  // The element pinch-zoom transforms: the whole document column, so zooming
+  // scales every page together the way a document viewer does.
+  const contentRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfRef      = useRef<any>(null);
-  const canvasRefs  = useRef<(HTMLCanvasElement | null)[]>([]);
-  // The page wrappers keep their height even when the canvas inside is freed,
-  // so scroll position is measured against these, not the canvases.
-  const pageRefs    = useRef<(HTMLDivElement | null)[]>([]);
-  const overlayRefs = useRef<(HTMLDivElement | null)[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderTasks = useRef<{ [key: number]: any }>({});
-  const resizeTimer = useRef<NodeJS.Timeout | null>(null);
-  // The element that pinch-zoom transforms. It is the whole document column,
-  // so zooming scales every page together, the way a document viewer does.
-  const contentRef  = useRef<HTMLDivElement>(null);
+  const pdfRef = useRef<any>(null);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const hiResRefs = useRef<(HTMLCanvasElement | null)[]>([]);
+  const urlsRef = useRef<(string | null)[]>([]);
+  const jobRef = useRef(0);
+  const rasterRef = useRef<{ version: string; width: number } | null>(null);
+  const labelRef = useRef(watermarkText);
+  useEffect(() => { labelRef.current = watermarkText; }, [watermarkText]);
 
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "no-access">("loading");
   const [errMsg, setErrMsg] = useState("");
   const [numPages, setNumPages] = useState(0);
+  // Height/width of the plan's pages (16:9 landscape); replaced with page 1's
+  // measured ratio as soon as the document opens.
+  const [pageAspect, setPageAspect] = useState(0.5625);
+  const [pageUrls, setPageUrls] = useState<(string | null)[]>([]);
+  const [links, setLinks] = useState<PageLink[][]>([]);
   const [scaleMultiplier, setScaleMultiplier] = useState(1);
-  // Which page is on screen, and where the customer left off last time. Kept in
-  // a ref as well so renderVisible can prioritise it without re-creating itself on
-  // every scroll.
   const [currentPage, setCurrentPage] = useState(1);
   const currentPageRef = useRef(1);
   const restoredRef = useRef(false);
-  // What each page was last drawn at (page -> "page:zoom:width"), so scrolling
-  // back to an already-correct page is free instead of a re-render.
-  const renderedRef = useRef<Map<number, string>>(new Map());
-  // Aspect ratio of page 1, used to reserve height for pages that are not
-  // rendered yet. Without it the placeholders have no height, the document
-  // collapses, and scrolling jumps around.
-  // Overwritten with page 1's real ratio as soon as the document opens; this is
-  // only the value used for the first paint. 16:9 landscape, matching the plan
-  // — the previous A4-portrait default (1.414) was 2.5x too tall, so every page
-  // box started far too large and then snapped shorter once measured.
-  const [pageAspect, setPageAspect] = useState(0.5625);
 
-  // Screenshot blocking was removed deliberately.
-  //
-  // It could not work: a browser cannot stop the operating system's capture,
-  // so anyone could still photograph the screen with a second phone or use the
-  // OS snipping tool. What it did do was hide the plan for two seconds whenever
-  // the window lost focus — which fired constantly on a phone (notification,
-  // app switch, screen rotate) and blanked the plan mid-set. It also blocked
-  // Ctrl+C and text selection for paying customers.
-  //
-  // The real deterrent is the per-viewer watermark drawn on every page above:
-  // it makes any leaked copy traceable to the account that opened it.
+  const storageKey = userId ? `amar-split-page:${userId}` : "";
 
-  // Render a single page with annotation links
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderPage = useCallback(async (pageNum: number, containerWidth: number, zoom: number) => {
-    const pdf = pdfRef.current;
-    if (!pdf) return;
-
-    const pageIndex = pageNum - 1;
-    const canvas = canvasRefs.current[pageIndex];
-    const overlay = overlayRefs.current[pageIndex];
-    if (!canvas || !overlay) return;
-
-    // Cancel existing render task
-    if (renderTasks.current[pageIndex]) {
-      try { renderTasks.current[pageIndex].cancel(); } catch { /* ignore */ }
-      renderTasks.current[pageIndex] = null;
+  // ── Page images ───────────────────────────────────────────────────────────
+  const publishUrls = useCallback((updates: { index: number; blob: Blob }[]) => {
+    const next = urlsRef.current.slice();
+    const stale: string[] = [];
+    for (const { index, blob } of updates) {
+      const old = next[index];
+      next[index] = URL.createObjectURL(blob);
+      if (old) stale.push(old);
     }
+    urlsRef.current = next;
+    setPageUrls(next);
+    // Replaced images are released only after their successors have painted,
+    // so a page being swapped for a newer render never shows empty.
+    if (stale.length) setTimeout(() => stale.forEach((u) => URL.revokeObjectURL(u)), 3000);
+  }, []);
 
-    try {
-      const page = await pdf.getPage(pageNum);
-      const baseViewport = page.getViewport({ scale: 1 });
+  const releaseUrls = useCallback(() => {
+    urlsRef.current.forEach((u) => u && URL.revokeObjectURL(u));
+    urlsRef.current = [];
+    setPageUrls([]);
+  }, []);
 
-      // Full container width — the viewer no longer has padding around the
-      // pages, so subtracting for it here would leave the plan narrower than
-      // the screen and waste space on a phone.
-      const targetWidth = Math.max(containerWidth * zoom, 280);
-      const computedScale = targetWidth / baseViewport.width;
-      // Cap at 1.5x on phones rather than 2x. Pixel count grows with the
-      // square, so 2x costs ~78% more work and memory per page than 1.5x for a
-      // difference that is not visible on a small screen — and that cost is
-      // paid on every page draw, which is what makes the plan feel heavy.
-      // Desktop keeps 2x, where there is headroom for it.
-      const isPhone = window.innerWidth < 768;
-      const dpr = Math.min(window.devicePixelRatio || 1, isPhone ? 1.5 : 2);
+  // Show every page already stored on this device in one go, then render the
+  // missing ones — always the one nearest the page on screen next, so the page
+  // you are looking at is never waiting behind pages you are not.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const buildPages = useCallback(async (pdf: any, version: string) => {
+    const el = viewerRef.current;
+    if (!userId || !el) return;
+    const job = ++jobRef.current;
+    const width = rasterWidthFor(el.clientWidth || window.innerWidth);
+    rasterRef.current = { version, width };
+    const total: number = pdf.numPages;
 
-      // Cap the bitmap size. Zooming in makes each page larger on screen, and
-      // at 4x a page at full DPR would be ~30MB of canvas — a few of those and
-      // a phone kills the tab. Past the budget the DPR is lowered instead, which
-      // costs a little sharpness only at deep zoom.
-      const MAX_CANVAS_PIXELS = 5_000_000;
-      const cssArea = baseViewport.width * computedScale * baseViewport.height * computedScale;
-      const pxRatio = Math.min(dpr, Math.sqrt(MAX_CANVAS_PIXELS / cssArea));
+    if (urlsRef.current.length > total) {
+      urlsRef.current.slice(total).forEach((u) => u && URL.revokeObjectURL(u));
+    }
+    urlsRef.current = Array.from({ length: total }, (_, i) => urlsRef.current[i] ?? null);
 
-      // Bake DPR into the viewport so pdfjs handles all scaling internally.
-      // Never call ctx.setTransform(dpr) separately — that causes double-scaling
-      // which garbles glyph advances (letter spacing).
-      const viewport = page.getViewport({ scale: computedScale });
-      const dprViewport = page.getViewport({ scale: computedScale * pxRatio });
+    const cached = await getPageImages(userId, version, width, total);
+    if (job !== jobRef.current) return;
+    const hits: { index: number; blob: Blob }[] = [];
+    cached.forEach((blob, index) => { if (blob) hits.push({ index, blob }); });
+    if (hits.length) publishUrls(hits);
 
-      // Draw into an off-screen canvas, then blit the finished page across in
-      // one step. Assigning canvas.width clears it to transparent, so rendering
-      // straight into the visible canvas made the page flash white for the
-      // whole render — which is what looked like the page vanishing and
-      // reloading. The visible canvas is only touched once the page is ready.
-      const off = document.createElement("canvas");
-      off.width  = Math.floor(dprViewport.width);
-      off.height = Math.floor(dprViewport.height);
-      // Fill the wrapper rather than setting a fixed pixel width. The wrapper
-      // already reserves this page's box via aspect-ratio, and a hard px width
-      // here would disagree with it by a pixel or two on some widths — enough
-      // to shift the layout as each page finishes drawing.
-      canvas.style.width  = "100%";
-      canvas.style.height = "100%";
+    const done = cached.map((b) => !!b);
+    for (;;) {
+      if (job !== jobRef.current) return;
+      const c = Math.min(Math.max(currentPageRef.current, 1), total) - 1;
+      let i = -1;
+      for (let d = 0; d < total && i < 0; d++) {
+        if (c + d < total && !done[c + d]) i = c + d;
+        else if (c - d >= 0 && !done[c - d]) i = c - d;
+      }
+      if (i < 0) break;
+      done[i] = true;
+      try {
+        const canvas = await drawPage(pdf, i + 1, width, labelRef.current);
+        if (job !== jobRef.current) return;
+        if (canvas) {
+          const blob = await canvasToJpeg(canvas);
+          canvas.width = 0;
+          canvas.height = 0;
+          if (blob && job === jobRef.current) {
+            publishUrls([{ index: i, blob }]);
+            void savePageImage(userId, version, width, i + 1, blob);
+          }
+        }
+      } catch {
+        /* a page that fails to render keeps its placeholder */
+      }
+      // Let scrolling and taps through between pages.
+      await nextTask();
+    }
+    if (job === jobRef.current) void prunePageImages(userId, version, width);
+  }, [userId, publishUrls]);
 
-      const offCtx = off.getContext("2d");
-      if (!offCtx) return;
-      // No manual ctx.setTransform — pdfjs owns the transform
-
-      const task = page.render({
-        canvasContext: offCtx,
-        viewport: dprViewport,
-        intent: "display",
-      });
-
-      renderTasks.current[pageIndex] = task;
-      await task.promise;
-      renderTasks.current[pageIndex] = null;
-
-      drawWatermark(offCtx, dprViewport.width, dprViewport.height, watermarkText);
-
-      // Page is complete — swap it in. Only now does the visible canvas change,
-      // so it never shows a partially drawn or empty page.
-      canvas.width  = off.width;
-      canvas.height = off.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(off, 0, 0);
-
-      // Rebuild the link overlay against the freshly drawn page. Cleared here
-      // rather than before the render so the old links stay clickable while the
-      // new page is still being drawn.
-      overlay.innerHTML = "";
-
-      // Build annotation (link) overlay (use CSS-sized viewport for positions)
-      // "display" only — the default also pulls print-intent annotations, which
-      // this viewer never uses and which cost time on every page draw.
-      const annotations = await page.getAnnotations({ intent: "display" });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      annotations.forEach((anno: any) => {
-        if (anno.subtype !== "Link" || !anno.rect) return;
-
-        const rect = viewport.convertToViewportRectangle(anno.rect);
-        const x = Math.min(rect[0], rect[2]);
-        const y = Math.min(rect[1], rect[3]);
-        const w = Math.abs(rect[2] - rect[0]);
-        const h = Math.abs(rect[3] - rect[1]);
-
-        // Percentages, not pixels: the canvas now fills its wrapper rather than
-        // being sized in px, so a px-positioned link would drift out of place
-        // whenever the rendered width and the wrapper width differ slightly.
-        const pct = (v: number, total: number) => `${(v / total) * 100}%`;
-
-        const a = document.createElement("a");
-        a.style.cssText =
-          `position:absolute;left:${pct(x, viewport.width)};top:${pct(y, viewport.height)};` +
-          `width:${pct(w, viewport.width)};height:${pct(h, viewport.height)};cursor:pointer;`;
-
-        if (anno.url) {
-          a.href = anno.url;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-        } else if (anno.dest) {
-          a.href = "#";
-          a.addEventListener("click", async (e) => {
-            e.preventDefault();
-            try {
-              let dest = anno.dest;
-              if (typeof dest === "string") dest = await pdfRef.current.getDestination(dest);
-              if (dest) {
-                const idx = await pdfRef.current.getPageIndex(dest[0]);
-                document.getElementById(`pdf-page-${idx + 1}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }
-            } catch { /* ignore */ }
+  // In-plan links (the language picker, jumps between sections), read once per
+  // document and laid over the images as percentages of the page.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const loadLinks = useCallback(async (pdf: any) => {
+    const all: PageLink[][] = [];
+    for (let n = 1; n <= pdf.numPages; n++) {
+      const list: PageLink[] = [];
+      try {
+        const page = await pdf.getPage(n);
+        const vp = page.getViewport({ scale: 1 });
+        const annotations = await page.getAnnotations({ intent: "display" });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const a of annotations as any[]) {
+          if (a.subtype !== "Link" || !a.rect || (!a.url && !a.dest)) continue;
+          const r = vp.convertToViewportRectangle(a.rect);
+          list.push({
+            left: (Math.min(r[0], r[2]) / vp.width) * 100,
+            top: (Math.min(r[1], r[3]) / vp.height) * 100,
+            width: (Math.abs(r[2] - r[0]) / vp.width) * 100,
+            height: (Math.abs(r[3] - r[1]) / vp.height) * 100,
+            url: a.url,
+            dest: a.dest,
           });
         }
-        overlay.appendChild(a);
-      });
-
-    } catch (err: unknown) {
-      if (err && typeof err === "object" && "name" in err && (err as { name: string }).name === "RenderingCancelledException") return;
-      console.warn(`[PdfCanvas] Page ${pageNum} render issue:`, err);
-    }
-  }, [watermarkText]);
-
-  // Only pages near the viewport are drawn. Rendering all of them at 2x DPR
-  // meant a 19-page plan held ~19 full-resolution bitmaps in memory at once —
-  // on a phone that is hundreds of MB, which is what made scrolling stutter,
-  // and every zoom tap re-rendered the whole document. One page ahead and one
-  // behind is enough to scroll smoothly.
-  // Pages to keep drawn either side of the current one. Two, not one: with a
-  // window of one the next page was freed the moment it stopped being adjacent,
-  // so scrolling forward showed a blank page that then had to redraw — the
-  // "page goes white and loads again" behaviour.
-  const RENDER_WINDOW = 2;
-  // Pages are only freed once they are this far away, so a page that just left
-  // the window is not discarded the instant you scroll back to it.
-  const KEEP_WINDOW = 4;
-
-  const renderVisible = useCallback(async () => {
-    if (!pdfRef.current || !viewerRef.current) return;
-    const containerW = viewerRef.current.clientWidth;
-    const total = pdfRef.current.numPages;
-    const center = Math.min(Math.max(currentPageRef.current, 1), total);
-
-    // Free only what is well outside the window. Setting width/height to 0 is
-    // what actually releases the backing bitmap; hiding the element does not.
-    // Zoomed in, each page is several times the pixels, so hold fewer of them.
-    const zoomed = scaleMultiplier > 1.25;
-    const renderWindow = zoomed ? 1 : RENDER_WINDOW;
-    const keepWindow = zoomed ? 1 : KEEP_WINDOW;
-    const keepFrom = Math.max(1, center - keepWindow);
-    const keepTo = Math.min(total, center + keepWindow);
-    for (let i = 1; i <= total; i++) {
-      if (i >= keepFrom && i <= keepTo) continue;
-      const c = canvasRefs.current[i - 1];
-      if (c && c.width !== 0) {
-        c.width = 0;
-        c.height = 0;
-        renderedRef.current.delete(i);
-      }
-    }
-
-    // Draw the current page first, then outward.
-    const order = [center];
-    for (let d = 1; d <= renderWindow; d++) {
-      if (center + d <= total) order.push(center + d);
-      if (center - d >= 1) order.push(center - d);
-    }
-
-    for (const i of order) {
-      const key = `${i}:${scaleMultiplier}:${containerW}`;
-      if (renderedRef.current.get(i) === key) continue;
-      // Claim the page before awaiting, so an overlapping call triggered by
-      // more scrolling doesn't start rendering the same page a second time.
-      renderedRef.current.set(i, key);
-      try {
-        await renderPage(i, containerW, scaleMultiplier);
       } catch {
-        renderedRef.current.delete(i);
+        /* no links on this page */
       }
+      all.push(list);
     }
-  }, [renderPage, scaleMultiplier]);
+    if (pdfRef.current === pdf) setLinks(all);
+  }, []);
 
-  // Turn raw PDF bytes into a rendered document.
+  const goToDest = useCallback(async (dest: unknown) => {
+    const pdf = pdfRef.current;
+    const el = viewerRef.current;
+    if (!pdf || !el) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let d: any = dest;
+      if (typeof d === "string") d = await pdf.getDestination(d);
+      if (!d) return;
+      const idx = await pdf.getPageIndex(d[0]);
+      const target = pageRefs.current[idx];
+      if (target) el.scrollTo({ top: target.offsetTop, behavior: "smooth" });
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const openPdf = useCallback(async (pdfjsLib: any, buf: ArrayBuffer) => {
-    const loadingTask = pdfjsLib.getDocument({
+  const openPdf = useCallback(async (pdfjsLib: any, buf: ArrayBuffer, version: string) => {
+    const pdf = await pdfjsLib.getDocument({
       data: new Uint8Array(buf.slice(0)),
       cMapUrl: "/pdfjs/cmaps/cmaps/",
       cMapPacked: true,
       standardFontDataUrl: "/pdfjs/standard_fonts/standard_fonts/",
-      // XFA is for interactive forms; this plan has none, and parsing for it
-      // costs time on every open.
+      // XFA is for interactive forms; this plan has none.
       enableXfa: false,
       // Render fonts directly onto canvas instead of CSS @font-face.
       // Fixes glyph width mismatches that cause garbled letter spacing.
       disableFontFace: true,
       useSystemFonts: false,
-    });
+    }).promise;
 
-    const pdf = await loadingTask.promise;
+    const previous = pdfRef.current;
     pdfRef.current = pdf;
-
-    // Measure page 1 so unrendered pages can reserve the right height. Assume
-    // a uniform page size — true for this plan, and only affects placeholders.
     try {
       const first = await pdf.getPage(1);
       const vp = first.getViewport({ scale: 1 });
       if (vp.width > 0) setPageAspect(vp.height / vp.width);
-    } catch { /* keep the A4 default */ }
-
-    // A newly opened document has nothing drawn yet.
-    renderedRef.current.clear();
+    } catch {
+      /* keep the default */
+    }
     setNumPages(pdf.numPages);
     setStatus("ready");
-  }, []);
+    void buildPages(pdf, version);
+    void loadLinks(pdf);
+    if (previous && previous !== pdf) {
+      try { previous.destroy(); } catch { /* ignore */ }
+    }
+  }, [buildPages, loadLinks]);
 
-  // Load PDF document (pdfjs v4)
-  //
-  // Cache-first: a cached copy renders immediately without waiting on any
-  // network call, then the version check runs in the background and only
-  // re-downloads if the admin actually replaced the file. Previously the
-  // version request was awaited *before* the cached bytes were used, so every
-  // open paused on the network (which reads as "it's downloading again") and
-  // offline it had to fail that request first.
+  const hideEverything = useCallback(() => {
+    jobRef.current++;
+    try { pdfRef.current?.destroy(); } catch { /* ignore */ }
+    pdfRef.current = null;
+    releaseUrls();
+    setLinks([]);
+    setNumPages(0);
+    setStatus("no-access");
+  }, [releaseUrls]);
+
+  // ── Loading the document ──────────────────────────────────────────────────
   const loadDocument = useCallback(async () => {
-    setStatus("loading");
-    setErrMsg("");
-
     try {
       const pdfjsLib = await import("pdfjs-dist");
-      // pdfjs v4 uses .mjs worker
       pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 
-      // No user id means no session yet — nothing to read and nothing to key a
-      // cache by.
       if (!userId) {
         setStatus("no-access");
         return;
       }
 
-      // Ask the server first, before anything from IndexedDB reaches the
-      // screen. A cached PDF used to be rendered immediately and only
-      // *afterwards* revalidated, so a device that had cached the file for a
-      // paying customer would show it to the next account signed in on that
-      // browser — including one that had never bought anything. The server
-      // always refused GET /api/split; the viewer just never asked.
-      // Start the access probe and read the cache at the same time. The probe
-      // used to be awaited first, so even with the file already on the device
-      // nothing appeared until the server answered — which is why an "already
-      // downloaded" plan still felt like it was loading every time.
+      // Start from the page the customer left off on, so that page is the
+      // first one rendered.
+      try {
+        const saved = parseInt(localStorage.getItem(`amar-split-page:${userId}`) || "1", 10);
+        if (saved > 0) currentPageRef.current = saved;
+      } catch { /* ignore */ }
+
+      // Probe access and read the cache at the same time, so a plan already on
+      // the device appears without waiting on the network.
       const probePromise = probeSplitAccess();
       const [cachedBuf, cachedVersion] = await Promise.all([
         getCachedPdf(userId),
@@ -382,21 +395,17 @@ export default function PdfCanvas({ isArabic }: Props) {
       ]);
 
       if (cachedBuf) {
-        // Draw immediately from the local copy. It was only ever written after
-        // an authenticated, entitled fetch, so showing it while the probe is
-        // still in flight does not widen access — and the probe below still
-        // pulls it straight back off screen if this session is not entitled.
-        await openPdf(pdfjsLib, cachedBuf);
+        // The local copy was only ever written after an authenticated, entitled
+        // fetch, so showing it while the probe is in flight does not widen
+        // access — and the probe pulls it straight back if this session is not
+        // entitled.
+        await openPdf(pdfjsLib, cachedBuf, cachedVersion ?? "cached");
 
         void (async () => {
           const probe = await probePromise;
           if (probe.state === "denied") {
-            // Revoked, expired, or a different account: hide it again and drop
-            // every local copy so it cannot be read from this device.
             await clearOtherUsersCache("");
-            pdfRef.current = null;
-            setNumPages(0);
-            setStatus("no-access");
+            hideEverything();
             return;
           }
           if (probe.state === "offline") return; // keep showing the cached copy
@@ -410,7 +419,9 @@ export default function PdfCanvas({ isArabic }: Props) {
             const fresh = await res.arrayBuffer();
             if (fresh.byteLength === 0) return;
             await savePdfToCache(userId, fresh, probe.version);
-            await openPdf(pdfjsLib, fresh);
+            // The pages on screen stay until the new version's images replace
+            // them one by one.
+            await openPdf(pdfjsLib, fresh, probe.version);
           } catch { /* keep showing the cached copy */ }
         })();
         return;
@@ -435,81 +446,142 @@ export default function PdfCanvas({ isArabic }: Props) {
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const buf = await res.arrayBuffer();
       await savePdfToCache(userId, buf, probe.version);
-      await openPdf(pdfjsLib, buf);
+      await openPdf(pdfjsLib, buf, probe.version);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[PdfCanvas]", msg);
       setErrMsg(msg);
       setStatus("error");
     }
-  }, [openPdf, userId]);
+  }, [openPdf, userId, hideEverything]);
 
   useEffect(() => {
-    loadDocument();
+    if (identityPending) return;
+    void loadDocument();
+  }, [loadDocument, identityPending]);
+
+  const retry = () => {
+    setStatus("loading");
+    setErrMsg("");
+    void loadDocument();
+  };
+
+  // Release everything on the way out.
+  useEffect(() => {
+    const urls = urlsRef;
+    const job = jobRef;
+    const pdf = pdfRef;
     return () => {
-      Object.values(renderTasks.current).forEach((t) => { try { t?.cancel(); } catch { /* */ } });
+      job.current++;
+      urls.current.forEach((u) => u && URL.revokeObjectURL(u));
+      try { pdf.current?.destroy(); } catch { /* ignore */ }
     };
-  }, [loadDocument]);
+  }, []);
 
+  // A much wider or narrower viewer (rotating the phone, entering fullscreen
+  // on desktop) re-renders the images at the new size. The current ones stay
+  // up until each is replaced.
   useEffect(() => {
-    if (status === "ready" && numPages > 0) {
-      const t = setTimeout(() => renderVisible(), 60);
-      return () => clearTimeout(t);
-    }
-  }, [status, numPages, renderVisible]);
-
-  // Debounced resize
-  useEffect(() => {
-    if (!viewerRef.current) return;
-    let lastW = viewerRef.current.clientWidth;
+    const el = viewerRef.current;
+    if (!el || status !== "ready") return;
+    let timer: NodeJS.Timeout | null = null;
     const ro = new ResizeObserver(() => {
-      if (status !== "ready" || !viewerRef.current) return;
-      const w = viewerRef.current.clientWidth;
-      if (Math.abs(w - lastW) < 10) return;
-      lastW = w;
-      if (resizeTimer.current) clearTimeout(resizeTimer.current);
-      resizeTimer.current = setTimeout(() => {
-        // Width changed, so every drawn page is the wrong size now.
-        renderedRef.current.clear();
-        void renderVisible();
-      }, 250);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        const raster = rasterRef.current;
+        const pdf = pdfRef.current;
+        if (!raster || !pdf) return;
+        if (rasterWidthFor(el.clientWidth) !== raster.width) void buildPages(pdf, raster.version);
+      }, 500);
     });
-    ro.observe(viewerRef.current);
-    return () => { ro.disconnect(); if (resizeTimer.current) clearTimeout(resizeTimer.current); };
-  }, [status, renderVisible]);
+    ro.observe(el);
+    return () => { ro.disconnect(); if (timer) clearTimeout(timer); };
+  }, [status, buildPages]);
 
-  // ── Zoom by hand ────────────────────────────────────────────────────────
-  // Pinch with two fingers, double-tap to zoom in / back out, drag to move
-  // around a zoomed page — like Google Drive's viewer. There are no buttons.
-  //
-  // While the fingers are down the document is scaled with a CSS transform,
-  // which the GPU does for free, so the gesture tracks the fingers without
-  // redrawing anything. When they lift, the new zoom is committed: the column
-  // is laid out at the new width, the scroll position is set so the point under
-  // the fingers stays put, and the visible pages are redrawn sharp at the new
-  // size. Until that redraw lands the old bitmap is shown stretched — slightly
-  // soft for a moment, never blank.
-  const MIN_SCALE = 1;
-  const MAX_SCALE = 4;
-  const DOUBLE_TAP_SCALE = 2.5;
-  const scaleRef = useRef(1);
-  const pendingScrollRef = useRef<{ left: number; top: number } | null>(null);
-  const [zoomHint, setZoomHint] = useState(() => {
-    try { return localStorage.getItem("amar-split-zoom-hint") !== "1"; } catch { return false; }
-  });
+  // ── Sharp pages when zoomed ───────────────────────────────────────────────
+  // The stored images are sized for fit-width. Zoomed in further, the page on
+  // screen (and the next) is drawn again at the zoomed resolution onto a canvas
+  // laid over its image. The image stays underneath, so at worst the page is
+  // slightly soft for a moment — never blank.
+  const hiResKeys = useRef<Map<number, number>>(new Map());
+  const hiResJob = useRef(0);
+  useEffect(() => {
+    if (status !== "ready") return;
+    const job = ++hiResJob.current;
+
+    const release = (keep: Set<number>) => {
+      hiResRefs.current.forEach((c, i) => {
+        if (!c || keep.has(i)) return;
+        if (c.width !== 0) { c.width = 0; c.height = 0; }
+        c.style.display = "none";
+        hiResKeys.current.delete(i);
+      });
+    };
+
+    const timer = setTimeout(async () => {
+      const pdf = pdfRef.current;
+      const el = viewerRef.current;
+      const raster = rasterRef.current;
+      if (!pdf || !el || !raster) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const need = Math.round(el.clientWidth * scaleMultiplier * dpr);
+      if (scaleMultiplier <= 1.01 || need <= raster.width * 1.15) {
+        release(new Set());
+        return;
+      }
+      const targets = [currentPage - 1, currentPage].filter((i) => i >= 0 && i < numPages);
+      release(new Set(targets));
+      for (const i of targets) {
+        if (job !== hiResJob.current) return;
+        if (hiResKeys.current.get(i) === need) continue;
+        const target = hiResRefs.current[i];
+        if (!target) continue;
+        try {
+          const off = await drawPage(pdf, i + 1, need, labelRef.current);
+          if (!off) continue;
+          if (job !== hiResJob.current) { off.width = 0; return; }
+          target.width = off.width;
+          target.height = off.height;
+          target.getContext("2d")?.drawImage(off, 0, 0);
+          off.width = 0;
+          off.height = 0;
+          target.style.display = "block";
+          hiResKeys.current.set(i, need);
+        } catch {
+          /* the stored image stays visible */
+        }
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [status, scaleMultiplier, currentPage, numPages]);
+
+  // ── Page counter ──────────────────────────────────────────────────────────
+  // Shown after any scroll or zoom, then faded, so it never sits over the plan
+  // while the customer reads.
   const [chromeVisible, setChromeVisible] = useState(true);
   const chromeTimer = useRef<NodeJS.Timeout | null>(null);
-
-  // Show the page counter briefly after any scroll or zoom, then fade it, so it
-  // never sits over the plan while the customer is reading.
   const flashChrome = useCallback(() => {
     setChromeVisible(true);
     if (chromeTimer.current) clearTimeout(chromeTimer.current);
     chromeTimer.current = setTimeout(() => setChromeVisible(false), 1600);
   }, []);
 
-  // Commit a zoom. (cx, cy) is the document point at the old scale that should
-  // end up at viewport position (vx, vy) — the pinch centre or the tap point.
+  useEffect(() => {
+    if (status !== "ready") return;
+    const t = setTimeout(() => setChromeVisible(false), 1600);
+    return () => clearTimeout(t);
+  }, [status]);
+
+  // ── Zoom by hand ──────────────────────────────────────────────────────────
+  // Pinch with two fingers, double-tap to zoom in / back out, drag to move
+  // around a zoomed page — like Google Drive's viewer. While the fingers are
+  // down the column is scaled with a CSS transform (free, on the GPU); when
+  // they lift the zoom is committed: the column is laid out at the new width
+  // and the scroll position set in the same frame so the point under the
+  // fingers stays put.
+  const scaleRef = useRef(1);
+  const pendingScrollRef = useRef<{ left: number; top: number } | null>(null);
+
   const applyZoom = useCallback((next: number, cx: number, cy: number, vx: number, vy: number) => {
     const prev = scaleRef.current;
     const clamped = Math.min(Math.max(next, MIN_SCALE), MAX_SCALE);
@@ -524,13 +596,9 @@ export default function PdfCanvas({ isArabic }: Props) {
     flashChrome();
   }, [flashChrome]);
 
-  // Runs after React has applied the new column width but before the browser
-  // paints, so dropping the transform and moving the scroll position happen in
-  // the same frame — no jump, no flicker.
   useLayoutEffect(() => {
     const el = viewerRef.current;
-    const content = contentRef.current;
-    if (content) content.style.transform = "";
+    if (contentRef.current) contentRef.current.style.transform = "";
     const pending = pendingScrollRef.current;
     if (el && pending) {
       el.scrollLeft = Math.max(0, pending.left);
@@ -587,10 +655,9 @@ export default function PdfCanvas({ isArabic }: Props) {
         const m = local((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
         pinch.midX = m.x;
         pinch.midY = m.y;
-        const dx = m.x - pinch.startMidX;
-        const dy = m.y - pinch.startMidY;
         if (contentRef.current) {
-          contentRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(${pinch.ratio})`;
+          contentRef.current.style.transform =
+            `translate(${m.x - pinch.startMidX}px, ${m.y - pinch.startMidY}px) scale(${pinch.ratio})`;
         }
       } else if (tapStart && e.touches.length === 1) {
         const p = local(e.touches[0].clientX, e.touches[0].clientY);
@@ -612,7 +679,6 @@ export default function PdfCanvas({ isArabic }: Props) {
         if (lastTap && now - lastTap.t < 300 && Math.hypot(x - lastTap.x, y - lastTap.y) < 30) {
           e.preventDefault();
           lastTap = null;
-          // Zoomed in -> back to fit width; at fit width -> zoom into the tap.
           const next = scaleRef.current > 1.05 ? 1 : DOUBLE_TAP_SCALE;
           applyZoom(next, el.scrollLeft + x, el.scrollTop + y, x, y);
         } else {
@@ -622,11 +688,11 @@ export default function PdfCanvas({ isArabic }: Props) {
       tapStart = null;
     };
 
-    // iOS Safari fires its own gesture events for a two-finger pinch; stop it
-    // zooming the whole app on top of ours.
+    // iOS Safari fires its own gesture events for a pinch; stop it zooming the
+    // whole app on top of ours.
     const stopNative = (e: Event) => e.preventDefault();
 
-    // Desktop: trackpad pinch and Ctrl+wheel both arrive as wheel events with
+    // Desktop: trackpad pinch and Ctrl+wheel arrive as wheel events with
     // ctrlKey set. Scale live with the transform, commit once the wheel rests.
     let wheel: { originX: number; originY: number; startMidX: number; startMidY: number; ratio: number } | null = null;
     let wheelTimer: NodeJS.Timeout | null = null;
@@ -651,7 +717,6 @@ export default function PdfCanvas({ isArabic }: Props) {
       }, 180);
     };
 
-    // Desktop double-click mirrors double-tap.
     const onDblClick = (e: MouseEvent) => {
       const m = local(e.clientX, e.clientY);
       const next = scaleRef.current > 1.05 ? 1 : DOUBLE_TAP_SCALE;
@@ -679,90 +744,61 @@ export default function PdfCanvas({ isArabic }: Props) {
     };
   }, [status, applyZoom]);
 
-  // The counter starts visible; once the plan is open, let it fade like it
-  // does after a scroll.
-  useEffect(() => {
-    if (status !== "ready") return;
-    const t = setTimeout(() => setChromeVisible(false), 1600);
-    return () => clearTimeout(t);
-  }, [status]);
-
-  // First open only: tell the customer how to zoom, since there is no button
-  // to discover it from. Shown once per device, for a few seconds.
+  // First open only: explain zoom, since there is no button to discover it.
+  const [zoomHint, setZoomHint] = useState(() => {
+    try { return localStorage.getItem(HINT_KEY) !== "1"; } catch { return false; }
+  });
   useEffect(() => {
     if (status !== "ready" || !zoomHint) return;
     const t = setTimeout(() => {
       setZoomHint(false);
-      try { localStorage.setItem("amar-split-zoom-hint", "1"); } catch { /* ignore */ }
+      try { localStorage.setItem(HINT_KEY, "1"); } catch { /* ignore */ }
     }, 4500);
     return () => clearTimeout(t);
   }, [status, zoomHint]);
 
-  // Anything already drawn is now at the wrong size, so drop the record and let
-  // renderVisible redraw the window. Only ~3 pages are affected, not all 19.
-  useEffect(() => {
-    renderedRef.current.clear();
-  }, [scaleMultiplier]);
-
-  // Track which page is on screen, and remember it per user so reopening the
-  // plan returns to where the customer stopped instead of page 1 — the whole
-  // point when you are working through a split set by set.
-  const storageKey = userId ? `amar-split-page:${userId}` : "";
-
+  // ── Position ──────────────────────────────────────────────────────────────
   const handleScroll = useCallback(() => {
     const el = viewerRef.current;
     if (!el) return;
+    flashChrome();
     const mid = el.scrollTop + el.clientHeight / 2;
     let page = 1;
-    // Measured against the wrappers: they keep their reserved height even while
-    // the canvas inside is freed, so this stays correct for undrawn pages.
     for (let i = 0; i < pageRefs.current.length; i++) {
       const p = pageRefs.current[i];
       if (!p) continue;
       if (p.offsetTop <= mid) page = i + 1;
       else break;
     }
-    flashChrome();
     if (page !== currentPageRef.current) {
       currentPageRef.current = page;
       setCurrentPage(page);
       if (storageKey) {
         try { localStorage.setItem(storageKey, String(page)); } catch { /* private mode */ }
       }
-      // Draw immediately rather than after a debounce. The 120ms wait meant the
-      // next page stayed blank until scrolling stopped, which read as the page
-      // disappearing and reloading. renderVisible skips pages already drawn at
-      // the current size, so calling it often is cheap.
-      void renderVisible();
     }
-  }, [storageKey, renderVisible, flashChrome]);
+  }, [storageKey, flashChrome]);
 
-  // Jump back to the remembered page once the document is on screen.
+  // Return to the remembered page once the pages are laid out.
   useEffect(() => {
-    if (status !== "ready" || numPages === 0 || restoredRef.current || !storageKey) return;
+    if (status !== "ready" || numPages === 0 || restoredRef.current) return;
     restoredRef.current = true;
-
-    let saved = 1;
-    try { saved = parseInt(localStorage.getItem(storageKey) || "1", 10) || 1; } catch { /* ignore */ }
+    const saved = currentPageRef.current;
     if (saved <= 1 || saved > numPages) return;
-
-    // Wait a frame so the canvases have their final heights.
-    const id = setTimeout(() => {
+    const id = requestAnimationFrame(() => {
       const target = pageRefs.current[saved - 1];
       if (target && viewerRef.current) {
         viewerRef.current.scrollTop = target.offsetTop;
-        currentPageRef.current = saved;
         setCurrentPage(saved);
       }
-    }, 120);
-    return () => clearTimeout(id);
-  }, [status, numPages, storageKey]);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [status, numPages]);
+
+  const pageLabel = (n: number) => (isArabic ? `صفحة ${n}` : `Page ${n}`);
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 relative">
-      {/* No toolbar: it took a row off the top of a phone screen for a page
-          counter and zoom buttons, and zoom is now done by hand. The counter
-          floats over the plan instead and fades out while you read. */}
       {status === "ready" && numPages > 0 && (
         <div
           className={`pointer-events-none absolute top-3 inset-x-0 z-20 flex justify-center transition-opacity duration-300 ${
@@ -784,110 +820,138 @@ export default function PdfCanvas({ isArabic }: Props) {
         </div>
       )}
 
-      {/* Print block */}
       <style dangerouslySetInnerHTML={{ __html: `@media print { .no-print-pdf { display: none !important; } }` }} />
 
-      {/* Viewer Area */}
       <div
         ref={viewerRef}
         onScroll={handleScroll}
-        className="no-print-pdf flex-1 w-full overflow-auto bg-[#070a0f] relative overscroll-contain"
+        className="no-print-pdf flex-1 min-h-0 w-full overflow-auto overscroll-contain bg-[#070a0f]"
+        // touch-action hands pinch and double-tap to the code above instead of
+        // the browser zooming the whole app.
         style={{ touchAction: "pan-x pan-y", WebkitTouchCallout: "none" }}
-        // No "Save image as…" / drag-out on the page canvases. A browser cannot
-        // stop a screenshot — the per-viewer watermark is what makes a leaked
-        // copy traceable — but there is no reason to offer a save option.
+        // No "Save image" / drag-out. A browser cannot stop a screenshot — the
+        // watermark is what makes a leaked copy traceable.
         onDragStart={(e) => e.preventDefault()}
         onContextMenu={(e) => e.preventDefault()}
       >
-        {/* The document column. Its width is the zoom: at 2x it is twice the
-            screen wide and the viewer scrolls sideways. `relative` makes it
-            the offsetParent of the pages, so their offsetTop is their position
-            in the document — what scroll tracking and resume measure. */}
-        <div
-          ref={contentRef}
-          className="relative"
-          style={{ width: `${scaleMultiplier * 100}%` }}
-        >
-          {status === "loading" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070a0f] z-10">
-              <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
-              <p className="text-sm font-semibold text-[var(--text-muted)]">
-                {isArabic ? "جاري تحميل الجدول..." : "Loading split..."}
+        {/* The document column; its width is the zoom. `relative` makes it the
+            pages' offsetParent, so their offsetTop is their document position. */}
+        <div ref={contentRef} className="relative" style={{ width: `${scaleMultiplier * 100}%` }}>
+          {status === "ready" && Array.from({ length: numPages }, (_, i) => {
+            const url = Math.abs(i + 1 - currentPage) <= IMG_WINDOW ? pageUrls[i] : null;
+            return (
+              <div
+                key={i}
+                ref={(el) => { pageRefs.current[i] = el; }}
+                className="relative w-full bg-[#141821]"
+                style={{ aspectRatio: `1 / ${pageAspect}` }}
+              >
+                {url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={url}
+                    alt={pageLabel(i + 1)}
+                    draggable={false}
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full select-none pointer-events-none"
+                  />
+                ) : !pageUrls[i] ? (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 size={22} className="animate-spin text-white/25" />
+                  </div>
+                ) : null}
+                {/* Sharper copy while zoomed; shown only once fully drawn. */}
+                <canvas
+                  ref={(el) => { hiResRefs.current[i] = el; }}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  style={{ display: "none" }}
+                />
+                {(links[i] ?? []).map((l, k) => {
+                  const box = { left: `${l.left}%`, top: `${l.top}%`, width: `${l.width}%`, height: `${l.height}%` };
+                  return l.url ? (
+                    <a key={k} href={l.url} target="_blank" rel="noopener noreferrer" className="absolute" style={box} aria-label={l.url} />
+                  ) : (
+                    <button key={k} type="button" onClick={() => void goToDest(l.dest)} className="absolute" style={box} aria-label={pageLabel(i + 1)} />
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {status === "loading" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070a0f] z-10">
+          <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
+          <p className="text-sm font-semibold text-[var(--text-muted)]">
+            {isArabic ? "جاري تحميل الجدول..." : "Loading split..."}
+          </p>
+        </div>
+      )}
+
+      {status === "no-access" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#070a0f] z-10 px-6 text-center">
+          <Lock size={40} className="text-amber-400" />
+          <div className="flex flex-col gap-1.5">
+            <p className="text-base font-bold text-[var(--text-primary)]">
+              {isArabic ? "لسه معندكش وصول لهذا الجدول" : "You don't have access to this split yet"}
+            </p>
+            <p className="text-xs text-[var(--text-muted)] max-w-xs leading-relaxed mx-auto">
+              {isArabic
+                ? "لو دفعت بالفعل، الطلب لسه بيتراجع. لو لسه معنديش اشتريه دلوقتي."
+                : "If you've already paid, your order may still be under review. Otherwise, get it now."}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Link
+              href="/#split"
+              className="px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-black rounded-[var(--radius-lg)] flex items-center gap-2 hover:opacity-90 transition-opacity"
+            >
+              {isArabic ? "اشتري الجدول" : "Buy the Split"}
+            </Link>
+            {waNumber && (
+              <a
+                href={`https://wa.me/${waNumber}?text=${encodeURIComponent(isArabic ? "مرحباً، مش قادر أشوف الجدول بتاعي" : "Hi, I can't see my split")}`}
+                target="_blank" rel="noopener noreferrer"
+                className="px-5 py-2.5 bg-white/5 border border-white/10 text-[var(--text-secondary)] text-sm font-bold rounded-[var(--radius-lg)] flex items-center gap-2 hover:bg-white/10 transition-colors"
+              >
+                <MessageCircle size={14} />
+                {isArabic ? "تواصل عبر واتساب" : "Contact on WhatsApp"}
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {status === "error" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6 text-center">
+          <WifiOff size={36} className="text-red-400" />
+          {errMsg === "offline-no-cache" ? (
+            <>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                {isArabic ? "مفيش نت، والجدول لسه مش محفوظ على جهازك" : "You're offline and the plan isn't saved on this device yet"}
               </p>
-            </div>
-          )}
-
-          {status === "no-access" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#070a0f] z-10 px-6 text-center">
-              <Lock size={40} className="text-amber-400" />
-              <div className="flex flex-col gap-1.5">
-                <p className="text-base font-bold text-[var(--text-primary)]">
-                  {isArabic ? "لسه معندكش وصول لهذا الجدول" : "You don't have access to this split yet"}
-                </p>
-                <p className="text-xs text-[var(--text-muted)] max-w-xs leading-relaxed mx-auto">
-                  {isArabic
-                    ? "لو دفعت بالفعل، الطلب لسه بيتراجع. لو لسه معنديش اشتريه دلوقتي."
-                    : "If you've already paid, your order may still be under review. Otherwise, get it now."}
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <a
-                  href="/#split"
-                  className="px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-black rounded-[var(--radius-lg)] flex items-center gap-2 hover:opacity-90 transition-opacity"
-                >
-                  {isArabic ? "اشتري الجدول" : "Buy the Split"}
-                </a>
-                {waNumber && (
-                  <a
-                    href={`https://wa.me/${waNumber}?text=${encodeURIComponent(isArabic ? "مرحباً، مش قادر أشوف الجدول بتاعي" : "Hi, I can't see my split")}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="px-5 py-2.5 bg-white/5 border border-white/10 text-[var(--text-secondary)] text-sm font-bold rounded-[var(--radius-lg)] flex items-center gap-2 hover:bg-white/10 transition-colors"
-                  >
-                    <MessageCircle size={14} />
-                    {isArabic ? "تواصل عبر واتساب" : "Contact on WhatsApp"}
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-
-          {status === "error" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6 text-center">
-              <WifiOff size={36} className="text-red-400" />
+              <p className="text-xs text-[var(--text-muted)] max-w-xs leading-relaxed">
+                {isArabic
+                  ? "افتح الجدول مرة واحدة وإنت متصل بالنت، وبعدها هيشتغل من غير نت."
+                  : "Open it once while online and it will work offline from then on."}
+              </p>
+            </>
+          ) : (
+            <>
               <p className="text-sm font-semibold text-[var(--text-primary)]">
                 {isArabic ? "تعذر تحميل الجدول" : "Failed to load"}
               </p>
               {errMsg && (
                 <p className="text-[11px] text-[var(--text-muted)] font-mono max-w-xs break-words">{errMsg}</p>
               )}
-              <button onClick={loadDocument} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-[var(--radius-lg)]">
-                {isArabic ? "إعادة المحاولة" : "Retry"}
-              </button>
-            </div>
+            </>
           )}
-
-          {status === "ready" && Array.from({ length: numPages }, (_, i) => (
-            <div
-              key={i}
-              id={`pdf-page-${i + 1}`}
-              ref={(el) => { pageRefs.current[i] = el; }}
-              // No card treatment: rounded corners, a border and a shadow on
-              // every page turned a continuous document into 19 separate cards,
-              // which is visually noisy and makes the plan harder to read than
-              // it is on paper. Pages now butt directly against each other and
-              // read as one scroll.
-              className="relative bg-white w-full"
-              // Reserve the page's height even before it is drawn, so the
-              // scrollbar is correct from the start and scrolling never jumps
-              // as pages render in and out of the window.
-              style={{ aspectRatio: `1 / ${pageAspect}` }}
-            >
-              <canvas ref={(el) => { canvasRefs.current[i] = el; }} style={{ display: "block", width: "100%" }} />
-              <div ref={(el) => { overlayRefs.current[i] = el; }} className="absolute inset-0 z-10" />
-            </div>
-          ))}
+          <button onClick={retry} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-[var(--radius-lg)]">
+            {isArabic ? "إعادة المحاولة" : "Retry"}
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

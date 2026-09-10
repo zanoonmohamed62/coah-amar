@@ -38,15 +38,49 @@ export default function MySplitPage() {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
+  // The reader gets an explicit height: from where it starts down to the bottom
+  // of the screen. It used to have only a min-height, so it grew to the full
+  // length of the plan and the whole page scrolled instead of the viewer. The
+  // viewer then never saw a scroll, never knew which page was on screen, and
+  // pages past the first few were never drawn — they sat white.
+  const [readerHeight, setReaderHeight] = useState<number | null>(null);
+  // iPhone Safari has no element fullscreen, so the button would do nothing.
+  const [canFullscreen, setCanFullscreen] = useState(false);
+  useEffect(() => {
+    const measure = () => {
+      const el = containerRef.current;
+      if (!el || document.fullscreenElement) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      // Desktop keeps the portal's 32px bottom padding; on mobile the reader
+      // runs to the screen edge (it cancels the padding with -mb-4).
+      const bottomGap = window.innerWidth >= 768 ? 32 : 0;
+      // The installed app pads the shell by the home-indicator inset.
+      const shell = el.closest(".app-shell");
+      const inset = shell ? parseFloat(getComputedStyle(shell).paddingBottom) || 0 : 0;
+      setReaderHeight(Math.max(320, Math.floor(window.innerHeight - top - bottomGap - inset)));
+    };
+    const raf = requestAnimationFrame(() => {
+      measure();
+      setCanFullscreen(!!document.fullscreenEnabled);
+    });
+    window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
+    };
+  }, []);
+
   return (
-    <div className="space-y-6 h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center shrink-0">
-        <div>
-          <Link href="/app" className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-2 transition-colors">
+    <div className="flex flex-col gap-3 md:gap-6">
+      <div className="flex gap-4 justify-between items-center shrink-0">
+        <div className="min-w-0">
+          <Link href="/app" className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] md:mb-2 transition-colors">
             <ArrowIcon size={14} />
             <span>{isArabic ? "\u0627\u0644\u0639\u0648\u062f\u0629 \u0644\u0644\u0631\u0626\u064a\u0633\u064a\u0629" : "Back to Dashboard"}</span>
           </Link>
-          <h1 className="text-2xl font-black text-[var(--text-primary)] flex items-center gap-2.5">
+          <h1 className="hidden md:flex text-2xl font-black text-[var(--text-primary)] items-center gap-2.5">
             <span className="text-[var(--accent)]">THE AMAR</span> &ldquo;X SPLIT&rdquo;
           </h1>
         </div>
@@ -62,26 +96,28 @@ export default function MySplitPage() {
 
       {/* Edge-to-edge on a phone: the rounded card, border and shadow are kept
           for the desktop layout but dropped on mobile, where they only shrink
-          the readable width of the plan. -mx-4 cancels the portal's own page
-          padding so the pages reach the screen edges. */}
+          the readable width of the plan. -mx-4/-mb-4 cancel the portal's own
+          page padding so the pages reach the screen edges. */}
       <div
         ref={containerRef}
-        className="bg-[var(--bg-card)] flex flex-col flex-1 overflow-hidden -mx-4 sm:mx-0 sm:border sm:border-[var(--border)] sm:rounded-[var(--radius-xl)] sm:shadow-[var(--shadow-card)]"
-        style={{ minHeight: "75vh" }}
+        className="bg-[var(--bg-card)] flex flex-col overflow-hidden -mx-4 -mb-4 md:mx-0 md:mb-0 md:border md:border-[var(--border)] md:rounded-[var(--radius-xl)] md:shadow-[var(--shadow-card)]"
+        style={{ height: readerHeight ? `${readerHeight}px` : "75vh" }}
       >
-        <div className="px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0">
+        <div className="px-4 md:px-5 py-2 md:py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-blue-400" />
             <span className="text-xs font-black text-[var(--text-primary)] tracking-wide">
               {isArabic ? "\u0627\u0644\u062c\u062f\u0648\u0644 \u0627\u0644\u0631\u0633\u0645\u064a" : "Official Split"}
             </span>
           </div>
-          <button onClick={toggleFullscreen} className="p-1.5 hover:bg-white/5 rounded-[var(--radius-sm)] text-[var(--text-primary)] hover:text-white transition-colors flex items-center gap-2">
+          {canFullscreen && (
+          <button onClick={toggleFullscreen} className="min-h-9 px-2 hover:bg-white/5 rounded-[var(--radius-sm)] text-[var(--text-primary)] hover:text-white transition-colors flex items-center gap-2">
             <span className="text-xs font-bold">
               {isFullscreen ? (isArabic ? "\u062a\u0635\u063a\u064a\u0631" : "Exit Fullscreen") : (isArabic ? "\u062a\u0643\u0628\u064a\u0631 \u0627\u0644\u0634\u0627\u0634\u0629" : "Fullscreen")}
             </span>
             {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
+          )}
         </div>
         <PdfCanvas isArabic={isArabic} />
       </div>

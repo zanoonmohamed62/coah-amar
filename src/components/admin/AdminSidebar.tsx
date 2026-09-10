@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { forgetOfflineSplit } from "@/lib/split-cache";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
@@ -164,7 +165,7 @@ export function AdminSidebar() {
         </Link>
 
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={async () => { await forgetOfflineSplit(); signOut({ callbackUrl: "/login" }); }}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-xs font-semibold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
           <LogOut size={14} /> {t.signOut}

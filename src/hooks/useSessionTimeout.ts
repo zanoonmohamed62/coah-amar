@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { signOut, useSession } from "next-auth/react";
+import { forgetOfflineSplit } from "@/lib/split-cache";
 
 const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 const WARNING_MS = 14 * 60 * 1000; // show warning at 14 minutes
@@ -29,7 +30,7 @@ export function useSessionTimeout({ onWarning }: UseSessionTimeoutOptions = {}) 
     }, WARNING_MS);
 
     timeoutRef.current = setTimeout(() => {
-      signOut({ callbackUrl: "/login?reason=timeout" });
+      void forgetOfflineSplit().finally(() => signOut({ callbackUrl: "/login?reason=timeout" }));
     }, TIMEOUT_MS);
   }, [clearTimers, onWarning]);
 
