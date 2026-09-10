@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
@@ -7,7 +8,7 @@ import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
 import { useSettings } from "@/lib/use-settings";
 import { usePWAInstall } from "@/lib/pwa-install-context";
-import { Smartphone } from "lucide-react";
+import { Smartphone, ExternalLink } from "lucide-react";
 import { EditableText } from "@/components/cms/EditableText";
 import { EditableImage } from "@/components/cms/EditableImage";
 
@@ -18,6 +19,15 @@ export function HeroSection() {
   const getSetting = useSettings();
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
   const { canInstall, triggerInstall } = usePWAInstall();
+
+  // Detect if the PWA is already installed (running in standalone mode)
+  const [isStandalone, setIsStandalone] = useState(false);
+  useEffect(() => {
+    setIsStandalone(
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as unknown as { standalone?: boolean }).standalone === true
+    );
+  }, []);
 
   return (
     <section className="relative min-h-[92vh] flex items-center overflow-hidden pt-28 pb-16 bg-[#07090e]">
@@ -88,7 +98,12 @@ export function HeroSection() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/icons/icon-192.png" alt="Coach Amar" className="w-full h-full object-cover" />
                 </div>
-                <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "تطبيق المتدربين X App" : "Customer X App"))}</span>
+                <span>
+                  {isStandalone
+                    ? (isArabic ? "لوحة التحكم" : "Dashboard")
+                    : get("hero", "appBtn", t.hero.appBtn || (isArabic ? "فتح التطبيق" : "Open App"))}
+                </span>
+                {!isStandalone && <ExternalLink size={12} className="opacity-50" />}
               </Link>
             )}
 

@@ -36,7 +36,6 @@ export function Navbar() {
   const navLinks = [
     { href: "/#plans", fieldId: "plans", label: get("nav", "plans", t.nav.plans) },
     { href: "/#coach", fieldId: "coach", label: get("nav", "coach", t.nav.coach) },
-    { href: "/#results", fieldId: "results", label: get("nav", "results", t.nav.results) },
     { href: "/#faq", fieldId: "faq", label: get("nav", "faq", t.nav.faq) },
   ];
 
