@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, FileText, User, MessageCircle, Sparkles } from "lucide-react";
+import { Home, FileText, User, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
 

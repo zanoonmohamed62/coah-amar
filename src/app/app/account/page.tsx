@@ -5,22 +5,53 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { User, RefreshCw, ShoppingBag, CheckCircle2, Clock } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { 
+  getCachedPwaUser, 
+  saveCachedEntitlements, 
+  getCachedEntitlements, 
+  saveCachedOrders, 
+  getCachedOrders 
+} from "@/lib/split-cache";
 
 type Order = { id: string; orderRef: string; status: string; amount: number; confirmedAt: string | null; isRenewal: boolean; product: { name: string; type: string } };
 type Entitlement = { id: string; status: string; startDate: string; expiresAt: string | null; isExpired: boolean; daysLeft: number | null; product: { name: string; type: string } };
 
 export default function AccountPage() {
   const session = useSession()?.data;
-  const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const cachedUser = typeof window !== "undefined" ? getCachedPwaUser() : null;
+  const user = (session?.user || cachedUser) as { name?: string; email?: string } | undefined;
+
+  const [entitlements, setEntitlements] = useState<Entitlement[]>(() => {
+    if (typeof window === "undefined") return [];
+    return getCachedEntitlements();
+  });
+  const [orders, setOrders] = useState<Order[]>(() => {
+    if (typeof window === "undefined") return [];
+    return getCachedOrders();
+  });
   const { lang, isArabic } = useLanguage();
 
   useEffect(() => {
-    fetch("/api/customer/entitlements").then(r => r.json()).then(d => setEntitlements(d.entitlements || []));
-    fetch("/api/customer/orders").then(r => r.json()).then(d => setOrders(d.orders || []));
-  }, []);
+    fetch("/api/customer/entitlements")
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d.entitlements)) {
+          setEntitlements(d.entitlements);
+          saveCachedEntitlements(d.entitlements);
+        }
+      })
+      .catch(() => {});
 
-  const user = session?.user as { name?: string; email?: string };
+    fetch("/api/customer/orders")
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d.orders)) {
+          setOrders(d.orders);
+          saveCachedOrders(d.orders);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const expiringEntitlements = entitlements.filter(e => e.daysLeft !== null && e.daysLeft <= 14 && !e.isExpired);
 
   const statusLabels: Record<string, string> = {

@@ -8,7 +8,7 @@ import { useLanguage } from "@/lib/language-context";
 import { useSiteContent } from "@/lib/use-site-content";
 import { useSettings } from "@/lib/use-settings";
 import { usePWAInstall } from "@/lib/pwa-install-context";
-import { Smartphone, ExternalLink } from "lucide-react";
+import { Download, LayoutDashboard } from "lucide-react";
 import { EditableText } from "@/components/cms/EditableText";
 import { EditableImage } from "@/components/cms/EditableImage";
 
@@ -81,30 +81,24 @@ export function HeroSection() {
               <ArrowIcon size={14} className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`} />
             </Link>
 
-            {canInstall ? (
-              <button
-                onClick={triggerInstall}
-                className="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-[var(--radius-lg)] transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-[0_4px_16px_rgba(37,99,235,0.35)] group cursor-pointer border border-blue-400/30"
-              >
-                <Smartphone size={16} />
-                <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "ثبّت التطبيق" : "Install App"))}</span>
-              </button>
-            ) : (
+            {isStandalone ? (
               <Link
                 href="/app"
                 className="px-5 py-3.5 bg-[#0e1626] border border-blue-500/30 text-blue-300 hover:text-white hover:bg-blue-600/20 hover:border-blue-400/60 rounded-[var(--radius-lg)] transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] group"
               >
-                <div className="w-5 h-5 rounded-[var(--radius-sm)] overflow-hidden flex-shrink-0 border border-blue-400/40 shadow-sm">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/icons/icon-192.png" alt="Coach Amar" className="w-full h-full object-cover" />
-                </div>
-                <span>
-                  {isStandalone
-                    ? (isArabic ? "لوحة التحكم" : "Dashboard")
-                    : get("hero", "appBtn", t.hero.appBtn || (isArabic ? "فتح التطبيق" : "Open App"))}
-                </span>
-                {!isStandalone && <ExternalLink size={12} className="opacity-50" />}
+                <LayoutDashboard size={16} className="text-blue-400" />
+                <span>{isArabic ? "لوحة التحكم" : "Dashboard"}</span>
               </Link>
+            ) : (
+              <button
+                onClick={async () => {
+                  await triggerInstall();
+                }}
+                className="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-[var(--radius-lg)] transition-all flex items-center justify-center gap-2.5 text-sm font-bold shadow-[0_4px_16px_rgba(37,99,235,0.35)] group cursor-pointer border border-blue-400/30 active:scale-[0.98]"
+              >
+                <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
+                <span>{get("hero", "appBtn", t.hero.appBtn || (isArabic ? "تحميل التطبيق" : "Download App"))}</span>
+              </button>
             )}
 
             <a

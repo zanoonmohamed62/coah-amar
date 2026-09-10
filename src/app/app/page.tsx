@@ -8,7 +8,6 @@ import {
   MessageCircle, 
   CheckCircle2, 
   Dumbbell, 
-  Sparkles, 
   Flame, 
   Clock, 
   ShieldCheck, 
@@ -16,10 +15,17 @@ import {
   ChevronLeft, 
   ExternalLink,
   RotateCcw,
-  Zap
+  Zap,
+  Activity
 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
+import { 
+  savePwaUser, 
+  getCachedPwaUser, 
+  saveCachedEntitlements, 
+  getCachedEntitlements 
+} from "@/lib/split-cache";
 
 type Entitlement = {
   id: string;
@@ -37,22 +43,38 @@ export default function AppHome() {
   const getSetting = useSettings();
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
 
-  const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedUser = typeof window !== "undefined" ? getCachedPwaUser() : null;
+  const user = session?.user || cachedUser;
+  const athleteName = user?.name || (isArabic ? "بطل كوتش عمار" : "Coach Amar Athlete");
+
+  const [entitlements, setEntitlements] = useState<Entitlement[]>(() => {
+    if (typeof window === "undefined") return [];
+    return getCachedEntitlements();
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (session?.user) {
+      savePwaUser({
+        id: (session.user as { id?: string }).id || "",
+        name: session.user.name || undefined,
+        email: session.user.email || undefined,
+      });
+    }
+
     fetch("/api/customer/entitlements")
       .then((r) => r.json())
       .then((d) => {
-        setEntitlements(d.entitlements || []);
+        if (Array.isArray(d.entitlements)) {
+          setEntitlements(d.entitlements);
+          saveCachedEntitlements(d.entitlements);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   const ArrowIcon = isArabic ? ChevronLeft : ChevronRight;
-  const user = session?.user;
-  const athleteName = user?.name || (isArabic ? "بطل كوتش عمار" : "Coach Amar Athlete");
   const activePlan = entitlements.find((e) => !e.isExpired) || entitlements[0];
 
   const quickActions = [
@@ -132,7 +154,7 @@ export default function AppHome() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-            <Sparkles size={16} className="text-blue-400" />
+            <Activity size={16} className="text-blue-400" />
             <span>{isArabic ? "جدولك التدريبي النشط" : "Your Active Split"}</span>
           </h2>
           <span className="text-xs text-blue-400 font-semibold">

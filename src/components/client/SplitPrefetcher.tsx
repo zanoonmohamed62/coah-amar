@@ -7,6 +7,8 @@ import {
   getCachedVersion,
   fetchCurrentVersion,
   savePdfToCache,
+  savePwaUser,
+  saveCachedEntitlements,
 } from "@/lib/split-cache";
 
 // Downloads the split PDF into IndexedDB in the background as soon as an
@@ -26,7 +28,16 @@ export function SplitPrefetcher() {
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (status !== "authenticated" || !userId || startedRef.current) return;
+    if (status !== "authenticated" || !userId) return;
+
+    // Cache user identity immediately for offline mode
+    savePwaUser({
+      id: userId,
+      name: session?.user?.name || undefined,
+      email: session?.user?.email || undefined,
+    });
+
+    if (startedRef.current) return;
     // The viewer downloads and caches the plan itself. Prefetching while it is
     // on screen just competes with it for bandwidth and CPU on the one screen
     // where responsiveness matters most.
@@ -39,7 +50,7 @@ export function SplitPrefetcher() {
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [status, userId]);
+  }, [status, userId, session]);
 
   return null;
 }
@@ -53,6 +64,9 @@ async function prefetch(userId: string) {
       return;
     }
     const { entitlements } = await entRes.json();
+    if (Array.isArray(entitlements)) {
+      saveCachedEntitlements(entitlements);
+    }
 
     const hasActive =
       Array.isArray(entitlements) &&

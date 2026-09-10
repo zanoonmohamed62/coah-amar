@@ -264,8 +264,12 @@ export async function prunePageImages(userId: string, version: string, width: nu
 // (the server answering "no session") or signing out through the app forgets
 // it and the cached plan.
 const LAST_USER_KEY = "amar-split-last-user";
+const CACHED_USER_KEY = "amar-pwa-cached-user";
+const CACHED_ENTITLEMENTS_KEY = "amar-pwa-cached-entitlements";
+const CACHED_ORDERS_KEY = "amar-pwa-cached-orders";
 
 export type RememberedUser = { id: string; label: string };
+export type CachedPwaUser = { id: string; name?: string; email?: string; role?: string };
 
 /** `label` is the watermark text (email), so an offline copy is still marked. */
 export function rememberSplitUser(userId: string, label: string) {
@@ -283,8 +287,69 @@ export function getRememberedSplitUser(): RememberedUser | null {
   }
 }
 
+export function savePwaUser(user: CachedPwaUser) {
+  try {
+    localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
+    if (user.id) {
+      rememberSplitUser(user.id, user.email || user.name || "");
+    }
+  } catch { /* ignore */ }
+}
+
+export function getCachedPwaUser(): CachedPwaUser | null {
+  try {
+    const raw = localStorage.getItem(CACHED_USER_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as CachedPwaUser;
+    return typeof v.id === "string" && v.id ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCachedEntitlements(entitlements: unknown[]) {
+  try {
+    localStorage.setItem(CACHED_ENTITLEMENTS_KEY, JSON.stringify(entitlements));
+  } catch { /* ignore */ }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getCachedEntitlements(): any[] {
+  try {
+    const raw = localStorage.getItem(CACHED_ENTITLEMENTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCachedOrders(orders: unknown[]) {
+  try {
+    localStorage.setItem(CACHED_ORDERS_KEY, JSON.stringify(orders));
+  } catch { /* ignore */ }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getCachedOrders(): any[] {
+  try {
+    const raw = localStorage.getItem(CACHED_ORDERS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Call on sign-out: nothing of the plan should stay readable on the device. */
 export async function forgetOfflineSplit(): Promise<void> {
-  try { localStorage.removeItem(LAST_USER_KEY); } catch { /* ignore */ }
+  try {
+    localStorage.removeItem(LAST_USER_KEY);
+    localStorage.removeItem(CACHED_USER_KEY);
+    localStorage.removeItem(CACHED_ENTITLEMENTS_KEY);
+    localStorage.removeItem(CACHED_ORDERS_KEY);
+  } catch { /* ignore */ }
   await clearOtherUsersCache("");
 }

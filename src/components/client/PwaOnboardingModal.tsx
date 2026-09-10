@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dumbbell, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Loader2, UserCheck } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 
 export function PwaOnboardingModal() {
@@ -47,7 +47,7 @@ export function PwaOnboardingModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-xl overflow-y-auto">
-      <div className="relative w-full max-w-md my-auto bg-[#090d16] border border-blue-500/20 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_30px_rgba(37,99,235,0.15)] overflow-hidden text-white flex flex-col justify-between min-h-[520px]">
+      <div className="relative w-full max-w-md my-auto bg-[#090d16] border border-blue-500/20 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_30px_rgba(37,99,235,0.15)] overflow-hidden text-white flex flex-col justify-between min-h-[500px]">
         {/* Subtle background ambient glows */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
@@ -77,7 +77,7 @@ export function PwaOnboardingModal() {
         {/* Dynamic Step Content */}
         <div className="relative z-10 p-6 sm:p-8 flex-1 flex flex-col justify-center">
           <AnimatePresence mode="wait">
-            {/* ──────── STEP 1: WELCOME SCREEN ──────── */}
+            {/* ──────── STEP 1: WELCOME SCREEN (Minimal Pushr Aesthetic) ──────── */}
             {step === 1 && (
               <motion.div
                 key="step1"
@@ -85,12 +85,8 @@ export function PwaOnboardingModal() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -14 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-6"
+                className="space-y-6 pt-2"
               >
-                <div className="w-14 h-14 rounded-[18px] bg-blue-600/10 border border-blue-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.2)]">
-                  <Dumbbell size={28} className="text-blue-400" />
-                </div>
-
                 <div className="space-y-3">
                   <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
                     {isArabic ? "مرحباً بك في" : "welcome to"}
@@ -126,10 +122,10 @@ export function PwaOnboardingModal() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -14 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-6"
+                className="space-y-6 pt-2"
               >
-                <div className="w-14 h-14 rounded-[18px] bg-blue-600/10 border border-blue-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.2)]">
-                  <Sparkles size={28} className="text-blue-400" />
+                <div className="w-12 h-12 rounded-[16px] bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400">
+                  <UserCheck size={22} />
                 </div>
 
                 <div className="space-y-3">
@@ -226,8 +222,8 @@ export function PwaOnboardingModal() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
-                <div className="w-14 h-14 rounded-[18px] bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                  <CheckCircle2 size={28} className="text-emerald-400" />
+                <div className="w-12 h-12 rounded-[16px] bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
+                  <CheckCircle2 size={24} />
                 </div>
 
                 <div className="space-y-3">

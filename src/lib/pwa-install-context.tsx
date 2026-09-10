@@ -37,9 +37,11 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
 
   const triggerInstall = useCallback(async () => {
     if (!deferredPrompt) {
-      // Fallback: guide user to browser install UI
+      const isAr = typeof document !== "undefined" && (document.documentElement.lang === "ar" || document.documentElement.dir === "rtl");
       alert(
-        "To install: tap the browser menu (⋮ or Share) and choose 'Add to Home Screen'."
+        isAr
+          ? "لتثبيت التطبيق على هاتفك:\nاضغط على زر المشاركة (Share ⎋) أو قائمة المتصفح (⋮)، ثم اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home Screen)."
+          : "To install the app on your phone:\nTap the Share button (⎋) or browser menu (⋮), and select 'Add to Home Screen'."
       );
       return;
     }
