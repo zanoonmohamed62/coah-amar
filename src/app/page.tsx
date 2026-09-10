@@ -13,8 +13,8 @@ export default function HomePage() {
   return (
     <>
       <SectionWrapper sectionId="hero"><HeroSection /></SectionWrapper>
-      <SectionWrapper sectionId="trust"><TrustStrip /></SectionWrapper>
       <SectionWrapper sectionId="pricing"><TwoPathsSection /></SectionWrapper>
+      <SectionWrapper sectionId="trust"><TrustStrip /></SectionWrapper>
       <SectionWrapper sectionId="problem"><ProblemSection /></SectionWrapper>
       <SectionWrapper sectionId="howItWorks"><HowItWorksSection /></SectionWrapper>
       <SectionWrapper sectionId="coach"><CoachSection /></SectionWrapper>
