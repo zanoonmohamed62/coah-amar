@@ -224,9 +224,12 @@ export function TwoPathsSection() {
                 </div>
                 <div className="text-right">
                   {/* Original price crossed out with EUR equivalent */}
-                  <div className="flex items-center justify-end mb-1">
-                    <span className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
-                      {origPrice1} / 19 €
+                  <div className="flex items-center justify-end gap-1.5 mb-1">
+                    <span dir="ltr" className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
+                      {origPrice1}
+                    </span>
+                    <span dir="ltr" className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
+                      / 19 €
                     </span>
                   </div>
 
@@ -327,9 +330,12 @@ export function TwoPathsSection() {
                 </div>
                 <div className="text-right">
                   {/* Original price crossed out with EUR equivalent */}
-                  <div className="flex items-center justify-end mb-1">
-                    <span className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
-                      {origPrice2} / 119 €
+                  <div className="flex items-center justify-end gap-1.5 mb-1">
+                    <span dir="ltr" className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
+                      {origPrice2}
+                    </span>
+                    <span dir="ltr" className="text-xs sm:text-sm text-slate-500 line-through font-medium tracking-tight">
+                      / 119 €
                     </span>
                   </div>
 

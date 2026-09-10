@@ -94,10 +94,10 @@ export default function RootLayout({
     >
       <head>
         {/* PWA & Icons */}
-        <link rel="manifest" href="/manifest.json?v=7" />
-        <link rel="icon" href="/favicon.ico?v=7" sizes="any" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=7" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=7" />
+        <link rel="manifest" href="/manifest.json?v=8" />
+        <link rel="icon" href="/favicon.ico?v=8" sizes="any" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=8" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=8" />
         <meta name="theme-color" content="#07090e" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

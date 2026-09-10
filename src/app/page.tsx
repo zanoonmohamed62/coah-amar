@@ -14,8 +14,8 @@ export default function HomePage() {
     <>
       <SectionWrapper sectionId="hero"><HeroSection /></SectionWrapper>
       <SectionWrapper sectionId="trust"><TrustStrip /></SectionWrapper>
-      <SectionWrapper sectionId="problem"><ProblemSection /></SectionWrapper>
       <SectionWrapper sectionId="pricing"><TwoPathsSection /></SectionWrapper>
+      <SectionWrapper sectionId="problem"><ProblemSection /></SectionWrapper>
       <SectionWrapper sectionId="howItWorks"><HowItWorksSection /></SectionWrapper>
       <SectionWrapper sectionId="coach"><CoachSection /></SectionWrapper>
       {/* The closing CTA sits here, straight after the coach section, so the
