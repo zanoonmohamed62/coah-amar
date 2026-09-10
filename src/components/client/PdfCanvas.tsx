@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2, WifiOff, ZoomIn, ZoomOut, RotateCcw, Lock, MessageCircle } from "lucide-react";
+import { Loader2, WifiOff, Lock, MessageCircle } from "lucide-react";
 import { useSettings } from "@/lib/use-settings";
 import {
   getCachedPdf,
@@ -67,6 +67,9 @@ export default function PdfCanvas({ isArabic }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderTasks = useRef<{ [key: number]: any }>({});
   const resizeTimer = useRef<NodeJS.Timeout | null>(null);
+  // The element that pinch-zoom transforms. It is the whole document column,
+  // so zooming scales every page together, the way a document viewer does.
+  const contentRef  = useRef<HTMLDivElement>(null);
 
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "no-access">("loading");
   const [errMsg, setErrMsg] = useState("");
@@ -136,11 +139,19 @@ export default function PdfCanvas({ isArabic }: Props) {
       const isPhone = window.innerWidth < 768;
       const dpr = Math.min(window.devicePixelRatio || 1, isPhone ? 1.5 : 2);
 
+      // Cap the bitmap size. Zooming in makes each page larger on screen, and
+      // at 4x a page at full DPR would be ~30MB of canvas — a few of those and
+      // a phone kills the tab. Past the budget the DPR is lowered instead, which
+      // costs a little sharpness only at deep zoom.
+      const MAX_CANVAS_PIXELS = 5_000_000;
+      const cssArea = baseViewport.width * computedScale * baseViewport.height * computedScale;
+      const pxRatio = Math.min(dpr, Math.sqrt(MAX_CANVAS_PIXELS / cssArea));
+
       // Bake DPR into the viewport so pdfjs handles all scaling internally.
       // Never call ctx.setTransform(dpr) separately — that causes double-scaling
       // which garbles glyph advances (letter spacing).
       const viewport = page.getViewport({ scale: computedScale });
-      const dprViewport = page.getViewport({ scale: computedScale * dpr });
+      const dprViewport = page.getViewport({ scale: computedScale * pxRatio });
 
       // Draw into an off-screen canvas, then blit the finished page across in
       // one step. Assigning canvas.width clears it to transparent, so rendering
@@ -259,8 +270,12 @@ export default function PdfCanvas({ isArabic }: Props) {
 
     // Free only what is well outside the window. Setting width/height to 0 is
     // what actually releases the backing bitmap; hiding the element does not.
-    const keepFrom = Math.max(1, center - KEEP_WINDOW);
-    const keepTo = Math.min(total, center + KEEP_WINDOW);
+    // Zoomed in, each page is several times the pixels, so hold fewer of them.
+    const zoomed = scaleMultiplier > 1.25;
+    const renderWindow = zoomed ? 1 : RENDER_WINDOW;
+    const keepWindow = zoomed ? 1 : KEEP_WINDOW;
+    const keepFrom = Math.max(1, center - keepWindow);
+    const keepTo = Math.min(total, center + keepWindow);
     for (let i = 1; i <= total; i++) {
       if (i >= keepFrom && i <= keepTo) continue;
       const c = canvasRefs.current[i - 1];
@@ -273,7 +288,7 @@ export default function PdfCanvas({ isArabic }: Props) {
 
     // Draw the current page first, then outward.
     const order = [center];
-    for (let d = 1; d <= RENDER_WINDOW; d++) {
+    for (let d = 1; d <= renderWindow; d++) {
       if (center + d <= total) order.push(center + d);
       if (center - d >= 1) order.push(center - d);
     }
@@ -390,7 +405,7 @@ export default function PdfCanvas({ isArabic }: Props) {
           if (cachedVersion === probe.version) return; // already current
 
           try {
-            const res = await fetch("/api/split", { cache: "no-store" });
+            const res = await fetch("/api/split", { cache: "no-store", headers: { "x-amar-viewer": "1" } });
             if (!res.ok) return;
             const fresh = await res.arrayBuffer();
             if (fresh.byteLength === 0) return;
@@ -412,7 +427,7 @@ export default function PdfCanvas({ isArabic }: Props) {
 
       await clearOtherUsersCache(userId);
 
-      const res = await fetch("/api/split", { cache: "no-store" });
+      const res = await fetch("/api/split", { cache: "no-store", headers: { "x-amar-viewer": "1" } });
       if (res.status === 403 || res.status === 401) {
         setStatus("no-access");
         return;
@@ -463,8 +478,225 @@ export default function PdfCanvas({ isArabic }: Props) {
     return () => { ro.disconnect(); if (resizeTimer.current) clearTimeout(resizeTimer.current); };
   }, [status, renderVisible]);
 
-  const handleZoom = (d: number) =>
-    setScaleMultiplier((p) => Math.min(Math.max(+(p + d).toFixed(2), 0.7), 2.0));
+  // ── Zoom by hand ────────────────────────────────────────────────────────
+  // Pinch with two fingers, double-tap to zoom in / back out, drag to move
+  // around a zoomed page — like Google Drive's viewer. There are no buttons.
+  //
+  // While the fingers are down the document is scaled with a CSS transform,
+  // which the GPU does for free, so the gesture tracks the fingers without
+  // redrawing anything. When they lift, the new zoom is committed: the column
+  // is laid out at the new width, the scroll position is set so the point under
+  // the fingers stays put, and the visible pages are redrawn sharp at the new
+  // size. Until that redraw lands the old bitmap is shown stretched — slightly
+  // soft for a moment, never blank.
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 4;
+  const DOUBLE_TAP_SCALE = 2.5;
+  const scaleRef = useRef(1);
+  const pendingScrollRef = useRef<{ left: number; top: number } | null>(null);
+  const [zoomHint, setZoomHint] = useState(() => {
+    try { return localStorage.getItem("amar-split-zoom-hint") !== "1"; } catch { return false; }
+  });
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const chromeTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Show the page counter briefly after any scroll or zoom, then fade it, so it
+  // never sits over the plan while the customer is reading.
+  const flashChrome = useCallback(() => {
+    setChromeVisible(true);
+    if (chromeTimer.current) clearTimeout(chromeTimer.current);
+    chromeTimer.current = setTimeout(() => setChromeVisible(false), 1600);
+  }, []);
+
+  // Commit a zoom. (cx, cy) is the document point at the old scale that should
+  // end up at viewport position (vx, vy) — the pinch centre or the tap point.
+  const applyZoom = useCallback((next: number, cx: number, cy: number, vx: number, vy: number) => {
+    const prev = scaleRef.current;
+    const clamped = Math.min(Math.max(next, MIN_SCALE), MAX_SCALE);
+    if (Math.abs(clamped - prev) < 0.001) {
+      if (contentRef.current) contentRef.current.style.transform = "";
+      return;
+    }
+    const r = clamped / prev;
+    scaleRef.current = clamped;
+    pendingScrollRef.current = { left: cx * r - vx, top: cy * r - vy };
+    setScaleMultiplier(clamped);
+    flashChrome();
+  }, [flashChrome]);
+
+  // Runs after React has applied the new column width but before the browser
+  // paints, so dropping the transform and moving the scroll position happen in
+  // the same frame — no jump, no flicker.
+  useLayoutEffect(() => {
+    const el = viewerRef.current;
+    const content = contentRef.current;
+    if (content) content.style.transform = "";
+    const pending = pendingScrollRef.current;
+    if (el && pending) {
+      el.scrollLeft = Math.max(0, pending.left);
+      el.scrollTop = Math.max(0, pending.top);
+    }
+    pendingScrollRef.current = null;
+  }, [scaleMultiplier]);
+
+  useEffect(() => {
+    const el = viewerRef.current;
+    if (!el || status !== "ready") return;
+
+    let pinch: {
+      startDist: number; startScale: number;
+      originX: number; originY: number; startMidX: number; startMidY: number;
+      ratio: number; midX: number; midY: number;
+    } | null = null;
+    let tapStart: { x: number; y: number; moved: boolean } | null = null;
+    let lastTap: { t: number; x: number; y: number } | null = null;
+
+    const local = (clientX: number, clientY: number) => {
+      const r = el.getBoundingClientRect();
+      return { x: clientX - r.left, y: clientY - r.top };
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        tapStart = null;
+        const [a, b] = [e.touches[0], e.touches[1]];
+        const m = local((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+        pinch = {
+          startDist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1,
+          startScale: scaleRef.current,
+          originX: el.scrollLeft + m.x, originY: el.scrollTop + m.y,
+          startMidX: m.x, startMidY: m.y, ratio: 1, midX: m.x, midY: m.y,
+        };
+        if (contentRef.current) {
+          contentRef.current.style.transformOrigin = `${pinch.originX}px ${pinch.originY}px`;
+        }
+      } else if (e.touches.length === 1) {
+        const p = local(e.touches[0].clientX, e.touches[0].clientY);
+        tapStart = { x: p.x, y: p.y, moved: false };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (pinch && e.touches.length === 2) {
+        e.preventDefault();
+        const [a, b] = [e.touches[0], e.touches[1]];
+        const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        const target = Math.min(Math.max(pinch.startScale * (dist / pinch.startDist), MIN_SCALE), MAX_SCALE);
+        pinch.ratio = target / pinch.startScale;
+        const m = local((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+        pinch.midX = m.x;
+        pinch.midY = m.y;
+        const dx = m.x - pinch.startMidX;
+        const dy = m.y - pinch.startMidY;
+        if (contentRef.current) {
+          contentRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(${pinch.ratio})`;
+        }
+      } else if (tapStart && e.touches.length === 1) {
+        const p = local(e.touches[0].clientX, e.touches[0].clientY);
+        if (Math.hypot(p.x - tapStart.x, p.y - tapStart.y) > 10) tapStart.moved = true;
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (pinch && e.touches.length < 2) {
+        const g = pinch;
+        pinch = null;
+        lastTap = null;
+        applyZoom(g.startScale * g.ratio, g.originX, g.originY, g.midX, g.midY);
+        return;
+      }
+      if (tapStart && !tapStart.moved && e.touches.length === 0) {
+        const now = Date.now();
+        const { x, y } = tapStart;
+        if (lastTap && now - lastTap.t < 300 && Math.hypot(x - lastTap.x, y - lastTap.y) < 30) {
+          e.preventDefault();
+          lastTap = null;
+          // Zoomed in -> back to fit width; at fit width -> zoom into the tap.
+          const next = scaleRef.current > 1.05 ? 1 : DOUBLE_TAP_SCALE;
+          applyZoom(next, el.scrollLeft + x, el.scrollTop + y, x, y);
+        } else {
+          lastTap = { t: now, x, y };
+        }
+      }
+      tapStart = null;
+    };
+
+    // iOS Safari fires its own gesture events for a two-finger pinch; stop it
+    // zooming the whole app on top of ours.
+    const stopNative = (e: Event) => e.preventDefault();
+
+    // Desktop: trackpad pinch and Ctrl+wheel both arrive as wheel events with
+    // ctrlKey set. Scale live with the transform, commit once the wheel rests.
+    let wheel: { originX: number; originY: number; startMidX: number; startMidY: number; ratio: number } | null = null;
+    let wheelTimer: NodeJS.Timeout | null = null;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      if (!wheel) {
+        const m = local(e.clientX, e.clientY);
+        wheel = { originX: el.scrollLeft + m.x, originY: el.scrollTop + m.y, startMidX: m.x, startMidY: m.y, ratio: 1 };
+        if (contentRef.current) {
+          contentRef.current.style.transformOrigin = `${wheel.originX}px ${wheel.originY}px`;
+        }
+      }
+      const target = Math.min(Math.max(scaleRef.current * wheel.ratio * Math.exp(-e.deltaY * 0.01), MIN_SCALE), MAX_SCALE);
+      wheel.ratio = target / scaleRef.current;
+      if (contentRef.current) contentRef.current.style.transform = `scale(${wheel.ratio})`;
+      if (wheelTimer) clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(() => {
+        const g = wheel;
+        wheel = null;
+        if (g) applyZoom(scaleRef.current * g.ratio, g.originX, g.originY, g.startMidX, g.startMidY);
+      }, 180);
+    };
+
+    // Desktop double-click mirrors double-tap.
+    const onDblClick = (e: MouseEvent) => {
+      const m = local(e.clientX, e.clientY);
+      const next = scaleRef.current > 1.05 ? 1 : DOUBLE_TAP_SCALE;
+      applyZoom(next, el.scrollLeft + m.x, el.scrollTop + m.y, m.x, m.y);
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: false });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: false });
+    el.addEventListener("gesturestart", stopNative);
+    el.addEventListener("gesturechange", stopNative);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("dblclick", onDblClick);
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+      el.removeEventListener("gesturestart", stopNative);
+      el.removeEventListener("gesturechange", stopNative);
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("dblclick", onDblClick);
+      if (wheelTimer) clearTimeout(wheelTimer);
+    };
+  }, [status, applyZoom]);
+
+  // The counter starts visible; once the plan is open, let it fade like it
+  // does after a scroll.
+  useEffect(() => {
+    if (status !== "ready") return;
+    const t = setTimeout(() => setChromeVisible(false), 1600);
+    return () => clearTimeout(t);
+  }, [status]);
+
+  // First open only: tell the customer how to zoom, since there is no button
+  // to discover it from. Shown once per device, for a few seconds.
+  useEffect(() => {
+    if (status !== "ready" || !zoomHint) return;
+    const t = setTimeout(() => {
+      setZoomHint(false);
+      try { localStorage.setItem("amar-split-zoom-hint", "1"); } catch { /* ignore */ }
+    }, 4500);
+    return () => clearTimeout(t);
+  }, [status, zoomHint]);
 
   // Anything already drawn is now at the wrong size, so drop the record and let
   // renderVisible redraw the window. Only ~3 pages are affected, not all 19.
@@ -490,6 +722,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       if (p.offsetTop <= mid) page = i + 1;
       else break;
     }
+    flashChrome();
     if (page !== currentPageRef.current) {
       currentPageRef.current = page;
       setCurrentPage(page);
@@ -502,7 +735,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       // the current size, so calling it often is cheap.
       void renderVisible();
     }
-  }, [storageKey, renderVisible]);
+  }, [storageKey, renderVisible, flashChrome]);
 
   // Jump back to the remembered page once the document is on screen.
   useEffect(() => {
@@ -515,9 +748,9 @@ export default function PdfCanvas({ isArabic }: Props) {
 
     // Wait a frame so the canvases have their final heights.
     const id = setTimeout(() => {
-      const target = canvasRefs.current[saved - 1];
+      const target = pageRefs.current[saved - 1];
       if (target && viewerRef.current) {
-        viewerRef.current.scrollTop = target.offsetTop - 12;
+        viewerRef.current.scrollTop = target.offsetTop;
         currentPageRef.current = saved;
         setCurrentPage(saved);
       }
@@ -527,67 +760,54 @@ export default function PdfCanvas({ isArabic }: Props) {
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 relative">
-      {/* Toolbar */}
-      <div className="px-4 py-2 border-b border-[var(--border)] bg-[#0b0f17] flex items-center justify-between text-xs shrink-0 z-20 select-none">
-        {/* Offline caching is deliberately silent — the customer shouldn't have
-            to think about downloads, so no status badge is shown here. */}
-        {/* Page position — the plan is long, and without this there is no way
-            to tell where you are or that the last page was remembered. */}
-        <div className="flex items-center gap-2">
-          {status === "ready" && numPages > 0 && (
-            <span className="text-[11px] font-mono text-[var(--text-muted)] tabular-nums px-2 py-1 rounded-[var(--radius-sm)] bg-white/5 border border-white/10">
-              {currentPage} / {numPages}
-            </span>
-          )}
-        </div>
-        {/* Zoom controls. Sized min-w/h-10 (40px) rather than the p-1 they used
-            to be (~22px): this is the toolbar of the actual product, used on a
-            phone in a gym, and a 22px target is not reliably tappable. */}
-        <div className="flex items-center gap-1 bg-white/5 px-1.5 py-1 rounded-[var(--radius-md)] border border-white/10">
-          <button
-            onClick={() => handleZoom(-0.15)}
-            aria-label={isArabic ? "تصغير" : "Zoom out"}
-            className="min-w-10 min-h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-white transition-colors"
-          >
-            <ZoomOut size={16} />
-          </button>
-          <span className="text-[11px] font-mono text-[var(--text-muted)] w-10 text-center tabular-nums">
-            {Math.round(scaleMultiplier * 100)}%
+      {/* No toolbar: it took a row off the top of a phone screen for a page
+          counter and zoom buttons, and zoom is now done by hand. The counter
+          floats over the plan instead and fades out while you read. */}
+      {status === "ready" && numPages > 0 && (
+        <div
+          className={`pointer-events-none absolute top-3 inset-x-0 z-20 flex justify-center transition-opacity duration-300 ${
+            chromeVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <span className="text-xs font-mono tabular-nums text-white bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+            {currentPage} / {numPages}
+            {scaleMultiplier > 1.01 && <span className="text-white/60"> · {Math.round(scaleMultiplier * 100)}%</span>}
           </span>
-          <button
-            onClick={() => handleZoom(0.15)}
-            aria-label={isArabic ? "تكبير" : "Zoom in"}
-            className="min-w-10 min-h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-white transition-colors"
-          >
-            <ZoomIn size={16} />
-          </button>
-          {scaleMultiplier !== 1 && (
-            <button
-              onClick={() => setScaleMultiplier(1)}
-              aria-label={isArabic ? "إعادة الحجم" : "Reset zoom"}
-              className="min-w-10 min-h-10 flex items-center justify-center hover:bg-white/10 active:bg-white/20 rounded-[var(--radius-sm)] text-blue-400 transition-colors"
-            >
-              <RotateCcw size={16} />
-            </button>
-          )}
         </div>
-      </div>
+      )}
+
+      {zoomHint && status === "ready" && (
+        <div className="pointer-events-none absolute bottom-6 inset-x-0 z-20 flex justify-center px-6">
+          <span className="text-xs font-semibold text-white bg-black/75 backdrop-blur-sm px-4 py-2.5 rounded-full text-center">
+            {isArabic ? "كبّر بإصبعين، أو اضغط مرتين على أي جزء" : "Pinch with two fingers, or double-tap to zoom"}
+          </span>
+        </div>
+      )}
 
       {/* Print block */}
       <style dangerouslySetInnerHTML={{ __html: `@media print { .no-print-pdf { display: none !important; } }` }} />
 
       {/* Viewer Area */}
-      <style dangerouslySetInnerHTML={{ __html: `@media print { .no-print-pdf { display: none !important; } }` }} />
       <div
         ref={viewerRef}
         onScroll={handleScroll}
-        className="no-print-pdf flex-1 w-full overflow-y-auto bg-[#070a0f] flex flex-col items-center relative"
-        // Pages are drawn to <canvas>, so there is no selectable text to copy
-        // anyway; dragging the canvas out as an image is the one thing worth
-        // preventing, and it costs the customer nothing.
+        className="no-print-pdf flex-1 w-full overflow-auto bg-[#070a0f] relative overscroll-contain"
+        style={{ touchAction: "pan-x pan-y", WebkitTouchCallout: "none" }}
+        // No "Save image as…" / drag-out on the page canvases. A browser cannot
+        // stop a screenshot — the per-viewer watermark is what makes a leaked
+        // copy traceable — but there is no reason to offer a save option.
         onDragStart={(e) => e.preventDefault()}
+        onContextMenu={(e) => e.preventDefault()}
       >
-        <div className="flex flex-col items-center w-full">
+        {/* The document column. Its width is the zoom: at 2x it is twice the
+            screen wide and the viewer scrolls sideways. `relative` makes it
+            the offsetParent of the pages, so their offsetTop is their position
+            in the document — what scroll tracking and resume measure. */}
+        <div
+          ref={contentRef}
+          className="relative"
+          style={{ width: `${scaleMultiplier * 100}%` }}
+        >
           {status === "loading" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070a0f] z-10">
               <Loader2 size={36} className="animate-spin text-[var(--accent)]" />
@@ -660,7 +880,7 @@ export default function PdfCanvas({ isArabic }: Props) {
               // Reserve the page's height even before it is drawn, so the
               // scrollbar is correct from the start and scrolling never jumps
               // as pages render in and out of the window.
-              style={{ aspectRatio: `1 / ${pageAspect}`, maxWidth: `${100 * scaleMultiplier}%` }}
+              style={{ aspectRatio: `1 / ${pageAspect}` }}
             >
               <canvas ref={(el) => { canvasRefs.current[i] = el; }} style={{ display: "block", width: "100%" }} />
               <div ref={(el) => { overlayRefs.current[i] = el; }} className="absolute inset-0 z-10" />

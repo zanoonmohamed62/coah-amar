@@ -82,7 +82,7 @@ async function prefetch(userId: string) {
 
     // 3. Fetch and store. A 403 here (entitlement revoked between the two
     //    calls, say) simply means nothing gets cached.
-    const res = await fetch("/api/split", { cache: "no-store" });
+    const res = await fetch("/api/split", { cache: "no-store", headers: { "x-amar-viewer": "1" } });
     if (!res.ok) {
       return;
     }
