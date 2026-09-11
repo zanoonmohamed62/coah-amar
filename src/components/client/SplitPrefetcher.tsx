@@ -81,6 +81,9 @@ async function prefetch(userId: string) {
     for (const lang of ["en", "ar"] as SplitLang[]) {
       await prefetchLang(userId, lang);
     }
+
+    // 3. Warm the split page shell so the Service Worker caches it immediately
+    fetch("/app/my-split").catch(() => {});
   } catch (err) {
     console.error("[SplitPrefetcher] Error:", err);
   }
