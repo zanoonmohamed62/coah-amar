@@ -2,263 +2,190 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ArrowRight, ArrowLeft, Loader2, UserCheck } from "lucide-react";
+import { 
+  ArrowRight, 
+  ArrowLeft, 
+  X,
+  FileText,
+  ShieldCheck,
+  CheckCircle2
+} from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
+import { 
+  RealisticDumbbellIcon, 
+  RealisticWhatsAppIcon, 
+  RealisticOfflineGymIcon 
+} from "@/components/client/PwaIcons";
 
 export function PwaOnboardingModal() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { isArabic } = useLanguage();
-
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
-    // Check if user already finished onboarding
-    const completed = localStorage.getItem("pwa_onboarded_v1");
-    if (!completed) {
+    // Only trigger for authenticated users on their first login
+    if (status !== "authenticated" || !session?.user) {
+      setIsOpen(false);
+      return;
+    }
+
+    const userId = (session.user as { id?: string }).id || session.user.email || "user";
+    const storageKey = `pwa_welcomed_${userId}`;
+    const alreadyWelcomed = localStorage.getItem(storageKey);
+
+    if (!alreadyWelcomed) {
       setIsOpen(true);
     }
-  }, []);
+  }, [status, session]);
 
-  const handleFinish = (destination?: string) => {
-    localStorage.setItem("pwa_onboarded_v1", "true");
+  const handleDismiss = (destination?: string) => {
+    if (session?.user) {
+      const userId = (session.user as { id?: string }).id || session.user.email || "user";
+      localStorage.setItem(`pwa_welcomed_${userId}`, "true");
+      // Also set legacy key to avoid old triggers
+      localStorage.setItem("pwa_onboarded_v1", "true");
+    }
     setIsOpen(false);
     if (destination) {
       router.push(destination);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsSigningIn(true);
-    try {
-      await signIn("google", { callbackUrl: "/app" });
-    } catch {
-      setIsSigningIn(false);
-    }
-  };
-
-  if (!isOpen) return null;
+  if (!isOpen || status !== "authenticated") return null;
 
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+  const userName = session?.user?.name || (isArabic ? "بطل كوتش عمار" : "Athlete");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-xl overflow-y-auto">
-      <div className="relative w-full max-w-md my-auto bg-[#090d16] border border-blue-500/20 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_30px_rgba(37,99,235,0.15)] overflow-hidden text-white flex flex-col justify-between min-h-[500px]">
-        {/* Subtle background ambient glows */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-2xl overflow-y-auto">
+        {/* iOS-Style System Sheet Container */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.94, y: 16 }}
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          className="relative w-full max-w-md my-auto bg-[#0d1322]/90 backdrop-blur-3xl border border-white/15 rounded-[32px] shadow-[0_30px_90px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.2)] overflow-hidden text-white flex flex-col p-6 sm:p-8"
+        >
+          {/* Ambient specular highlight on top border */}
+          <div className="absolute top-0 inset-x-8 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
-        {/* Step progress pills */}
-        <div className="relative z-10 px-6 pt-6 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            {[1, 2, 3].map((s) => (
-              <div
-                key={s}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  step === s
-                    ? "w-8 bg-blue-500"
-                    : step > s
-                    ? "w-3 bg-blue-400/50"
-                    : "w-3 bg-white/10"
-                }`}
-              />
-            ))}
+          {/* Close button (iOS circular blurred icon) */}
+          <button
+            onClick={() => handleDismiss()}
+            aria-label="Close"
+            className="absolute top-5 ltr:right-5 rtl:left-5 z-20 w-8 h-8 rounded-full bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all active:scale-95"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
+
+          {/* App Emblem (iOS Continuous Squircle with Realistic Glass Bevel) */}
+          <div className="flex flex-col items-center text-center pt-2">
+            <div className="w-18 h-18 rounded-[22px] bg-gradient-to-b from-[#1b263b] to-[#0b101b] p-0.5 shadow-[0_12px_32px_rgba(37,99,235,0.35),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-white/20 flex items-center justify-center mb-4 relative overflow-hidden">
+              <div className="w-full h-full rounded-[20px] overflow-hidden flex items-center justify-center bg-[#070b14] relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/icons/logo-amar.png"
+                  alt="Coach Amar"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-white/10 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Header Greeting */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-bold mb-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+              <CheckCircle2 size={13} className="text-blue-400" />
+              <span>{isArabic ? "تم تفعيل حسابك بنجاح" : "Account Verified"}</span>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+              {isArabic ? `أهلاً بك، ${userName}` : `Welcome, ${userName}`}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xs leading-relaxed">
+              {isArabic
+                ? "بوابتك الرياضية المخصصة أصبحت جاهزة. تعرف على ميزات التطبيق للانطلاق بقوة:"
+                : "Your dedicated athletic portal is ready. Here is what you can do:"}
+            </p>
           </div>
 
-          <span className="text-[11px] font-semibold text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2.5 py-1 rounded-[18px] border border-blue-500/20">
-            {isArabic ? `الخطوة ${step} من 3` : `Step ${step} of 3`}
-          </span>
-        </div>
+          {/* iOS Features List (Apple HIG Style with Realistic Graphic Design Icons) */}
+          <div className="mt-6 space-y-3.5">
+            {/* Item 1 */}
+            <div className="flex items-start gap-3.5 p-3 rounded-[20px] bg-white/[0.03] border border-white/[0.06]">
+              <div className="w-11 h-11 rounded-[15px] bg-gradient-to-b from-blue-500/30 to-blue-600/15 border border-blue-400/35 text-blue-400 flex items-center justify-center shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <RealisticDumbbellIcon className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-white tracking-tight">
+                  {isArabic ? "جدولك التدريبي المخصص (PDF)" : "Custom Training Split"}
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  {isArabic
+                    ? "تصفح تمارينك ومجموعاتك التدريبية حتى بدون إنترنت (Offline Mode) داخل الجيم."
+                    : "Access all your exercises, sets, and progressions offline inside the gym."}
+                </p>
+              </div>
+            </div>
 
-        {/* Dynamic Step Content */}
-        <div className="relative z-10 p-6 sm:p-8 flex-1 flex flex-col justify-center">
-          <AnimatePresence mode="wait">
-            {/* ──────── STEP 1: WELCOME SCREEN (Minimal Pushr Aesthetic) ──────── */}
-            {step === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -14 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-6 pt-2"
-              >
-                <div className="space-y-3">
-                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                    {isArabic ? "مرحباً بك في" : "welcome to"}
-                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-white">
-                      COACH AMAR
-                    </span>
-                  </h1>
+            {/* Item 2 */}
+            <div className="flex items-start gap-3.5 p-3 rounded-[20px] bg-white/[0.03] border border-white/[0.06]">
+              <div className="w-11 h-11 rounded-[15px] bg-gradient-to-b from-emerald-500/30 to-teal-600/15 border border-emerald-400/35 text-emerald-400 flex items-center justify-center shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <RealisticWhatsAppIcon className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-white tracking-tight">
+                  {isArabic ? "متابعة مباشرة مع الكوتش" : "1-on-1 Direct WhatsApp Line"}
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  {isArabic
+                    ? "تواصل فوري لمراجعة تكنيك التمارين، وتعديل الأوزان وخطة الماكروز أسبوعياً."
+                    : "Instant channel for form check reviews, progressive overload, and macro adjustments."}
+                </p>
+              </div>
+            </div>
 
-                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                    {isArabic
-                      ? "رفيقك التدريبي الرياضي المتكامل. تتبع تمارينك، افتح جدولك المخصص بدقة، وحقق أعلى نتائجك البدنية مع متابعة الكوتش المستمرة."
-                      : "your new favorite workout companion. access your customized split, track high-performance sessions, and stay locked in with direct coach guidance."}
-                  </p>
-                </div>
+            {/* Item 3 */}
+            <div className="flex items-start gap-3.5 p-3 rounded-[20px] bg-white/[0.03] border border-white/[0.06]">
+              <div className="w-11 h-11 rounded-[15px] bg-gradient-to-b from-indigo-500/30 to-blue-600/15 border border-indigo-400/35 text-indigo-300 flex items-center justify-center shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <RealisticOfflineGymIcon className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-white tracking-tight">
+                  {isArabic ? "تطبيق مثبت وسريع (PWA)" : "Fast Offline PWA"}
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  {isArabic
+                    ? "تطبيق خفيف مثبت على هاتفك، يعمل بلمسة واحدة بدون استهلاك بيانات."
+                    : "Lightweight home-screen app that opens instantly with zero lag."}
+                </p>
+              </div>
+            </div>
+          </div>
 
-                <div className="pt-4">
-                  <button
-                    onClick={() => setStep(2)}
-                    className="w-full h-12 bg-white hover:bg-slate-100 text-[#090d16] font-bold text-base rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(255,255,255,0.2)] active:scale-[0.98]"
-                  >
-                    <span>{isArabic ? "يلا نبدأ (let's go)" : "let's go"}</span>
-                    <ArrowIcon size={18} />
-                  </button>
-                </div>
-              </motion.div>
-            )}
+          {/* Action Buttons (iOS Pill Geometry) */}
+          <div className="mt-6 pt-2 space-y-2.5">
+            <button
+              onClick={() => handleDismiss("/app/my-split")}
+              className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(37,99,235,0.45),inset_0_1px_0_rgba(255,255,255,0.3)] active:scale-[0.98]"
+            >
+              <FileText size={17} />
+              <span>{isArabic ? "فتح جدول التمرين الآن" : "Open My Split"}</span>
+              <ArrowIcon size={16} />
+            </button>
 
-            {/* ──────── STEP 2: LET'S COMPLETE (LOGIN / CONNECT) ──────── */}
-            {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -14 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-6 pt-2"
-              >
-                <div className="w-12 h-12 rounded-[16px] bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400">
-                  <UserCheck size={22} />
-                </div>
-
-                <div className="space-y-3">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
-                    {isArabic ? "إكمال إعداد حسابك" : "let's complete setup"}
-                  </h2>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    {isArabic
-                      ? "قم بربط حسابك عبر Google للوصول الفوري إلى جدول تمارينك المخصص ومزامنة بياناتك مع الموقع."
-                      : "connect your account to unlock your personalized training split and sync seamlessly with the member portal."}
-                  </p>
-                </div>
-
-                {status === "authenticated" && session?.user ? (
-                  <div className="p-4 rounded-[18px] bg-white/[0.03] border border-blue-500/30 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-[14px] bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-                      <CheckCircle2 size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-blue-400 font-bold uppercase tracking-wider">
-                        {isArabic ? "الحساب متصل بنجاح" : "Account Connected"}
-                      </p>
-                      <p className="text-sm font-semibold text-white truncate">
-                        {session.user.email}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3 pt-2">
-                    <button
-                      onClick={handleGoogleSignIn}
-                      disabled={isSigningIn}
-                      className="w-full h-12 bg-white hover:bg-slate-100 text-[#090d16] font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_4px_16px_rgba(255,255,255,0.15)] active:scale-[0.98] disabled:opacity-50"
-                    >
-                      {isSigningIn ? (
-                        <Loader2 size={18} className="animate-spin text-blue-600" />
-                      ) : (
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
-                          <path
-                            fill="#4285F4"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                          />
-                          <path
-                            fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                          />
-                        </svg>
-                      )}
-                      <span>
-                        {isArabic
-                          ? "تسجيل الدخول بحساب Google"
-                          : "Continue with Google"}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => router.push("/login?callbackUrl=/app")}
-                      className="w-full py-2.5 text-xs text-slate-400 hover:text-white transition-colors text-center"
-                    >
-                      {isArabic
-                        ? "أو تسجيل الدخول بالبريد الإلكتروني وكلمة المرور"
-                        : "or sign in with email and password"}
-                    </button>
-                  </div>
-                )}
-
-                <div className="pt-2">
-                  <button
-                    onClick={() => setStep(3)}
-                    className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(37,99,235,0.3)]"
-                  >
-                    <span>{isArabic ? "متابعة" : "Continue"}</span>
-                    <ArrowIcon size={16} />
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* ──────── STEP 3: SETUP COMPLETE SCREEN ──────── */}
-            {step === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -14 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-6"
-              >
-                <div className="w-12 h-12 rounded-[16px] bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
-                  <CheckCircle2 size={24} />
-                </div>
-
-                <div className="space-y-3">
-                  <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                    {isArabic ? "تم الإعداد بنجاح" : "setup complete"}
-                  </h2>
-                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                    {isArabic
-                      ? "جاهز للانطلاق الآن، ابدأ بتمرينك الأول وتعرف على جدولك الرياضي المخصص."
-                      : "let's get into action by starting your first workout."}
-                  </p>
-                </div>
-
-                {/* Pill Action Buttons (Matching user screenshot) */}
-                <div className="pt-6 grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => handleFinish()}
-                    className="h-12 bg-white/10 hover:bg-white/15 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center active:scale-[0.98]"
-                  >
-                    {isArabic ? "لاحقاً" : "later"}
-                  </button>
-
-                  <button
-                    onClick={() => handleFinish("/app/my-split")}
-                    className="h-12 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-1.5 shadow-[0_4px_20px_rgba(37,99,235,0.4)] active:scale-[0.98]"
-                  >
-                    <span>{isArabic ? "ابدأ التمرين" : "start workout"}</span>
-                    <ArrowIcon size={16} />
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+            <button
+              onClick={() => handleDismiss()}
+              className="w-full h-11 bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white font-semibold text-xs rounded-[18px] transition-all duration-200 flex items-center justify-center active:scale-[0.98]"
+            >
+              {isArabic ? "الانتقال إلى الرئيسية (الداشبورد)" : "Continue to Dashboard"}
+            </button>
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </AnimatePresence>
   );
 }

@@ -18,6 +18,13 @@ import {
   Zap,
   Activity
 } from "lucide-react";
+import { 
+  RealisticDumbbellIcon, 
+  RealisticWhatsAppIcon, 
+  RealisticMembershipIcon, 
+  RealisticNutritionIcon, 
+  RealisticOfflineGymIcon 
+} from "@/components/client/PwaIcons";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
 import { 
@@ -80,32 +87,48 @@ export default function AppHome() {
   const quickActions = [
     {
       title: isArabic ? "جدول التمرين" : "My Split",
+      subtitle: isArabic ? "التمارين والمجموعات" : "Workout & sets",
       href: "/app/my-split",
-      icon: Dumbbell,
-      color: "from-blue-600 to-blue-500",
+      icon: RealisticDumbbellIcon,
+      tileGradient: "from-blue-600/30 to-blue-700/10",
+      tileBorder: "border-blue-400/35",
+      tileShadow: "shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),0_10px_24px_-4px_rgba(37,99,235,0.35)]",
+      iconColor: "text-blue-400",
     },
     {
       title: isArabic ? "واتساب الكوتش" : "Coach WhatsApp",
+      subtitle: isArabic ? "تواصل مباشر" : "1-on-1 direct",
       href: `https://wa.me/${waNumber}?text=${encodeURIComponent(
         isArabic ? "مرحباً كوتش عمار، لدي استفسار" : "Hi Coach Amar, I have a question"
       )}`,
-      icon: MessageCircle,
-      color: "from-blue-500 to-cyan-500",
+      icon: RealisticWhatsAppIcon,
+      tileGradient: "from-emerald-600/30 to-teal-700/10",
+      tileBorder: "border-emerald-400/35",
+      tileShadow: "shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),0_10px_24px_-4px_rgba(16,185,129,0.3)]",
+      iconColor: "text-emerald-400",
       external: true,
     },
     {
       title: isArabic ? "الاشتراكات" : "Membership",
+      subtitle: isArabic ? "الفواتير والتجديد" : "Billing & status",
       href: "/app/account",
-      icon: ShieldCheck,
-      color: "from-indigo-600 to-blue-500",
+      icon: RealisticMembershipIcon,
+      tileGradient: "from-indigo-600/30 to-blue-700/10",
+      tileBorder: "border-indigo-400/35",
+      tileShadow: "shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),0_10px_24px_-4px_rgba(99,102,241,0.3)]",
+      iconColor: "text-indigo-400",
     },
     {
       title: isArabic ? "التغذية والماكروز" : "Nutrition Guide",
+      subtitle: isArabic ? "استفسار السعرات" : "Macros inquiry",
       href: `https://wa.me/${waNumber}?text=${encodeURIComponent(
         isArabic ? "مرحباً كوتش عمار، أود الاستفسار عن خطة التغذية الخاصة بي" : "Hi Coach Amar, I'd like to ask about my nutrition plan"
       )}`,
-      icon: Flame,
-      color: "from-blue-700 to-blue-500",
+      icon: RealisticNutritionIcon,
+      tileGradient: "from-amber-600/30 to-orange-700/10",
+      tileBorder: "border-amber-400/35",
+      tileShadow: "shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),0_10px_24px_-4px_rgba(245,158,11,0.3)]",
+      iconColor: "text-amber-400",
       external: true,
     },
   ];
@@ -115,7 +138,7 @@ export default function AppHome() {
       {/* ──────── TOP BAR & GREETING ──────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-[18px] bg-gradient-to-tr from-blue-600 to-blue-400 p-0.5 shadow-[0_4px_16px_rgba(37,99,235,0.3)]">
+          <div className="w-12 h-12 rounded-[18px] bg-gradient-to-b from-blue-500 to-blue-600 p-0.5 shadow-[0_6px_20px_rgba(37,99,235,0.35),inset_0_1px_0_rgba(255,255,255,0.3)] border border-white/20">
             <div className="w-full h-full bg-[#090d16] rounded-[16px] flex items-center justify-center font-black text-blue-400 text-lg">
               {athleteName.charAt(0).toUpperCase()}
             </div>
@@ -125,7 +148,7 @@ export default function AppHome() {
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 {isArabic ? `أهلاً، ${athleteName}` : `Hello, ${athleteName}`}
               </h1>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[18px] bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-400 text-[10px] font-bold">
                 <CheckCircle2 size={11} /> {isArabic ? "مفعل" : "Active"}
               </span>
             </div>
@@ -136,21 +159,9 @@ export default function AppHome() {
             </p>
           </div>
         </div>
-
-        {/* Replay Onboarding button */}
-        <button
-          onClick={() => {
-            localStorage.removeItem("pwa_onboarded_v1");
-            window.location.reload();
-          }}
-          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[18px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-semibold text-slate-300 transition-colors"
-        >
-          <RotateCcw size={13} className="text-blue-400" />
-          <span>{isArabic ? "عرض البداية" : "Onboarding"}</span>
-        </button>
       </div>
 
-      {/* ──────── SECTION 1: FEATURED ACTIVE SPLIT SHOWCASE (24px card) ──────── */}
+      {/* ──────── SECTION 1: FEATURED ACTIVE SPLIT SHOWCASE (28px card) ──────── */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
@@ -162,14 +173,14 @@ export default function AppHome() {
           </span>
         </div>
 
-        <div className="relative rounded-[24px] bg-gradient-to-b from-[#0e1626] to-[#080d18] border border-blue-500/25 p-6 sm:p-8 shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_24px_rgba(37,99,235,0.12)] overflow-hidden">
+        <div className="relative rounded-[28px] bg-gradient-to-b from-[#0f172a]/90 via-[#0b111e]/95 to-[#070b14] backdrop-blur-2xl border border-white/12 p-6 sm:p-8 shadow-[0_16px_48px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.15)] overflow-hidden">
           {/* Subtle Ambient Background glow */}
           <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
           
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[18px] bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-bold uppercase tracking-wider">
-                <Dumbbell size={13} />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-bold uppercase tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                <ShieldCheck size={14} className="text-blue-400 shrink-0" />
                 <span>{activePlan?.product.name || (isArabic ? "جدول التدريب المعتمد" : "Custom Training Split")}</span>
               </div>
 
@@ -190,7 +201,7 @@ export default function AppHome() {
             <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0">
               <Link
                 href="/app/my-split"
-                className="h-12 px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_6px_24px_rgba(37,99,235,0.4)] active:scale-[0.98]"
+                className="h-12 px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(37,99,235,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.98]"
               >
                 <FileText size={17} />
                 <span>{isArabic ? "فتح جدول التمرين" : "Open My Split"}</span>
@@ -203,9 +214,9 @@ export default function AppHome() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-12 px-6 bg-white/[0.04] hover:bg-white/[0.08] border border-blue-500/20 text-white font-semibold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="h-12 px-6 bg-white/[0.05] hover:bg-white/[0.1] border border-white/12 text-white font-semibold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] backdrop-blur-md"
               >
-                <MessageCircle size={17} className="text-blue-400" />
+                <MessageCircle size={17} className="text-emerald-400" />
                 <span>{isArabic ? "استشارة الكوتش" : "Ask Coach"}</span>
               </a>
             </div>
@@ -213,7 +224,7 @@ export default function AppHome() {
         </div>
       </section>
 
-      {/* ──────── SECTION 2: CIRCULAR QUICK ACTIONS ROW (Inspired by reference) ──────── */}
+      {/* ──────── SECTION 2: REALISTIC IOS SQUIRCLE QUICK ACTIONS ROW ──────── */}
       <section className="space-y-3">
         <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
           {isArabic ? "الوصول السريع" : "Quick Actions"}
@@ -223,13 +234,20 @@ export default function AppHome() {
           {quickActions.map((action, i) => {
             const Icon = action.icon;
             const content = (
-              <div className="h-full p-4 rounded-[24px] bg-[#0c111c] border border-white/[0.06] hover:border-blue-500/40 hover:bg-white/[0.02] transition-all duration-200 flex flex-col items-center text-center gap-2.5 group">
-                <div className={`w-12 h-12 rounded-full bg-gradient-to-tr ${action.color} text-white flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform`}>
-                  <Icon size={20} />
+              <div className="h-full p-4 rounded-[24px] bg-[#0c121e]/85 backdrop-blur-xl border border-white/[0.08] hover:border-blue-500/40 hover:bg-white/[0.03] transition-all duration-200 flex flex-col items-center text-center gap-3 group shadow-[0_8px_20px_rgba(0,0,0,0.4)]">
+                {/* iOS Squircle Glass Icon Tile */}
+                <div className={`w-13 h-13 rounded-[18px] bg-gradient-to-b ${action.tileGradient} border ${action.tileBorder} ${action.tileShadow} ${action.iconColor} flex items-center justify-center group-hover:scale-105 transition-transform duration-200 backdrop-blur-md relative overflow-hidden`}>
+                  <div className="absolute top-0 inset-x-2 h-px bg-white/40 pointer-events-none" />
+                  <Icon className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-white leading-tight">
-                  {action.title}
-                </span>
+                <div>
+                  <span className="text-xs font-bold text-white leading-tight block">
+                    {action.title}
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    {action.subtitle}
+                  </span>
+                </div>
               </div>
             );
 
@@ -256,7 +274,7 @@ export default function AppHome() {
         </div>
       </section>
 
-      {/* ──────── SECTION 3: KEY BENTO MODULES (24px cards) ──────── */}
+      {/* ──────── SECTION 3: KEY BENTO MODULES (iOS Frosted Glass) ──────── */}
       <section className="space-y-3">
         <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
           {isArabic ? "نظرة عامة على برنامجك" : "Program Highlights"}
@@ -264,10 +282,10 @@ export default function AppHome() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Card 1: Offline & Watermark Security */}
-          <div className="rounded-[24px] bg-[#0c111c] border border-white/[0.06] p-5 flex flex-col justify-between space-y-4">
-            <div className="space-y-2">
-              <div className="w-9 h-9 rounded-[14px] bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
-                <Zap size={18} />
+          <div className="rounded-[24px] bg-[#0c121e]/85 backdrop-blur-xl border border-white/[0.08] p-5 flex flex-col justify-between space-y-4 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:border-white/15 transition-all">
+            <div className="space-y-2.5">
+              <div className="w-10 h-10 rounded-[14px] bg-gradient-to-b from-blue-500/25 to-blue-600/10 border border-blue-400/30 text-blue-400 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <RealisticOfflineGymIcon className="w-5 h-5" />
               </div>
               <h4 className="text-sm font-bold text-white">
                 {isArabic ? "ميزة الجيم بدون نت (Offline)" : "Offline Gym Mode"}
@@ -288,16 +306,15 @@ export default function AppHome() {
           </div>
 
           {/* Card 2: 1-on-1 Direct WhatsApp Line */}
-          <div className="rounded-[24px] bg-[#0c111c] border border-white/[0.06] p-5 flex flex-col justify-between space-y-4">
-            <div className="space-y-2">
-              <div className="w-9 h-9 rounded-[14px] bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
-                <MessageCircle size={18} />
+          <div className="rounded-[24px] bg-[#0c121e]/85 backdrop-blur-xl border border-white/[0.08] p-5 flex flex-col justify-between space-y-4 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:border-white/15 transition-all">
+            <div className="space-y-2.5">
+              <div className="w-10 h-10 rounded-[14px] bg-gradient-to-b from-emerald-500/25 to-teal-600/10 border border-emerald-400/30 text-emerald-400 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <RealisticWhatsAppIcon className="w-5 h-5" />
               </div>
               <div className="flex items-center gap-2">
                 <h4 className="text-sm font-bold text-white">
                   {isArabic ? "متابعة مباشرة عبر واتساب" : "Direct WhatsApp Access"}
                 </h4>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
                 {isArabic
@@ -311,7 +328,7 @@ export default function AppHome() {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
             >
               <span>{isArabic ? "إرسال رسالة" : "Message Coach"}</span>
               <ArrowIcon size={14} />
@@ -319,10 +336,10 @@ export default function AppHome() {
           </div>
 
           {/* Card 3: Account & Membership details */}
-          <div className="rounded-[24px] bg-[#0c111c] border border-white/[0.06] p-5 flex flex-col justify-between space-y-4">
-            <div className="space-y-2">
-              <div className="w-9 h-9 rounded-[14px] bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
-                <ShieldCheck size={18} />
+          <div className="rounded-[24px] bg-[#0c121e]/85 backdrop-blur-xl border border-white/[0.08] p-5 flex flex-col justify-between space-y-4 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:border-white/15 transition-all">
+            <div className="space-y-2.5">
+              <div className="w-10 h-10 rounded-[14px] bg-gradient-to-b from-indigo-500/25 to-blue-600/10 border border-indigo-400/30 text-indigo-400 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <ShieldCheck size={19} />
               </div>
               <h4 className="text-sm font-bold text-white">
                 {isArabic ? "حالة الاشتراك والتجديد" : "Membership Status"}
@@ -335,7 +352,7 @@ export default function AppHome() {
             </div>
             <Link
               href="/app/account"
-              className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
             >
               <span>{isArabic ? "إدارة الحساب" : "Manage Account"}</span>
               <ArrowIcon size={14} />

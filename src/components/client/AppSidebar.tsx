@@ -86,7 +86,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
 
   return (
     <aside
-      className={`fixed top-0 ${isArabic ? "right-0 border-l" : "left-0 border-r"} h-full flex flex-col bg-[var(--bg-card)] border-[var(--border)] shadow-2xl z-50 py-6 pt-16 md:pt-6 transition-all duration-300 md:translate-x-0 ${
+      className={`fixed top-0 ${isArabic ? "right-0 border-l" : "left-0 border-r"} h-full flex flex-col bg-[#0b101b]/95 backdrop-blur-2xl border-white/10 shadow-2xl z-50 py-6 pt-16 md:pt-6 transition-all duration-300 md:translate-x-0 ${
         isOpen
           ? "translate-x-0"
           : isArabic
@@ -94,12 +94,11 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           : "-translate-x-full"
       } ${isCollapsed ? "w-64 md:w-20" : "w-64"}`}
     >
-      {/* Mobile close button — the drawer covers the header on mobile, so it
-          needs its own way out. */}
+      {/* Mobile close button */}
       <button
         onClick={() => setIsOpen(false)}
         aria-label={isArabic ? "إغلاق القائمة" : "Close menu"}
-        className={`md:hidden absolute top-4 ${isArabic ? "left-4" : "right-4"} p-2 rounded-[var(--radius-sm)] bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)]`}
+        className={`md:hidden absolute top-4 ${isArabic ? "left-4" : "right-4"} w-8 h-8 rounded-full bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 flex items-center justify-center text-slate-300 active:scale-95 transition-all`}
       >
         <X size={16} />
       </button>
@@ -107,28 +106,35 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
       {/* Brand */}
       <div className={`px-5 mb-6 flex items-center ${isCollapsed ? "justify-center md:flex-col gap-4" : "justify-between"}`}>
         {!isCollapsed && (
-          <div className="md:block">
-            <span className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              COACH <span className="text-[var(--accent)]">AMAR</span>
-            </span>
-            <p className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mt-0.5">
-              {isArabic ? "بوابة المتدرب الرياضي" : "Member Portal"}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[12px] overflow-hidden border border-white/15 shadow-[0_2px_8px_rgba(37,99,235,0.3)] shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/logo-amar.png" alt="Coach Amar" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <span className="text-base font-extrabold tracking-tight text-white leading-none block">
+                COACH <span className="text-blue-400">AMAR</span>
+              </span>
+              <p className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mt-1">
+                {isArabic ? "بوابة المتدرب الرياضي" : "Member Portal"}
+              </p>
+            </div>
           </div>
         )}
         {isCollapsed && (
           <div className="hidden md:flex flex-col items-center justify-center leading-none">
-            <div className="font-extrabold text-base text-[var(--text-primary)] leading-none">
-              <span className="text-[var(--accent)]">A</span>X
+            <div className="w-8 h-8 rounded-[10px] overflow-hidden border border-white/15 shadow-[0_2px_8px_rgba(37,99,235,0.3)] mb-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/logo-amar.png" alt="Coach Amar" className="w-full h-full object-cover" />
             </div>
-            <span className="text-[7px] font-black tracking-widest text-white mt-1">SPLIT</span>
+            <span className="text-[7px] font-black tracking-widest text-white mt-0.5">SPLIT</span>
           </div>
         )}
 
         <div className={`flex items-center gap-2 ${isCollapsed ? "md:flex-col" : ""}`}>
           <button
             onClick={toggleLang}
-            className="p-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors text-xs font-bold"
+            className="w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
             title={isArabic ? "Switch to English" : "التحويل إلى العربية"}
           >
             <Globe size={14} />
@@ -138,8 +144,8 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           {setIsCollapsed && (
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden md:flex p-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-              title={isCollapsed ? (isArabic ? "توسيع" : "Expand") : (isArabic ? "طي القائمة" : "Collapse")}
+              className="hidden md:flex w-8 h-8 rounded-[10px] border border-white/10 bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 hover:text-white items-center justify-center transition-colors text-xs font-bold"
+              title={isCollapsed ? (isArabic ? "توسيع" : "Expand") : (isArabic ? "طي" : "Collapse")}
             >
               {isCollapsed ? <ExpandIcon size={14} /> : <CollapseIcon size={14} />}
             </button>
@@ -148,7 +154,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
       </div>
 
       {/* Nav links */}
-      <nav className={`flex-1 overflow-y-auto custom-scrollbar space-y-1 ${isCollapsed ? "px-2" : "px-3"}`}>
+      <nav className={`flex-1 overflow-y-auto custom-scrollbar space-y-1.5 ${isCollapsed ? "px-2" : "px-3"}`}>
         {links.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           return (
@@ -157,15 +163,17 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
               href={href}
               onClick={() => setIsOpen(false)}
               title={isCollapsed ? label : undefined}
-              className={`flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-sm font-medium transition-all ${isCollapsed ? "px-0 justify-center md:px-0" : "px-3"} ${
+              className={`flex items-center gap-3 py-2.5 rounded-[14px] text-sm font-medium transition-all ${isCollapsed ? "px-0 justify-center md:px-0" : "px-3"} ${
                 active
-                  ? "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 font-semibold"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] border border-transparent"
+                  ? "bg-blue-500/15 text-blue-400 border border-blue-400/30 font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent"
               }`}
             >
-              <Icon size={16} className={active ? "text-[var(--accent)]" : "text-[var(--text-muted)]"} />
+              <div className={`w-7 h-7 rounded-[9px] flex items-center justify-center ${active ? "bg-blue-500/20 text-blue-400" : "text-slate-400"}`}>
+                <Icon size={16} />
+              </div>
               {!isCollapsed && <span>{label}</span>}
-              {!isCollapsed && active && <ArrowIcon size={12} className={isArabic ? "mr-auto text-[var(--accent)]" : "ml-auto text-[var(--accent)]"} />}
+              {!isCollapsed && active && <ArrowIcon size={12} className={isArabic ? "mr-auto text-blue-400" : "ml-auto text-blue-400"} />}
             </Link>
           );
         })}

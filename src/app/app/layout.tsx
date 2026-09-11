@@ -28,24 +28,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         dir={dir}
         className={`app-shell min-h-screen flex flex-col md:flex-row bg-[var(--bg-base)] text-[var(--text-primary)] ${isArabic ? "font-cairo" : ""}`}
       >
-        {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 flex items-center justify-between p-4 bg-[var(--bg-card)]/95 backdrop-blur-md border-b border-[var(--border)] z-30">
-          <div className="font-extrabold tracking-tight text-[var(--text-primary)]">
-            COACH <span className="text-[var(--accent)]">AMAR</span>
+        {/* Mobile Header (iOS Navigation Bar) */}
+        <header className="md:hidden sticky top-0 flex items-center justify-between px-4 py-3 bg-[#090d16]/85 backdrop-blur-2xl border-b border-white/10 z-30">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-[11px] overflow-hidden border border-white/15 shadow-[0_2px_8px_rgba(37,99,235,0.3)] shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/logo-amar.png" alt="Coach Amar" className="w-full h-full object-cover" />
+            </div>
+            <div className="font-extrabold tracking-tight text-white text-sm">
+              COACH <span className="text-blue-400">AMAR</span>
+            </div>
           </div>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             aria-label={isArabic ? "القائمة" : "Menu"}
-            className="min-w-11 min-h-11 flex items-center justify-center bg-[var(--bg-elevated)] rounded-[var(--radius-md)] text-[var(--text-primary)] active:opacity-80"
+            className="w-10 h-10 flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 rounded-[14px] text-white active:scale-95 transition-all"
           >
-            {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </header>
 
-        {/* Sidebar Overlay */}
+        {/* Sidebar Overlay with iOS Blur */}
         {isSidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/60 z-40 md:hidden"
+            className="fixed inset-0 bg-black/70 backdrop-blur-md z-40 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
