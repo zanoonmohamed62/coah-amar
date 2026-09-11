@@ -158,7 +158,7 @@ export function AmarSupport() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label={T("مساعدة", "Support")}
-          className="fixed z-40 bottom-28 md:bottom-6 ltr:right-4 rtl:left-4 md:ltr:right-6 md:rtl:left-6 ios-btn-blue w-14 h-14 !rounded-[20px] shadow-[0_14px_36px_-8px_rgba(37,99,235,0.75)]"
+          className="fixed z-40 top-1/2 -translate-y-1/2 ltr:right-3 rtl:left-3 md:ltr:right-5 md:rtl:left-5 ios-btn-blue w-12 h-12 md:w-14 md:h-14 !rounded-[18px] md:!rounded-[20px] shadow-[0_14px_36px_-8px_rgba(37,99,235,0.75)]"
         >
           <MessageCircle size={23} strokeWidth={2.2} />
         </button>
