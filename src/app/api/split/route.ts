@@ -18,7 +18,18 @@ async function hasSplitAccess(userId: string): Promise<boolean> {
   return !!entitlement;
 }
 
-async function readActivePdf(): Promise<Buffer> {
+type SplitLang = "en" | "ar";
+
+const SPLIT_FILES: Record<SplitLang, string> = {
+  en: "AMAR.X.SPLIT.ENGLISH.pdf",
+  ar: "AMAR.X.SPLIT.ARABIC.pdf",
+};
+
+function parseLang(raw: string | null): SplitLang {
+  return raw === "ar" ? "ar" : "en";
+}
+
+async function readActivePdf(lang: SplitLang): Promise<Buffer> {
   const activeMediaId = await getSetting("active_split_media_id");
 
   if (activeMediaId) {
@@ -29,9 +40,8 @@ async function readActivePdf(): Promise<Buffer> {
     }
   }
 
-  // Legacy fallback: the original hand-placed file, kept for backward compatibility
-  // until an admin uploads a replacement through the UI.
-  const filePath = path.join(process.cwd(), "private-assets", "AMARX-SPLIT.pdf");
+  // Language-specific files in private-assets/
+  const filePath = path.join(process.cwd(), "private-assets", SPLIT_FILES[lang]);
   return fs.readFileSync(filePath);
 }
 
@@ -78,7 +88,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const fileBuffer = await readActivePdf();
+    const lang = parseLang(req.nextUrl.searchParams.get("lang"));
+    const fileBuffer = await readActivePdf(lang);
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {

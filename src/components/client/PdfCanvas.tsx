@@ -4,6 +4,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Loader2, WifiOff, Lock, MessageCircle } from "lucide-react";
+import { RealisticOfflineWifiIcon } from "@/components/client/PwaIcons";
 import { useSettings } from "@/lib/use-settings";
 import {
   getCachedPdf,
@@ -18,6 +19,7 @@ import {
   getRememberedSplitUser,
   forgetOfflineSplit,
 } from "@/lib/split-cache";
+import type { SplitLang } from "@/lib/split-cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // How the plan is shown
@@ -121,9 +123,10 @@ function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Blob | null> {
 
 interface Props {
   isArabic: boolean;
+  lang: SplitLang;
 }
 
-export default function PdfCanvas({ isArabic }: Props) {
+export default function PdfCanvas({ isArabic, lang }: Props) {
   // ── Who is reading ────────────────────────────────────────────────────────
   // Offline, next-auth cannot reach the session endpoint and reports
   // "unauthenticated", which used to leave the viewer with no user to find the
@@ -197,7 +200,7 @@ export default function PdfCanvas({ isArabic }: Props) {
   const currentPageRef = useRef(1);
   const restoredRef = useRef(false);
 
-  const storageKey = userId ? `amar-split-page:${userId}` : "";
+  const storageKey = userId ? `amar-split-page:${userId}:${lang}` : "";
 
   // ── Page images ───────────────────────────────────────────────────────────
   const publishUrls = useCallback((updates: { index: number; blob: Blob }[]) => {
@@ -382,16 +385,16 @@ export default function PdfCanvas({ isArabic }: Props) {
       // Start from the page the customer left off on, so that page is the
       // first one rendered.
       try {
-        const saved = parseInt(localStorage.getItem(`amar-split-page:${userId}`) || "1", 10);
+        const saved = parseInt(localStorage.getItem(`amar-split-page:${userId}:${lang}`) || "1", 10);
         if (saved > 0) currentPageRef.current = saved;
       } catch { /* ignore */ }
 
       // Probe access and read the cache at the same time, so a plan already on
       // the device appears without waiting on the network.
-      const probePromise = probeSplitAccess();
+      const probePromise = probeSplitAccess(lang);
       const [cachedBuf, cachedVersion] = await Promise.all([
-        getCachedPdf(userId),
-        getCachedVersion(userId),
+        getCachedPdf(userId, lang),
+        getCachedVersion(userId, lang),
       ]);
 
       if (cachedBuf) {
@@ -414,11 +417,11 @@ export default function PdfCanvas({ isArabic }: Props) {
           if (cachedVersion === probe.version) return; // already current
 
           try {
-            const res = await fetch("/api/split", { cache: "no-store", headers: { "x-amar-viewer": "1" } });
+            const res = await fetch(`/api/split?lang=${lang}`, { cache: "no-store", headers: { "x-amar-viewer": "1" } });
             if (!res.ok) return;
             const fresh = await res.arrayBuffer();
             if (fresh.byteLength === 0) return;
-            await savePdfToCache(userId, fresh, probe.version);
+            await savePdfToCache(userId, fresh, probe.version, lang);
             // The pages on screen stay until the new version's images replace
             // them one by one.
             await openPdf(pdfjsLib, fresh, probe.version);
@@ -438,14 +441,14 @@ export default function PdfCanvas({ isArabic }: Props) {
 
       await clearOtherUsersCache(userId);
 
-      const res = await fetch("/api/split", { cache: "no-store", headers: { "x-amar-viewer": "1" } });
+      const res = await fetch(`/api/split?lang=${lang}`, { cache: "no-store", headers: { "x-amar-viewer": "1" } });
       if (res.status === 403 || res.status === 401) {
         setStatus("no-access");
         return;
       }
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const buf = await res.arrayBuffer();
-      await savePdfToCache(userId, buf, probe.version);
+      await savePdfToCache(userId, buf, probe.version, lang);
       await openPdf(pdfjsLib, buf, probe.version);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -453,7 +456,7 @@ export default function PdfCanvas({ isArabic }: Props) {
       setErrMsg(msg);
       setStatus("error");
     }
-  }, [openPdf, userId, hideEverything]);
+  }, [openPdf, userId, hideEverything, lang]);
 
   useEffect(() => {
     if (identityPending) return;
@@ -601,8 +604,11 @@ export default function PdfCanvas({ isArabic }: Props) {
     if (contentRef.current) contentRef.current.style.transform = "";
     const pending = pendingScrollRef.current;
     if (el && pending) {
-      el.scrollLeft = Math.max(0, pending.left);
-      el.scrollTop = Math.max(0, pending.top);
+      // Clamp so zoomed content can't escape the viewport (fixes right-shift bug)
+      const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
+      el.scrollLeft = Math.min(Math.max(0, pending.left), maxLeft);
+      el.scrollTop = Math.min(Math.max(0, pending.top), maxTop);
     }
     pendingScrollRef.current = null;
   }, [scaleMultiplier]);
@@ -924,14 +930,20 @@ export default function PdfCanvas({ isArabic }: Props) {
       )}
 
       {status === "error" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#070a0f] z-10 px-6 text-center">
-          <WifiOff size={36} className="text-red-400" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#070a0f] z-10 px-6 text-center">
+          {/* iOS Squircle Glass Frame with Ambient Red Backlight Glow */}
+          <div className="relative">
+            <div className="absolute -inset-2 bg-red-600/20 rounded-[24px] blur-md pointer-events-none" />
+            <div className="relative w-16 h-16 rounded-[20px] bg-gradient-to-b from-red-950/40 via-[#150a0f] to-[#0a0507] border border-red-500/30 flex items-center justify-center shadow-[0_8px_24px_rgba(239,68,68,0.25),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <RealisticOfflineWifiIcon className="w-9 h-9" />
+            </div>
+          </div>
           {errMsg === "offline-no-cache" ? (
             <>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">
+              <p className="text-sm font-bold text-white tracking-tight">
                 {isArabic ? "مفيش نت، والجدول لسه مش محفوظ على جهازك" : "You're offline and the plan isn't saved on this device yet"}
               </p>
-              <p className="text-xs text-[var(--text-muted)] max-w-xs leading-relaxed">
+              <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
                 {isArabic
                   ? "افتح الجدول مرة واحدة وإنت متصل بالنت، وبعدها هيشتغل من غير نت."
                   : "Open it once while online and it will work offline from then on."}
@@ -939,16 +951,20 @@ export default function PdfCanvas({ isArabic }: Props) {
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">
+              <p className="text-sm font-bold text-white tracking-tight">
                 {isArabic ? "تعذر تحميل الجدول" : "Failed to load"}
               </p>
               {errMsg && (
-                <p className="text-[11px] text-[var(--text-muted)] font-mono max-w-xs break-words">{errMsg}</p>
+                <p className="text-[11px] text-slate-500 font-mono max-w-xs break-words">{errMsg}</p>
               )}
             </>
           )}
-          <button onClick={retry} className="px-4 py-2 bg-[var(--accent)] text-white text-xs font-black rounded-[var(--radius-lg)]">
-            {isArabic ? "إعادة المحاولة" : "Retry"}
+          <button
+            onClick={retry}
+            className="relative group h-10 px-6 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-bold text-xs rounded-[16px] transition-all flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(37,99,235,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 border border-blue-400/30 overflow-hidden"
+          >
+            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+            <span>{isArabic ? "إعادة المحاولة" : "Retry"}</span>
           </button>
         </div>
       )}

@@ -5,20 +5,24 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { forgetOfflineSplit } from "@/lib/split-cache";
 import {
-  LayoutDashboard,
-  FileText,
-  User,
-  LogOut,
-  MessageCircle,
   ChevronRight,
   ChevronLeft,
   Globe,
-  RefreshCw,
   PanelLeftClose,
   PanelRightClose,
   X,
-  ExternalLink
 } from "lucide-react";
+import { 
+  RealisticDashboardIcon, 
+  RealisticDocumentIcon, 
+  RealisticUserIcon, 
+  RealisticRefreshIcon, 
+  RealisticWhatsAppIcon, 
+  RealisticSparklesIcon, 
+  RealisticLogOutIcon,
+  RealisticAppIcon,
+  RealisticCoachAvatar
+} from "@/components/client/PwaIcons";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
 import { useState } from "react";
@@ -43,18 +47,18 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
     {
       href: "/app",
       label: isArabic ? "لوحة التحكم" : "Dashboard",
-      icon: LayoutDashboard,
+      icon: RealisticDashboardIcon,
       exact: true,
     },
     {
       href: "/app/my-split",
       label: isArabic ? "جدول التمرين (PDF)" : "My Split (PDF)",
-      icon: FileText,
+      icon: RealisticDocumentIcon,
     },
     {
       href: "/app/account",
       label: isArabic ? "حسابي والاشتراكات" : "Account",
-      icon: User,
+      icon: RealisticUserIcon,
     },
   ];
 
@@ -107,10 +111,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
       <div className={`px-5 mb-6 flex items-center ${isCollapsed ? "justify-center md:flex-col gap-4" : "justify-between"}`}>
         {!isCollapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-[12px] overflow-hidden border border-white/15 shadow-[0_2px_8px_rgba(37,99,235,0.3)] shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/logo-amar.png" alt="Coach Amar" className="w-full h-full object-cover" />
-            </div>
+            <RealisticCoachAvatar size="sm" />
             <div>
               <span className="text-base font-extrabold tracking-tight text-white leading-none block">
                 COACH <span className="text-blue-400">AMAR</span>
@@ -123,11 +124,8 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
         )}
         {isCollapsed && (
           <div className="hidden md:flex flex-col items-center justify-center leading-none">
-            <div className="w-8 h-8 rounded-[10px] overflow-hidden border border-white/15 shadow-[0_2px_8px_rgba(37,99,235,0.3)] mb-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/logo-amar.png" alt="Coach Amar" className="w-full h-full object-cover" />
-            </div>
-            <span className="text-[7px] font-black tracking-widest text-white mt-0.5">SPLIT</span>
+            <RealisticCoachAvatar size="sm" showBadge={false} />
+            <span className="text-[7px] font-black tracking-widest text-white mt-1">SPLIT</span>
           </div>
         )}
 
@@ -170,7 +168,7 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
               }`}
             >
               <div className={`w-7 h-7 rounded-[9px] flex items-center justify-center ${active ? "bg-blue-500/20 text-blue-400" : "text-slate-400"}`}>
-                <Icon size={16} />
+                <Icon className="w-4 h-4" />
               </div>
               {!isCollapsed && <span>{label}</span>}
               {!isCollapsed && active && <ArrowIcon size={12} className={isArabic ? "mr-auto text-blue-400" : "ml-auto text-blue-400"} />}
@@ -179,15 +177,17 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
         })}
       </nav>
 
-      {/* Bottom Actions */}
+      {/* Bottom Actions with Realistic Graphic Icons */}
       <div className={`pt-4 border-t border-[var(--border)] space-y-1 ${isCollapsed ? "px-2 md:px-2" : "px-3"}`}>
         <button
           onClick={handleUpdate}
           disabled={isUpdating}
           title={isCollapsed ? (isArabic ? "تحديث" : "Update") : undefined}
-          className={`w-full flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer disabled:opacity-50 ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+          className={`w-full flex items-center gap-3 py-2.5 rounded-[14px] text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer disabled:opacity-50 ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >
-          <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} />
+          <div className="w-6 h-6 flex items-center justify-center">
+            <RealisticRefreshIcon className={`w-4 h-4 ${isUpdating ? "animate-spin" : ""}`} />
+          </div>
           {!isCollapsed && (isArabic ? (isUpdating ? "جاري التحديث..." : "تحديث التطبيق") : (isUpdating ? "Updating..." : "Check for Updates"))}
         </button>
 
@@ -198,9 +198,11 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           target="_blank"
           rel="noopener noreferrer"
           title={isCollapsed ? (isArabic ? "واتساب الكوتش" : "WhatsApp Coach") : undefined}
-          className={`flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-blue-400 hover:bg-blue-500/10 transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+          className={`flex items-center gap-3 py-2.5 rounded-[14px] text-xs font-bold text-emerald-400 hover:bg-emerald-500/10 transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >
-          <MessageCircle size={16} />
+          <div className="w-6 h-6 flex items-center justify-center">
+            <RealisticWhatsAppIcon className="w-4 h-4" />
+          </div>
           {!isCollapsed && (isArabic ? "واتساب الكوتش" : "WhatsApp Coach")}
         </a>
 
@@ -209,18 +211,22 @@ export function AppSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: A
           target="_blank"
           rel="noopener noreferrer"
           title={isCollapsed ? (isArabic ? "الموقع الرسمي" : "Visit Website") : undefined}
-          className={`flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+          className={`flex items-center gap-3 py-2.5 rounded-[14px] text-xs font-bold text-slate-300 hover:text-white hover:bg-white/[0.05] transition-colors ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >
-          <ExternalLink size={16} />
+          <div className="w-6 h-6 flex items-center justify-center">
+            <RealisticSparklesIcon className="w-4 h-4" />
+          </div>
           {!isCollapsed && (isArabic ? "الموقع الرسمي" : "Visit Website")}
         </a>
 
         <button
           onClick={async () => { await forgetOfflineSplit(); signOut({ callbackUrl: "/login" }); }}
           title={isCollapsed ? (isArabic ? "تسجيل الخروج" : "Sign Out") : undefined}
-          className={`w-full flex items-center gap-3 py-2.5 rounded-[var(--radius-sm)] text-xs font-bold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer ${isCollapsed ? "justify-center px-0" : "px-3"}`}
+          className={`w-full flex items-center gap-3 py-2.5 rounded-[14px] text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer ${isCollapsed ? "justify-center px-0" : "px-3"}`}
         >
-          <LogOut size={16} /> 
+          <div className="w-6 h-6 flex items-center justify-center">
+            <RealisticLogOutIcon className="w-4 h-4" />
+          </div>
           {!isCollapsed && (isArabic ? "تسجيل الخروج" : "Sign Out")}
         </button>
       </div>

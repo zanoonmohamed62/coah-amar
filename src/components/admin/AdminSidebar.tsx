@@ -6,19 +6,22 @@ import { signOut, useSession } from "next-auth/react";
 import { forgetOfflineSplit } from "@/lib/split-cache";
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard,
-  Users,
-  ShoppingBag,
-  Package,
-  FileText,
-  Settings,
-  LogOut,
   ChevronRight,
   ChevronLeft,
-  Sparkles,
-  ShieldCheck,
   X,
 } from "lucide-react";
+import {
+  RealisticDashboardIcon,
+  RealisticOrdersIcon,
+  RealisticUserIcon,
+  RealisticProductsIcon,
+  RealisticCmsIcon,
+  RealisticSettingsIcon,
+  RealisticTeamIcon,
+  RealisticSparklesIcon,
+  RealisticLogOutIcon,
+  RealisticCoachAvatar
+} from "@/components/client/PwaIcons";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
 import { useAdminSidebar } from "./AdminSidebarContext";
@@ -33,14 +36,14 @@ export function AdminSidebar() {
   const { mobileOpen, closeMobile } = useAdminSidebar();
 
   const links = [
-    { href: "/admin", label: t.overview, icon: LayoutDashboard, exact: true },
-    { href: "/admin/orders", label: t.orders, icon: ShoppingBag, badgeKey: "orders" },
-    { href: "/admin/customers", label: t.customers, icon: Users },
-    { href: "/admin/products", label: t.products, icon: Package },
-    { href: "/admin/cms", label: t.cms, icon: FileText },
-    { href: "/admin/settings", label: t.settings, icon: Settings },
+    { href: "/admin", label: t.overview, icon: RealisticDashboardIcon, exact: true },
+    { href: "/admin/orders", label: t.orders, icon: RealisticOrdersIcon, badgeKey: "orders" },
+    { href: "/admin/customers", label: t.customers, icon: RealisticUserIcon },
+    { href: "/admin/products", label: t.products, icon: RealisticProductsIcon },
+    { href: "/admin/cms", label: t.cms, icon: RealisticCmsIcon },
+    { href: "/admin/settings", label: t.settings, icon: RealisticSettingsIcon },
     ...(isSuperAdminEmail(session?.user?.email)
-      ? [{ href: "/admin/team", label: t.team, icon: ShieldCheck }]
+      ? [{ href: "/admin/team", label: t.team, icon: RealisticTeamIcon }]
       : []),
   ];
 
@@ -93,16 +96,14 @@ export function AdminSidebar() {
         }`}
       >
       {/* Brand Header */}
-      <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
-        <Link href="/admin" className="flex items-center gap-2.5 group" onClick={closeMobile}>
-          <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[var(--accent)] flex items-center justify-center font-black text-black text-sm tracking-wider group-hover:scale-105 transition-transform">
-            AM
-          </div>
+      <div className="p-5 border-b border-[var(--border)] flex items-center justify-between">
+        <Link href="/admin" className="flex items-center gap-3 group" onClick={closeMobile}>
+          <RealisticCoachAvatar size="sm" />
           <div>
-            <span className="text-base font-black tracking-tight text-[var(--text-primary)]">
-              THE <span className="text-[var(--accent)]">AMAR</span>
+            <span className="text-base font-black tracking-tight text-[var(--text-primary)] block leading-tight">
+              COACH <span className="text-blue-400">AMAR</span>
             </span>
-            <span className="block text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
+            <span className="block text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mt-0.5">
               {t.brandSub}
             </span>
           </div>
@@ -113,8 +114,8 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <p className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)]">
+      <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+        <p className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)]">
           {t.management}
         </p>
 
@@ -127,24 +128,26 @@ export function AdminSidebar() {
               key={href}
               href={href}
               onClick={closeMobile}
-              className={`flex items-center justify-between px-3 py-2.5 rounded-[var(--radius-sm)] text-sm font-medium transition-all ${
+              className={`flex items-center justify-between px-3 py-2.5 rounded-[14px] text-sm font-medium transition-all ${
                 active
-                  ? "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 shadow-[0_0_15px_var(--accent-glow)] font-semibold"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] border border-transparent"
+                  ? "bg-blue-500/15 text-blue-400 border border-blue-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] font-semibold"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] border border-transparent"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon size={16} className={active ? "text-[var(--accent)]" : "text-[var(--text-muted)]"} />
+                <div className={`w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 ${active ? "bg-blue-500/20" : ""}`}>
+                  <Icon className="w-4 h-4" />
+                </div>
                 <span>{label}</span>
               </div>
 
               <div className="flex items-center gap-1.5">
                 {showBadge && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-black rounded-full bg-amber-500 text-black">
+                  <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-amber-500 text-black shadow-sm">
                     {pendingOrders}
                   </span>
                 )}
-                {active && <ArrowIcon size={13} className="text-[var(--accent)]" />}
+                {active && <ArrowIcon size={13} className="text-blue-400" />}
               </div>
             </Link>
           );
@@ -152,23 +155,23 @@ export function AdminSidebar() {
       </nav>
 
       {/* Footer / Account */}
-      <div className="p-4 border-t border-[var(--border)] bg-[var(--bg-base)]/50 space-y-2">
+      <div className="p-4 border-t border-[var(--border)] bg-[var(--bg-base)]/50 space-y-1.5">
         <Link
           href="/app"
           target="_blank"
-          className="w-full flex items-center justify-between px-3 py-2 rounded-[var(--radius-sm)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors border border-transparent"
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-[14px] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors border border-transparent"
         >
-          <span className="flex items-center gap-2">
-            <Sparkles size={13} className="text-[var(--accent)]" /> {t.clientApp}
+          <span className="flex items-center gap-2.5">
+            <RealisticSparklesIcon className="w-4 h-4" /> {t.clientApp}
           </span>
           <ArrowIcon size={12} className="text-[var(--text-muted)]" />
         </Link>
 
         <button
           onClick={async () => { await forgetOfflineSplit(); signOut({ callbackUrl: "/login" }); }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-xs font-semibold text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[14px] text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
         >
-          <LogOut size={14} /> {t.signOut}
+          <RealisticLogOutIcon className="w-4 h-4" /> {t.signOut}
         </button>
       </div>
       </aside>

@@ -6,6 +6,11 @@
 // read and write through here, so the file downloaded ahead of time is exactly
 // the one the viewer picks up — including offline. Keeping the keys in one
 // place is what stops the two from silently drifting apart.
+//
+// Since the split now ships as two PDFs (English + Arabic), every key is
+// scoped by a lang code ("en" | "ar") in addition to the user id.
+
+export type SplitLang = "en" | "ar";
 
 const IDB_DB = "amar-split-cache";
 const IDB_STORE = "pdf-blobs";
@@ -21,14 +26,14 @@ const IDB_STORE = "pdf-blobs";
 //
 // Scoping by user keeps one account's download unreadable by another, and
 // `clearOtherUsersCache` drops the rest so the device doesn't hoard copies.
-const KEY_PREFIX = "amarx-split-v3:";
-const VER_PREFIX = "amarx-split-version-v3:";
+const KEY_PREFIX = "amarx-split-v4:";
+const VER_PREFIX = "amarx-split-version-v4:";
 
-function pdfKey(userId: string) {
-  return `${KEY_PREFIX}${userId}`;
+function pdfKey(userId: string, lang: SplitLang) {
+  return `${KEY_PREFIX}${userId}:${lang}`;
 }
-function versionKey(userId: string) {
-  return `${VER_PREFIX}${userId}`;
+function versionKey(userId: string, lang: SplitLang) {
+  return `${VER_PREFIX}${userId}:${lang}`;
 }
 
 function openIDB(): Promise<IDBDatabase> {
@@ -44,13 +49,13 @@ function openIDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function getCachedPdf(userId: string): Promise<ArrayBuffer | null> {
+export async function getCachedPdf(userId: string, lang: SplitLang = "en"): Promise<ArrayBuffer | null> {
   if (!userId) return null;
   try {
     const db = await openIDB();
     return await new Promise((res, rej) => {
       const tx = db.transaction(IDB_STORE, "readonly");
-      const r = tx.objectStore(IDB_STORE).get(pdfKey(userId));
+      const r = tx.objectStore(IDB_STORE).get(pdfKey(userId, lang));
       r.onsuccess = () => {
         const v = r.result;
         res(v instanceof ArrayBuffer && v.byteLength > 0 ? v : null);
@@ -62,13 +67,13 @@ export async function getCachedPdf(userId: string): Promise<ArrayBuffer | null> 
   }
 }
 
-export async function getCachedVersion(userId: string): Promise<string | null> {
+export async function getCachedVersion(userId: string, lang: SplitLang = "en"): Promise<string | null> {
   if (!userId) return null;
   try {
     const db = await openIDB();
     return await new Promise((res, rej) => {
       const tx = db.transaction(IDB_STORE, "readonly");
-      const r = tx.objectStore(IDB_STORE).get(versionKey(userId));
+      const r = tx.objectStore(IDB_STORE).get(versionKey(userId, lang));
       r.onsuccess = () => res(typeof r.result === "string" ? r.result : null);
       r.onerror = () => rej(r.error);
     });
@@ -77,14 +82,14 @@ export async function getCachedVersion(userId: string): Promise<string | null> {
   }
 }
 
-export async function savePdfToCache(userId: string, buf: ArrayBuffer, version: string): Promise<void> {
+export async function savePdfToCache(userId: string, buf: ArrayBuffer, version: string, lang: SplitLang = "en"): Promise<void> {
   if (!userId) return;
   try {
     const db = await openIDB();
     await new Promise<void>((res, rej) => {
       const tx = db.transaction(IDB_STORE, "readwrite");
-      tx.objectStore(IDB_STORE).put(buf.slice(0), pdfKey(userId));
-      tx.objectStore(IDB_STORE).put(version, versionKey(userId));
+      tx.objectStore(IDB_STORE).put(buf.slice(0), pdfKey(userId, lang));
+      tx.objectStore(IDB_STORE).put(version, versionKey(userId, lang));
       tx.oncomplete = () => res();
       tx.onerror = () => rej(tx.error);
     });
@@ -106,9 +111,9 @@ export type VersionProbe =
   | { state: "denied" }
   | { state: "offline" };
 
-export async function probeSplitAccess(): Promise<VersionProbe> {
+export async function probeSplitAccess(lang: SplitLang = "en"): Promise<VersionProbe> {
   try {
-    const res = await fetch("/api/split/version", { cache: "no-store" });
+    const res = await fetch(`/api/split/version?lang=${lang}`, { cache: "no-store" });
     if (res.status === 403 || res.status === 401) return { state: "denied" };
     if (!res.ok) return { state: "offline" };
     const data = await res.json();
@@ -120,8 +125,8 @@ export async function probeSplitAccess(): Promise<VersionProbe> {
 }
 
 /** Back-compat helper: the version string, or null when unavailable. */
-export async function fetchCurrentVersion(): Promise<string | null> {
-  const probe = await probeSplitAccess();
+export async function fetchCurrentVersion(lang: SplitLang = "en"): Promise<string | null> {
+  const probe = await probeSplitAccess(lang);
   return probe.state === "ok" ? probe.version : null;
 }
 
@@ -141,7 +146,10 @@ export async function clearOtherUsersCache(userId: string): Promise<void> {
       const store = tx.objectStore(IDB_STORE);
       const keysReq = store.getAllKeys();
       keysReq.onsuccess = () => {
-        const mine = new Set([pdfKey(userId), versionKey(userId)]);
+        const mine = new Set([
+          pdfKey(userId, "en"), versionKey(userId, "en"),
+          pdfKey(userId, "ar"), versionKey(userId, "ar"),
+        ]);
         // This user's rendered page images stay too. With an empty userId the
         // prefix matches nothing (real ids are never empty), so everything goes.
         const myPages = `${PAGE_PREFIX}${userId}:`;

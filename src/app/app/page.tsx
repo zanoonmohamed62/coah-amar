@@ -23,7 +23,10 @@ import {
   RealisticWhatsAppIcon, 
   RealisticMembershipIcon, 
   RealisticNutritionIcon, 
-  RealisticOfflineGymIcon 
+  RealisticOfflineGymIcon,
+  RealisticDocumentIcon,
+  RealisticShieldIcon,
+  RealisticActivityIcon
 } from "@/components/client/PwaIcons";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
@@ -165,7 +168,7 @@ export default function AppHome() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-            <Activity size={16} className="text-blue-400" />
+            <RealisticActivityIcon className="w-5 h-5" />
             <span>{isArabic ? "جدولك التدريبي النشط" : "Your Active Split"}</span>
           </h2>
           <span className="text-xs text-blue-400 font-semibold">
@@ -180,7 +183,7 @@ export default function AppHome() {
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3 max-w-xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-bold uppercase tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-                <ShieldCheck size={14} className="text-blue-400 shrink-0" />
+                <RealisticShieldIcon className="w-4 h-4 shrink-0" />
                 <span>{activePlan?.product.name || (isArabic ? "جدول التدريب المعتمد" : "Custom Training Split")}</span>
               </div>
 
@@ -197,13 +200,15 @@ export default function AppHome() {
               </p>
             </div>
 
-            {/* CTA Pill Buttons */}
+            {/* CTA Pill Buttons with Realistic iOS 3D Glass Styling */}
             <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0">
               <Link
                 href="/app/my-split"
-                className="h-12 px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(37,99,235,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.98]"
+                className="relative group h-12 px-6 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2.5 shadow-[0_8px_24px_rgba(37,99,235,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] active:scale-[0.98] border border-blue-300/30 overflow-hidden"
               >
-                <FileText size={17} />
+                {/* Specular gloss top reflection */}
+                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
+                <RealisticDocumentIcon className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
                 <span>{isArabic ? "فتح جدول التمرين" : "Open My Split"}</span>
                 <ArrowIcon size={16} />
               </Link>
@@ -214,9 +219,11 @@ export default function AppHome() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-12 px-6 bg-white/[0.05] hover:bg-white/[0.1] border border-white/12 text-white font-semibold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] backdrop-blur-md"
+                className="relative group h-12 px-6 bg-[#0f172a]/90 hover:bg-[#1e293b]/90 border border-emerald-500/35 hover:border-emerald-400/50 text-white font-semibold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2.5 active:scale-[0.98] backdrop-blur-md shadow-[0_4px_16px_rgba(16,185,129,0.15),inset_0_1px_1px_rgba(255,255,255,0.15)] overflow-hidden"
               >
-                <MessageCircle size={17} className="text-emerald-400" />
+                {/* Specular gloss top reflection */}
+                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+                <RealisticWhatsAppIcon className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
                 <span>{isArabic ? "استشارة الكوتش" : "Ask Coach"}</span>
               </a>
             </div>
@@ -339,7 +346,7 @@ export default function AppHome() {
           <div className="rounded-[24px] bg-[#0c121e]/85 backdrop-blur-xl border border-white/[0.08] p-5 flex flex-col justify-between space-y-4 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:border-white/15 transition-all">
             <div className="space-y-2.5">
               <div className="w-10 h-10 rounded-[14px] bg-gradient-to-b from-indigo-500/25 to-blue-600/10 border border-indigo-400/30 text-indigo-400 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                <ShieldCheck size={19} />
+                <RealisticShieldIcon className="w-5 h-5" />
               </div>
               <h4 className="text-sm font-bold text-white">
                 {isArabic ? "حالة الاشتراك والتجديد" : "Membership Status"}

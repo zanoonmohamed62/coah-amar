@@ -10,18 +10,16 @@ import {
   savePwaUser,
   saveCachedEntitlements,
 } from "@/lib/split-cache";
+import type { SplitLang } from "@/lib/split-cache";
 
-// Downloads the split PDF into IndexedDB in the background as soon as an
-// entitled customer opens the portal — so an installed PWA carries the plan
-// with it and works offline without the customer ever having had to open the
+// Downloads both split PDFs (English + Arabic) into IndexedDB in the background
+// as soon as an entitled customer opens the portal — so an installed PWA carries
+// both plans and works offline without the customer ever having had to open the
 // viewer while online first.
 //
 // Access is NOT decided here. This only *asks*; `GET /api/split` still enforces
 // requireCustomer() + an ACTIVE, non-expired Entitlement server-side, so a
 // signed-in visitor with no purchase gets a 403 and nothing is ever cached.
-// The entitlement check below is purely to avoid firing a request we know will
-// be refused (and to keep a non-buyer's device from downloading 2.8MB for
-// nothing) — it is a courtesy, not the security boundary.
 export function SplitPrefetcher() {
   const { data: session, status } = useSession();
   const userId = (session?.user as { id?: string } | undefined)?.id ?? "";
@@ -57,12 +55,9 @@ export function SplitPrefetcher() {
 
 async function prefetch(userId: string) {
   try {
-
     // 1. Only proceed for a customer who actually has active access.
     const entRes = await fetch("/api/customer/entitlements", { cache: "no-store" });
-    if (!entRes.ok) {
-      return;
-    }
+    if (!entRes.ok) return;
     const { entitlements } = await entRes.json();
     if (Array.isArray(entitlements)) {
       saveCachedEntitlements(entitlements);
@@ -75,38 +70,43 @@ async function prefetch(userId: string) {
           e?.status === "ACTIVE" && !e?.isExpired
       );
     if (!hasActive) {
-      console.log("[SplitPrefetcher] No active entitlement found. Statuses:", 
+      console.log("[SplitPrefetcher] No active entitlement found. Statuses:",
         entitlements?.map((e: { status?: string; isExpired?: boolean }) => `${e?.status}(expired:${e?.isExpired})`)
       );
       return;
     }
 
-    // 2. Skip the download when the cached copy is already current.
+    // 2. Prefetch both language versions sequentially (en first, then ar).
+    //    Sequential rather than parallel to avoid hammering the server.
+    for (const lang of ["en", "ar"] as SplitLang[]) {
+      await prefetchLang(userId, lang);
+    }
+  } catch (err) {
+    console.error("[SplitPrefetcher] Error:", err);
+  }
+}
+
+async function prefetchLang(userId: string, lang: SplitLang) {
+  try {
+    // Skip the download when the cached copy is already current.
     const [cached, cachedVersion, currentVersion] = await Promise.all([
-      getCachedPdf(userId),
-      getCachedVersion(userId),
-      fetchCurrentVersion(),
+      getCachedPdf(userId, lang),
+      getCachedVersion(userId, lang),
+      fetchCurrentVersion(lang),
     ]);
     const isStale =
       currentVersion !== null && cachedVersion !== null && currentVersion !== cachedVersion;
 
-    if (cached && !isStale) {
-      return;
-    }
+    if (cached && !isStale) return;
 
-    // 3. Fetch and store. A 403 here (entitlement revoked between the two
-    //    calls, say) simply means nothing gets cached.
-    const res = await fetch("/api/split", { cache: "no-store", headers: { "x-amar-viewer": "1" } });
-    if (!res.ok) {
-      return;
-    }
+    // Fetch and store. A 403 here simply means nothing gets cached.
+    const res = await fetch(`/api/split?lang=${lang}`, { cache: "no-store", headers: { "x-amar-viewer": "1" } });
+    if (!res.ok) return;
     const buf = await res.arrayBuffer();
-    if (buf.byteLength === 0) {
-      return;
-    }
+    if (buf.byteLength === 0) return;
 
-    await savePdfToCache(userId, buf, currentVersion ?? "legacy");
+    await savePdfToCache(userId, buf, currentVersion ?? "legacy", lang);
   } catch (err) {
-    console.error("[SplitPrefetcher] Error:", err);
+    console.error(`[SplitPrefetcher] Error prefetching ${lang}:`, err);
   }
 }

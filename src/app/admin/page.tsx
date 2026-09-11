@@ -2,21 +2,25 @@
 
 import { useEffect, useState } from "react";
 import {
-  Users,
-  ShoppingBag,
-  Dumbbell,
-  TrendingUp,
   Clock,
   ArrowUpRight,
   ArrowDownLeft,
-  CreditCard,
   Plus,
-  Sparkles,
   ExternalLink,
   ChevronRight,
   ChevronLeft,
-  FileText,
+  CreditCard,
+  ShoppingBag,
 } from "lucide-react";
+import {
+  RealisticRevenueIcon,
+  RealisticDumbbellIcon,
+  RealisticUserIcon,
+  RealisticOrdersIcon,
+  RealisticCmsIcon,
+  RealisticCreditCardIcon,
+  RealisticSparklesIcon
+} from "@/components/client/PwaIcons";
 import Link from "next/link";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
@@ -129,62 +133,74 @@ export default function AdminOverview() {
           ))
         ) : (
           <>
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden hover:border-[var(--accent)]/40 transition-colors">
-              <div className="flex items-center gap-1.5 mb-3 text-[var(--text-muted)]">
-                <TrendingUp size={13} className="text-[var(--accent)]" />
-                <span className="text-xs font-bold uppercase tracking-wider">
+            {/* Card 1: Monthly Revenue */}
+            <div className="bg-gradient-to-b from-[#0e1626]/90 via-[#0a101b]/95 to-[#060911] border border-emerald-500/20 rounded-[22px] p-5 relative overflow-hidden hover:border-emerald-400/40 transition-all shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   {t.monthlyRevenue}
                 </span>
+                <div className="w-8 h-8 rounded-[11px] bg-gradient-to-b from-emerald-500/20 to-teal-600/10 border border-emerald-400/30 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                  <RealisticRevenueIcon className="w-4 h-4" />
+                </div>
               </div>
-              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight tabular-nums">
+              <p className="text-2xl lg:text-3xl font-black text-white tracking-tight tabular-nums">
                 {stats?.monthlyRevenue.toLocaleString()}{" "}
-                <span className="text-sm font-bold text-[var(--accent)]">{t.egp}</span>
+                <span className="text-sm font-bold text-emerald-400">{t.egp}</span>
               </p>
-              <p className="text-xs text-[var(--text-muted)] mt-2 flex items-center gap-1">
+              <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
                 <span className="text-emerald-400 font-semibold">{stats?.monthlyOrdersCount} {t.salesThisMonth}</span>
               </p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden hover:border-emerald-500/40 transition-colors">
-              <div className="flex items-center gap-1.5 mb-3 text-[var(--text-muted)]">
-                <Dumbbell size={13} className="text-emerald-400" />
-                <span className="text-xs font-bold uppercase tracking-wider">
+            {/* Card 2: Active Athletes */}
+            <div className="bg-gradient-to-b from-[#0e1626]/90 via-[#0a101b]/95 to-[#060911] border border-blue-500/20 rounded-[22px] p-5 relative overflow-hidden hover:border-blue-400/40 transition-all shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   {t.activeAthletes}
                 </span>
+                <div className="w-8 h-8 rounded-[11px] bg-gradient-to-b from-blue-500/20 to-indigo-600/10 border border-blue-400/30 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                  <RealisticDumbbellIcon className="w-4 h-4" />
+                </div>
               </div>
-              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight tabular-nums">
+              <p className="text-2xl lg:text-3xl font-black text-white tracking-tight tabular-nums">
                 {stats?.activeEntitlements}
               </p>
-              <p className="text-xs text-[var(--text-muted)] mt-2">
+              <p className="text-xs text-slate-400 mt-2">
                 {t.activeAthletesDesc}
               </p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden hover:border-[var(--border-accent)] transition-colors">
-              <div className="flex items-center gap-1.5 mb-3 text-[var(--text-muted)]">
-                <Users size={13} />
-                <span className="text-xs font-bold uppercase tracking-wider">
+            {/* Card 3: Total Clients */}
+            <div className="bg-gradient-to-b from-[#0e1626]/90 via-[#0a101b]/95 to-[#060911] border border-indigo-500/20 rounded-[22px] p-5 relative overflow-hidden hover:border-indigo-400/40 transition-all shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   {t.totalClients}
                 </span>
+                <div className="w-8 h-8 rounded-[11px] bg-gradient-to-b from-indigo-500/20 to-purple-600/10 border border-indigo-400/30 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                  <RealisticUserIcon className="w-4 h-4" />
+                </div>
               </div>
-              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight tabular-nums">
+              <p className="text-2xl lg:text-3xl font-black text-white tracking-tight tabular-nums">
                 {stats?.totalCustomers}
               </p>
-              <p className="text-xs text-[var(--text-muted)] mt-2">{t.totalClientsDesc}</p>
+              <p className="text-xs text-slate-400 mt-2">{t.totalClientsDesc}</p>
             </div>
 
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-5 relative overflow-hidden hover:border-purple-500/40 transition-colors">
-              <div className="flex items-center gap-1.5 mb-3 text-[var(--text-muted)]">
-                <ShoppingBag size={13} className="text-purple-400" />
-                <span className="text-xs font-bold uppercase tracking-wider">
+            {/* Card 4: All-Time Sales */}
+            <div className="bg-gradient-to-b from-[#0e1626]/90 via-[#0a101b]/95 to-[#060911] border border-amber-500/20 rounded-[22px] p-5 relative overflow-hidden hover:border-amber-400/40 transition-all shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   {t.allTimeSales}
                 </span>
+                <div className="w-8 h-8 rounded-[11px] bg-gradient-to-b from-amber-500/20 to-orange-600/10 border border-amber-400/30 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                  <RealisticOrdersIcon className="w-4 h-4" />
+                </div>
               </div>
-              <p className="text-2xl lg:text-3xl font-black text-[var(--text-primary)] tracking-tight tabular-nums">
+              <p className="text-2xl lg:text-3xl font-black text-white tracking-tight tabular-nums">
                 {stats?.totalRevenue.toLocaleString()}{" "}
-                <span className="text-sm font-bold text-purple-400">{t.egp}</span>
+                <span className="text-sm font-bold text-amber-400">{t.egp}</span>
               </p>
-              <p className="text-xs text-[var(--text-muted)] mt-2">
+              <p className="text-xs text-slate-400 mt-2">
                 {stats?.totalOrdersCount} {t.confirmedTransactions}
               </p>
             </div>
@@ -195,54 +211,74 @@ export default function AdminOverview() {
       {/* Mid Section: Quick Actions & Payment Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Action Station */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-6 flex flex-col justify-between">
+        <div className="bg-gradient-to-b from-[#0e1626]/90 via-[#0a101b]/95 to-[#060911] border border-white/10 rounded-[24px] p-6 flex flex-col justify-between shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-1 flex items-center gap-2">
-              <Sparkles size={16} className="text-[var(--accent)]" /> {t.quickActions}
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-white mb-1 flex items-center gap-2">
+              <RealisticSparklesIcon className="w-4 h-4" /> {t.quickActions}
             </h3>
-            <p className="text-xs text-[var(--text-muted)] mb-5">
+            <p className="text-xs text-slate-400 mb-5">
               {t.quickActionsDesc}
             </p>
 
             <div className="grid grid-cols-2 gap-3">
               <Link
                 href="/admin/orders"
-                className="p-3 border-b-2 border-transparent hover:border-[var(--accent)] bg-[var(--bg-elevated)] rounded-[var(--radius-md)] transition-colors text-start"
+                className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-blue-400/30 rounded-[16px] transition-all text-start group"
               >
-                <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                  <ShoppingBag size={13} className="text-[var(--text-muted)]" /> {t.manageOrders}
-                </p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-1">{t.manageOrdersDesc}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-[8px] bg-blue-500/15 flex items-center justify-center">
+                    <RealisticOrdersIcon className="w-3.5 h-3.5" />
+                  </div>
+                  <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+                    {t.manageOrders}
+                  </p>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">{t.manageOrdersDesc}</p>
               </Link>
 
               <Link
                 href="/admin/customers"
-                className="p-3 border-b-2 border-transparent hover:border-[var(--accent)] bg-[var(--bg-elevated)] rounded-[var(--radius-md)] transition-colors text-start"
+                className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-blue-400/30 rounded-[16px] transition-all text-start group"
               >
-                <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                  <Users size={13} className="text-[var(--text-muted)]" /> {t.athletesList}
-                </p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-1">{t.athletesListDesc}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-[8px] bg-indigo-500/15 flex items-center justify-center">
+                    <RealisticUserIcon className="w-3.5 h-3.5" />
+                  </div>
+                  <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+                    {t.athletesList}
+                  </p>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">{t.athletesListDesc}</p>
               </Link>
 
               <Link
                 href="/admin/cms"
-                className="p-3 border-b-2 border-transparent hover:border-[var(--accent)] bg-[var(--bg-elevated)] rounded-[var(--radius-md)] transition-colors text-start"
+                className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-blue-400/30 rounded-[16px] transition-all text-start group"
               >
-                <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                  <FileText size={13} className="text-[var(--text-muted)]" /> {t.websiteCms}
-                </p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-1">{t.websiteCmsDesc}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-[8px] bg-sky-500/15 flex items-center justify-center">
+                    <RealisticCmsIcon className="w-3.5 h-3.5" />
+                  </div>
+                  <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+                    {t.websiteCms}
+                  </p>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">{t.websiteCmsDesc}</p>
               </Link>
 
               <Link
                 href="/admin/settings"
-                className="p-3 border-b-2 border-transparent hover:border-[var(--accent)] bg-[var(--bg-elevated)] rounded-[var(--radius-md)] transition-colors text-start"
+                className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-blue-400/30 rounded-[16px] transition-all text-start group"
               >
-                <p className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                  <CreditCard size={13} className="text-[var(--text-muted)]" /> {t.paymentConfig}
-                </p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-1">{t.paymentConfigDesc}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-[8px] bg-slate-500/15 flex items-center justify-center">
+                    <RealisticCreditCardIcon className="w-3.5 h-3.5" />
+                  </div>
+                  <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+                    {t.paymentConfig}
+                  </p>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">{t.paymentConfigDesc}</p>
               </Link>
             </div>
           </div>
@@ -258,7 +294,7 @@ export default function AdminOverview() {
         {/* Payment Channels Breakdown */}
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-xl)] p-6">
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-1 flex items-center gap-2">
-            <CreditCard size={16} className="text-[var(--accent)]" /> {t.paymentChannels}
+            <RealisticCreditCardIcon className="w-4 h-4" /> {t.paymentChannels}
           </h3>
           <p className="text-xs text-[var(--text-muted)] mb-5">
             {t.paymentChannelsDesc}
@@ -344,7 +380,7 @@ export default function AdminOverview() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                <ShoppingBag size={16} className="text-[var(--accent)]" /> {t.activePackages}
+                <RealisticOrdersIcon className="w-4 h-4" /> {t.activePackages}
               </h3>
               <Link href="/admin/products" className="text-xs text-[var(--accent)] hover:underline font-semibold">
                 {t.manage}

@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink, Shield, Globe, Menu } from "lucide-react";
+import { Globe, Menu, Shield } from "lucide-react";
+import { RealisticCoachAvatar, RealisticSparklesIcon } from "@/components/client/PwaIcons";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
@@ -30,7 +31,7 @@ export function AdminHeader() {
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-8 py-4 bg-[var(--bg-base)]/80 backdrop-blur-md border-b border-[var(--border)]">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-8 py-3.5 bg-[var(--bg-base)]/80 backdrop-blur-md border-b border-[var(--border)]">
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={toggleMobile}
@@ -51,19 +52,19 @@ export function AdminHeader() {
         {/* Language Switcher */}
         <button
           onClick={toggleLang}
-          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--border-accent)] transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--text-secondary)] hover:text-white hover:border-blue-400/40 transition-all cursor-pointer"
           title={isArabic ? "Switch to English" : "التحويل إلى العربية"}
         >
-          <Globe size={14} className="text-[var(--accent)]" />
+          <Globe size={14} className="text-blue-400" />
           <span className="hidden sm:inline">{isArabic ? "English" : "العربية"}</span>
         </button>
 
         {pendingCount > 0 && (
           <Link
             href="/admin/orders?status=AWAITING_CONFIRMATION"
-            className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-[var(--radius-pill)] bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors animate-pulse whitespace-nowrap"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-400 text-xs font-bold hover:bg-amber-500/25 transition-colors shadow-[0_2px_10px_rgba(245,158,11,0.2)] animate-pulse whitespace-nowrap"
           >
-            <span className="w-2 h-2 rounded-[var(--radius-pill)] bg-amber-400 shrink-0"></span>
+            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
             <span className="hidden sm:inline">{t.pendingOrders(pendingCount)}</span>
             <span className="sm:hidden">{pendingCount}</span>
           </Link>
@@ -72,20 +73,18 @@ export function AdminHeader() {
         <Link
           href="/"
           target="_blank"
-          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-elevated)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-accent)] transition-colors"
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--text-secondary)] hover:text-white hover:border-blue-400/40 transition-colors"
         >
-          <ExternalLink size={14} />
+          <RealisticSparklesIcon className="w-3.5 h-3.5" />
           <span>{t.liveSite}</span>
         </Link>
 
-        <div className={`hidden sm:flex items-center gap-2 ${isArabic ? "pr-3 border-r" : "pl-3 border-l"} border-[var(--border)]`}>
-          <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)] font-bold text-xs">
-            CA
-          </div>
+        <div className={`hidden sm:flex items-center gap-2.5 ${isArabic ? "pr-3 border-r" : "pl-3 border-l"} border-[var(--border)]`}>
+          <RealisticCoachAvatar size="sm" />
           <div className="hidden lg:block text-start">
             <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">Coach Amar</p>
-            <p className="text-[10px] text-[var(--text-muted)] leading-tight flex items-center gap-1">
-              <Shield size={11} className="text-emerald-400" /> {t.superAdmin}
+            <p className="text-[10px] text-[var(--text-muted)] leading-tight flex items-center gap-1 mt-0.5">
+              <Shield size={10} className="text-emerald-400" /> {t.superAdmin}
             </p>
           </div>
         </div>

@@ -3,9 +3,11 @@
 import dynamic from "next/dynamic";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Maximize2, Minimize2, ChevronLeft, ChevronRight, MessageCircle, ShieldCheck, Loader2 } from "lucide-react";
+import { Maximize2, Minimize2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { RealisticWhatsAppIcon, RealisticShieldIcon } from "@/components/client/PwaIcons";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
+import type { SplitLang } from "@/lib/split-cache";
 
 const PdfCanvas = dynamic(() => import("@/components/client/PdfCanvas"), {
   ssr: false,
@@ -16,6 +18,8 @@ const PdfCanvas = dynamic(() => import("@/components/client/PdfCanvas"), {
   ),
 });
 
+const TAB_KEY = "amar-split-tab";
+
 export default function MySplitPage() {
   const { isArabic } = useLanguage();
   const getSetting = useSettings();
@@ -23,6 +27,20 @@ export default function MySplitPage() {
   const ArrowIcon = isArabic ? ChevronRight : ChevronLeft;
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Default tab matches the user's language
+  const [activeTab, setActiveTab] = useState<SplitLang>(() => {
+    try {
+      const saved = localStorage.getItem(TAB_KEY);
+      if (saved === "en" || saved === "ar") return saved;
+    } catch { /* ignore */ }
+    return isArabic ? "ar" : "en";
+  });
+
+  const switchTab = (tab: SplitLang) => {
+    setActiveTab(tab);
+    try { localStorage.setItem(TAB_KEY, tab); } catch { /* ignore */ }
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -78,19 +96,20 @@ export default function MySplitPage() {
         <div className="min-w-0">
           <Link href="/app" className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] md:mb-2 transition-colors">
             <ArrowIcon size={14} />
-            <span>{isArabic ? "\u0627\u0644\u0639\u0648\u062f\u0629 \u0644\u0644\u0631\u0626\u064a\u0633\u064a\u0629" : "Back to Dashboard"}</span>
+            <span>{isArabic ? "العودة للرئيسية" : "Back to Dashboard"}</span>
           </Link>
           <h1 className="hidden md:flex text-2xl font-black text-[var(--text-primary)] items-center gap-2.5">
             <span className="text-[var(--accent)]">THE AMAR</span> &ldquo;X SPLIT&rdquo;
           </h1>
         </div>
         <a
-          href={`https://wa.me/${WA}?text=${encodeURIComponent(isArabic ? "\u0645\u0631\u062d\u0628\u0627\u064b \u0643\u0648\u062a\u0634 \u0639\u0645\u0627\u0631\u060c \u0644\u062f\u064a \u0627\u0633\u062a\u0641\u0633\u0627\u0631" : "Hi Coach Amar, I have a question about the X Split")}`}
+          href={`https://wa.me/${WA}?text=${encodeURIComponent(isArabic ? "مرحباً كوتش عمار، لدي استفسار" : "Hi Coach Amar, I have a question about the X Split")}`}
           target="_blank" rel="noopener noreferrer"
-          className="px-3.5 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 text-xs font-bold rounded-[var(--radius-md)] transition-colors flex items-center gap-1.5"
+          className="relative group h-9 px-4 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/35 text-emerald-400 hover:text-emerald-300 text-xs font-bold rounded-[14px] transition-all flex items-center gap-2 shadow-[0_2px_10px_rgba(16,185,129,0.2),inset_0_1px_1px_rgba(255,255,255,0.2)] active:scale-95 overflow-hidden"
         >
-          <MessageCircle size={14} />
-          <span>{isArabic ? "\u0648\u0627\u062a\u0633\u0627\u0628 \u0627\u0644\u0643\u0648\u062a\u0634" : "Ask Coach"}</span>
+          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+          <RealisticWhatsAppIcon className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" />
+          <span>{isArabic ? "واتساب الكوتش" : "Ask Coach"}</span>
         </a>
       </div>
 
@@ -103,23 +122,49 @@ export default function MySplitPage() {
         className="bg-[var(--bg-card)] flex flex-col overflow-hidden -mx-4 -mb-4 md:mx-0 md:mb-0 md:border md:border-[var(--border)] md:rounded-[var(--radius-xl)] md:shadow-[var(--shadow-card)]"
         style={{ height: readerHeight ? `${readerHeight}px` : "75vh" }}
       >
-        <div className="px-4 md:px-5 py-2 md:py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0">
+        {/* Top bar: language tabs + controls */}
+        <div className="px-4 md:px-5 py-2 md:py-3 border-b border-[var(--border)] bg-[var(--bg-elevated)] flex items-center justify-between shrink-0 gap-2">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-blue-400" />
-            <span className="text-xs font-black text-[var(--text-primary)] tracking-wide">
-              {isArabic ? "\u0627\u0644\u062c\u062f\u0648\u0644 \u0627\u0644\u0631\u0633\u0645\u064a" : "Official Split"}
-            </span>
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] bg-blue-500/10 border border-blue-400/25 text-blue-300 text-xs font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <RealisticShieldIcon className="w-4 h-4 shrink-0 text-blue-400" />
+              <span>{isArabic ? "الجدول الرسمي" : "Official Split"}</span>
+            </div>
+            {/* Language tabs */}
+            <div className="flex bg-white/5 rounded-[var(--radius-md)] p-0.5">
+              <button
+                onClick={() => switchTab("en")}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-[var(--radius-sm)] transition-all duration-200 ${
+                  activeTab === "en"
+                    ? "bg-blue-500 text-white shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5"
+                }`}
+              >
+                English
+              </button>
+              <button
+                onClick={() => switchTab("ar")}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-[var(--radius-sm)] transition-all duration-200 ${
+                  activeTab === "ar"
+                    ? "bg-blue-500 text-white shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5"
+                }`}
+              >
+                عربي
+              </button>
+            </div>
           </div>
           {canFullscreen && (
           <button onClick={toggleFullscreen} className="min-h-9 px-2 hover:bg-white/5 rounded-[var(--radius-sm)] text-[var(--text-primary)] hover:text-white transition-colors flex items-center gap-2">
             <span className="text-xs font-bold">
-              {isFullscreen ? (isArabic ? "\u062a\u0635\u063a\u064a\u0631" : "Exit Fullscreen") : (isArabic ? "\u062a\u0643\u0628\u064a\u0631 \u0627\u0644\u0634\u0627\u0634\u0629" : "Fullscreen")}
+              {isFullscreen ? (isArabic ? "تصغير" : "Exit Fullscreen") : (isArabic ? "تكبير الشاشة" : "Fullscreen")}
             </span>
             {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
           )}
         </div>
-        <PdfCanvas isArabic={isArabic} />
+        {/* Only the active tab's PdfCanvas is mounted to save memory */}
+        {activeTab === "en" && <PdfCanvas isArabic={isArabic} lang="en" />}
+        {activeTab === "ar" && <PdfCanvas isArabic={isArabic} lang="ar" />}
       </div>
     </div>
   );
