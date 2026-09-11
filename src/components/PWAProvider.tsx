@@ -47,9 +47,12 @@ export function PWAProvider() {
 
       {/* ── Offline indicator ── */}
       {!isOnline && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 bg-[#1a1f2e] border border-blue-500/30 text-blue-400 text-xs font-semibold rounded-[var(--radius-pill)] shadow-2xl shadow-blue-500/10 backdrop-blur-md">
-          <Wifi size={14} className="opacity-50" />
-          <span>وضع أوفلاين — الجدول محفوظ محلياً</span>
+        <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-[#1a1f2e]/95 border border-amber-500/30 text-amber-400 text-xs font-semibold rounded-[var(--radius-pill)] shadow-2xl shadow-amber-500/10 backdrop-blur-md">
+          <Wifi size={16} className="opacity-70 shrink-0" />
+          <div className="flex flex-col gap-0.5">
+            <span>You&apos;re offline — cached content available</span>
+            <span className="text-[10px] text-amber-400/60" dir="rtl">أنت غير متصل — المحتوى المحفوظ متاح</span>
+          </div>
         </div>
       )}
 

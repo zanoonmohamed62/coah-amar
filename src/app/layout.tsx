@@ -81,6 +81,7 @@ export const metadata: Metadata = {
 import { LayoutShell } from "@/components/layout/layout-shell";
 import { PWAInstallProvider } from "@/lib/pwa-install-context";
 import { SWKillSwitch } from "@/components/SWKillSwitch";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export default function RootLayout({
   children,
@@ -106,6 +107,7 @@ export default function RootLayout({
       </head>
       <body>
         <SWKillSwitch />
+        <ServiceWorkerRegistrar />
         <SessionWrapper>
           <PWAInstallProvider>
             <LanguageProvider>

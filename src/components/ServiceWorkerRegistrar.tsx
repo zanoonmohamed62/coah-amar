@@ -2,19 +2,13 @@
 
 import { useEffect } from "react";
 
-// Registers the service worker at the ROOT scope, and retires the old
-// /app-scoped registration.
+// Registers the service worker at the ROOT scope so every page on the site
+// (landing, customer portal, admin) is covered for offline use and push.
 //
-// It used to be registered with `{ scope: "/app" }`, which meant it only
-// controlled the customer portal. Push notifications run through the service
-// worker, so the admin panel at /admin had no worker to subscribe with — the
-// order alert could never reach the admin's phone. Root scope covers both, and
-// the fetch handler still only intercepts /app, /_next/static and /pdfjs, so
-// nothing else changes about how pages load.
-//
-// Mounted in the portal and the admin panel only. Public marketing pages
-// deliberately do not install a worker: a casual visitor should not be made to
-// download and cache the PDF worker just for reading the homepage.
+// Previously only mounted in /app and /admin. Now mounted in the root layout
+// so visitors from Instagram/TikTok who install the PWA get full offline
+// support from their first visit — the landing page, checkout, and the
+// customer portal all cache for offline.
 export function ServiceWorkerRegistrar() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;

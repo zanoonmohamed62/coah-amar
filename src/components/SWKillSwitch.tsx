@@ -5,16 +5,10 @@ import { useEffect } from "react";
 /**
  * Self-healing cleanup for stale service workers.
  *
- * An earlier deployed sw.js registered at root scope with a catch-all
- * `event.respondWith(fetch(request))` in its fetch handler. Re-issuing a
- * navigation request that way loses its original semantics, so those clients
- * render a blank "This page couldn't load" error on every page — including in
- * Incognito, since a fresh window installs the worker on first visit.
- *
- * A newer worker scoped to /app cannot replace a root-scoped registration, so
- * affected browsers cannot recover on their own. This unregisters any worker
- * controlling a scope outside /app and drops its caches, then reloads once so
- * the page is served normally. It is a no-op for everyone else.
+ * The current worker lives at root scope ("/"). Older deploys registered a
+ * worker at "/app" scope — those are stale and must be removed so they don't
+ * shadow the root worker on portal pages. This component unregisters any
+ * non-root worker and reloads once so the current root worker can take over.
  */
 export function SWKillSwitch() {
   useEffect(() => {
@@ -25,22 +19,17 @@ export function SWKillSwitch() {
     (async () => {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
+        // Only remove workers with a scope OTHER than root — the root one
+        // is the current, correct worker.
         const stale = registrations.filter((reg) => {
           const scopePath = new URL(reg.scope).pathname;
-          return !scopePath.startsWith("/app");
+          return scopePath !== "/" && scopePath.startsWith("/app");
         });
 
         if (stale.length === 0) return;
 
         await Promise.all(stale.map((reg) => reg.unregister().catch(() => false)));
 
-        if ("caches" in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map((k) => caches.delete(k).catch(() => false)));
-        }
-
-        // Reload once so this load is served without the removed worker.
-        // sessionStorage guards against a reload loop if anything above fails.
         if (cancelled) return;
         const RELOAD_GUARD = "amarx-sw-cleanup-reloaded";
         let alreadyReloaded = false;
@@ -51,7 +40,7 @@ export function SWKillSwitch() {
 
         if (!alreadyReloaded) window.location.reload();
       } catch {
-        // Never let cleanup break the page.
+        /* Never let cleanup break the page. */
       }
     })();
 
