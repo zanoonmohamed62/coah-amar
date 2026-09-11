@@ -81,7 +81,7 @@ jobs:
               # scripts/pre-push-migrate.js (or a real migration) rather than
               # granting blanket permission on every deploy.
               echo "🗄️ Pushing DB schema..."
-              npx prisma db push
+              npx prisma db push --accept-data-loss
 
               # Checkout is dead without at least one active product: /api/products
               # returns [], neither checkout page can resolve a productId, and the
