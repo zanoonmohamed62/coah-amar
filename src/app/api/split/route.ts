@@ -33,10 +33,14 @@ async function readActivePdf(lang: SplitLang): Promise<Buffer> {
   const activeMediaId = await getSetting("active_split_media_id");
 
   if (activeMediaId) {
-    const asset = await db.mediaAsset.findUnique({ where: { id: activeMediaId } });
-    if (asset) {
-      const filePath = path.join(process.cwd(), "private_media", asset.storageKey);
-      return fs.readFileSync(filePath);
+    try {
+      const asset = await db.mediaAsset.findUnique({ where: { id: activeMediaId } });
+      if (asset) {
+        const filePath = path.join(process.cwd(), "private_media", asset.storageKey);
+        return fs.readFileSync(filePath);
+      }
+    } catch {
+      // Media asset missing or unreadable — fall through to language files
     }
   }
 
