@@ -26,8 +26,8 @@ const IDB_STORE = "pdf-blobs";
 //
 // Scoping by user keeps one account's download unreadable by another, and
 // `clearOtherUsersCache` drops the rest so the device doesn't hoard copies.
-const KEY_PREFIX = "amarx-split-v4:";
-const VER_PREFIX = "amarx-split-version-v4:";
+const KEY_PREFIX = "amarx-split-v5:";
+const VER_PREFIX = "amarx-split-version-v5:";
 
 function pdfKey(userId: string, lang: SplitLang) {
   return `${KEY_PREFIX}${userId}:${lang}`;
@@ -187,7 +187,7 @@ export async function clearOtherUsersCache(userId: string): Promise<void> {
 // therefore re-rendered the whole plan from scratch every single time, which is
 // exactly the "it loads again from zero each time I open it" the viewer was
 // reported for. Pruning is now confined to one language's own images.
-const PAGE_PREFIX = "amarx-split-page-v2:";
+const PAGE_PREFIX = "amarx-split-page-v3:";
 
 function langPrefix(userId: string, lang: SplitLang) {
   return `${PAGE_PREFIX}${userId}:${lang}:`;

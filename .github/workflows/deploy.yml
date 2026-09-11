@@ -43,8 +43,8 @@ jobs:
             # every future deploy just no-ops here.
             echo "🗂️  Ensuring persistent upload storage..."
             PERSIST_DIR="/var/www/amarel7ewety/.persist"
-            mkdir -p "$PERSIST_DIR/uploads" "$PERSIST_DIR/private_media"
-            for pair in "public/uploads:$PERSIST_DIR/uploads" "private_media:$PERSIST_DIR/private_media"; do
+            mkdir -p "$PERSIST_DIR/uploads" "$PERSIST_DIR/private_media" "$PERSIST_DIR/private-assets"
+            for pair in "public/uploads:$PERSIST_DIR/uploads" "private_media:$PERSIST_DIR/private_media" "private-assets:$PERSIST_DIR/private-assets"; do
               LOCAL_PATH="${pair%%:*}"
               PERSIST_PATH="${pair##*:}"
               if [ -L "$LOCAL_PATH" ]; then

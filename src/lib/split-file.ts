@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { getSetting } from "@/lib/settings";
 
 // Where the split PDF comes from, for both the bytes route and the version
@@ -16,6 +18,14 @@ export const SPLIT_FILES: Record<SplitLang, string> = {
 
 export function parseLang(raw: string | null): SplitLang {
   return raw === "ar" ? "ar" : "en";
+}
+
+export function resolveSplitFilePath(lang: SplitLang): string {
+  const privatePath = path.join(process.cwd(), "private-assets", SPLIT_FILES[lang]);
+  if (fs.existsSync(privatePath)) return privatePath;
+  const assetsPath = path.join(process.cwd(), "assets", SPLIT_FILES[lang]);
+  if (fs.existsSync(assetsPath)) return assetsPath;
+  return privatePath;
 }
 
 /**

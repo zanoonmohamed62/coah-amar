@@ -3,7 +3,9 @@ import fs from "fs";
 import path from "path";
 import { db } from "@/lib/db";
 import { requireCustomer } from "@/lib/auth-guard";
-import { activeSplitMediaId, parseLang, SPLIT_FILES, type SplitLang } from "@/lib/split-file";
+import { activeSplitMediaId, parseLang, resolveSplitFilePath, type SplitLang } from "@/lib/split-file";
+
+export const dynamic = "force-dynamic";
 
 async function hasSplitAccess(userId: string): Promise<boolean> {
   const now = new Date();
@@ -33,8 +35,8 @@ async function readActivePdf(lang: SplitLang): Promise<Buffer> {
     }
   }
 
-  // Language-specific files in private-assets/
-  const filePath = path.join(process.cwd(), "private-assets", SPLIT_FILES[lang]);
+  // Language-specific files in private-assets/ (or assets/)
+  const filePath = resolveSplitFilePath(lang);
   return fs.readFileSync(filePath);
 }
 

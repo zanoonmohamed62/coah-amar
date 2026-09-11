@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
-import path from "path";
 import { db } from "@/lib/db";
 import { requireCustomer } from "@/lib/auth-guard";
-import { activeSplitMediaId, parseLang, SPLIT_FILES } from "@/lib/split-file";
+import { activeSplitMediaId, parseLang, resolveSplitFilePath } from "@/lib/split-file";
+
+export const dynamic = "force-dynamic";
 
 // Cheap "may I read the split, and which one is current?" probe.
 //
@@ -46,13 +47,20 @@ export async function GET(req: NextRequest) {
   let version = activeMediaId ? `${lang}-${activeMediaId}` : `${lang}-legacy`;
   if (!activeMediaId) {
     try {
-      const filePath = path.join(process.cwd(), "private-assets", SPLIT_FILES[lang]);
+      const filePath = resolveSplitFilePath(lang);
       const stat = fs.statSync(filePath);
-      version = `${lang}-${stat.mtimeMs}`;
+      version = `${lang}-${stat.size}-${Math.round(stat.mtimeMs)}`;
     } catch {
       version = `${lang}-legacy`;
     }
   }
 
-  return NextResponse.json({ version, userId });
+  return NextResponse.json(
+    { version, userId },
+    {
+      headers: {
+        "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+      },
+    }
+  );
 }
