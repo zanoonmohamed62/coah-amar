@@ -7,16 +7,13 @@ import { PWAProvider } from "@/components/PWAProvider";
 import { SplitPrefetcher } from "@/components/client/SplitPrefetcher";
 import { PwaOnboardingModal } from "@/components/client/PwaOnboardingModal";
 import { AppDock } from "@/components/client/AppDock";
+import { AmarSupport } from "@/components/client/AmarSupport";
 import { Menu, X } from "lucide-react";
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { isArabic, dir } = useLanguage();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
-
-  // Auto sign-out after 15 minutes of inactivity
-  useSessionTimeout();
 
   return (
     <>
@@ -73,6 +70,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Floating Mobile Dock */}
         <AppDock />
+
+        {/* In-app help desk — scripted answers, WhatsApp as the escape hatch. */}
+        <AmarSupport />
       </div>
     </>
   );

@@ -3,7 +3,7 @@
 //  Strategy: App shell cache-first, PDF network-first
 // ═══════════════════════════════════════════════════════
 
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const SHELL_CACHE = `amar-shell-${CACHE_VERSION}`;
 const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 
@@ -135,6 +135,56 @@ async function handleStaticFetch(request) {
     return new Response("Offline", { status: 503 });
   }
 }
+
+// ── Push notifications ───────────────────────────────
+// Order alerts for the admin, training nudges for customers. The payload is
+// built server-side in src/lib/push.ts.
+//
+// The browser REQUIRES a visible notification for every push (the subscription
+// is userVisibleOnly), so there is always a fallback title — dropping the event
+// silently would eventually get the subscription revoked.
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : "" };
+  }
+
+  const title = payload.title || "THE AMAR";
+  const options = {
+    body: payload.body || "",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    // A tag replaces an earlier notification with the same one instead of
+    // stacking duplicates — a re-sent push for one order shows once.
+    tag: payload.tag || "amar",
+    renotify: Boolean(payload.tag),
+    dir: "auto",
+    data: { url: payload.url || "/app" },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Tapping a notification focuses an already-open window rather than piling up
+// new tabs, and navigates it to the notification's target.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url || "/app";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          if ("navigate" in client) client.navigate(target).catch(() => {});
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    })
+  );
+});
 
 // ── Message handler (from page) ──────────────────────
 self.addEventListener("message", (event) => {

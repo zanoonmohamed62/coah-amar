@@ -10,9 +10,18 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 48;
 
-  const fetchAssets = () => fetch("/api/admin/media").then(r => r.json()).then(d => { setAssets(d.assets || []); setLoading(false); });
-  useEffect(() => { fetchAssets(); }, []);
+  // Paged — see /api/admin/media. Payment screenshots live on their orders.
+  const fetchAssets = (p = page) =>
+    fetch(`/api/admin/media?page=${p}&pageSize=${PAGE_SIZE}`)
+      .then(r => r.json())
+      .then(d => { setAssets(d.assets || []); setTotal(typeof d.total === "number" ? d.total : 0); setLoading(false); })
+      .catch(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchAssets(page); }, [page]);
 
   async function handleUpload(files: FileList | null) {
     if (!files?.length) return;
@@ -82,6 +91,30 @@ export default function MediaPage() {
           ))}
         </div>
       }
+
+      {total > PAGE_SIZE && (
+        <div className="flex items-center justify-between gap-3 mt-6">
+          <span className="text-xs text-[var(--text-muted)] tabular-nums">
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} / {total}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="min-h-9 px-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] text-xs font-bold text-[var(--text-secondary)] hover:text-white disabled:opacity-40"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page * PAGE_SIZE >= total}
+              className="min-h-9 px-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] text-xs font-bold text-[var(--text-secondary)] hover:text-white disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

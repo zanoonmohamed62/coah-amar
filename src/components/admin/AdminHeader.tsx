@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/language-context";
 import { adminTranslations } from "@/lib/admin-translations";
 import { useAdminSidebar } from "./AdminSidebarContext";
+import { AdminRealtime } from "./AdminRealtime";
 
 export function AdminHeader() {
   const pathname = usePathname();
@@ -24,9 +25,11 @@ export function AdminHeader() {
   const info = matched ? matched[1] : { title: "Admin Portal", subtitle: "Coach Amar Management Suite" };
 
   useEffect(() => {
-    fetch("/api/admin/orders?status=AWAITING_CONFIRMATION")
+    // `total`, not `orders.length` — the route is paged now, so counting the
+    // rows in the response would cap the badge at one page (25).
+    fetch("/api/admin/orders?status=AWAITING_CONFIRMATION&pageSize=1")
       .then((r) => r.json())
-      .then((d) => setPendingCount(d.orders?.length || 0))
+      .then((d) => setPendingCount(typeof d.total === "number" ? d.total : 0))
       .catch(() => {});
   }, [pathname]);
 
@@ -49,6 +52,9 @@ export function AdminHeader() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Live visitors + order notifications, pushed over SSE */}
+        <AdminRealtime />
+
         {/* Language Switcher */}
         <button
           onClick={toggleLang}

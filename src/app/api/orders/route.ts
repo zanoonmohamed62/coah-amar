@@ -4,6 +4,10 @@ import { db } from "@/lib/db";
 import { createOrderSchema } from "@/lib/validations";
 import { OrderStatus, PaymentMethod } from "@prisma/client";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
+import { nextOrderRef } from "@/lib/order-ref";
+import { publishEvent } from "@/lib/realtime";
+import { notifyAdmins } from "@/lib/push";
+import { pricedProduct, invalidatePricing } from "@/lib/pricing";
 
 const FIELD_LABELS: Record<string, string> = {
   name: "الاسم",
@@ -11,8 +15,39 @@ const FIELD_LABELS: Record<string, string> = {
   phone: "رقم الواتساب",
   productId: "المنتج",
   paymentMethod: "طريقة الدفع",
+  proofAssetId: "صورة التحويل",
+  proofClaimToken: "صورة التحويل",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toRealtime(order: any, productName: string) {
+  return {
+    orderRef: order.orderRef,
+    customerName: order.customerName,
+    customerEmail: order.customerEmail,
+    productName,
+    amount: order.amount,
+    currency: order.currency,
+    paymentMethod: order.paymentMethod,
+    status: order.status,
+    createdAt: new Date(order.createdAt ?? Date.now()).toISOString(),
+  };
+}
+
+function timingSafeEqualStr(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+// Creating an order means the customer has paid and pressed Confirm.
+//
+// It used to mean they had clicked "Get the Split" — so every visitor who was
+// merely curious landed in the admin's confirmation queue, and the real payers
+// were buried among them. The screenshot is now uploaded first
+// (POST /api/checkout/proof) and its claim token presented here; without one
+// there is no order.
 export async function POST(req: NextRequest) {
   // Rate limit: 5 orders per minute per IP
   const ip = getClientIp(req);
@@ -29,29 +64,48 @@ export async function POST(req: NextRequest) {
     const field = typeof issue?.path?.[0] === "string" ? (issue.path[0] as string) : "";
     const raw = issue?.message ?? "البيانات المدخلة غير صحيحة";
     const label = FIELD_LABELS[field];
-    // Only prefix the field name when the message doesn't already name it,
+    // Only prefix the field name when the message does not already name it,
     // otherwise it reads as "رقم الواتساب: رقم الواتساب غير صحيح".
     const message = label && !raw.includes(label) ? `${label}: ${raw}` : raw;
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const { productId, name, email, phone, paymentMethod, goal, level, notes, isRenewal, orderRef } = parsed.data;
+  const {
+    productId, name, email, phone, paymentMethod,
+    goal, level, notes, isRenewal,
+    proofAssetId, proofClaimToken,
+  } = parsed.data;
 
-  // Validate product exists and is active
+  // Validate product exists and is active, and get the price it sells at RIGHT
+  // NOW — computed fresh, not from the display cache. `product.price` in the
+  // database is the discounted figure; recording that directly is what would
+  // have kept charging the launch price after the counter reached its limit.
   const product = await db.product.findUnique({ where: { id: productId, isActive: true } });
   if (!product) return NextResponse.json({ error: "Product not found or inactive" }, { status: 404 });
+  const live = await pricedProduct(productId);
+  if (!live) return NextResponse.json({ error: "Product not found or inactive" }, { status: 404 });
 
-  // Idempotency: check if order already exists
-  const existing = await db.order.findUnique({ where: { orderRef } });
-  if (existing) return NextResponse.json({ order: existing }, { status: 200 });
+  // The screenshot has to be a real, unclaimed upload that this browser made.
+  const proof = await db.mediaAsset.findUnique({ where: { id: proofAssetId } });
+  if (!proof || !proof.claimToken || !timingSafeEqualStr(proofClaimToken, proof.claimToken)) {
+    return NextResponse.json(
+      { error: "صورة التحويل غير صالحة — ارفعها مرة تانية من فضلك." },
+      { status: 400 }
+    );
+  }
+  if (proof.claimedAt) {
+    return NextResponse.json(
+      { error: "صورة التحويل دي متسجلة على طلب تاني بالفعل — ارفع صورة جديدة." },
+      { status: 400 }
+    );
+  }
 
   // Same customer, same product, still waiting to be confirmed → hand back the
-  // order they already have instead of creating a second one. orderRef alone
-  // can't catch this: the checkout page mints a fresh one on every page load,
-  // so a customer who leaves to pay and comes back with the browser's Back
-  // button (rather than their order link) submits a brand-new ref and would
-  // otherwise land a duplicate in the admin queue for the same payment.
-  // Scoped to 24h so a genuine repurchase later is never blocked.
+  // order they already have instead of creating a second one. A customer who
+  // pays, gets their number, then comes back through the browser Back button
+  // and confirms again would otherwise land a duplicate in the admin queue for
+  // the same payment. Scoped to 24h so a genuine repurchase later is never
+  // blocked.
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const openOrder = await db.order.findFirst({
     where: {
@@ -63,12 +117,32 @@ export async function POST(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
   if (openOrder) {
+    // Their newest screenshot still wins — they may be re-uploading precisely
+    // because the first one was wrong.
+    const claimed = await db.$transaction(async (tx) => {
+      const won = await tx.mediaAsset.updateMany({
+        where: { id: proof.id, claimedAt: null },
+        data: { claimedAt: new Date(), claimToken: null },
+      });
+      if (won.count !== 1) return false;
+      await tx.order.update({ where: { id: openOrder.id }, data: { paymentProofId: proof.id } });
+      return true;
+    });
+    if (!claimed) {
+      return NextResponse.json(
+        { error: "صورة التحويل دي متسجلة على طلب بالفعل — ارفع صورة جديدة." },
+        { status: 400 }
+      );
+    }
+    try {
+      publishEvent({ type: "order.proof", order: toRealtime(openOrder, product.name) });
+    } catch { /* an admin notification must never fail a customer order */ }
     return NextResponse.json({ order: openOrder, reused: true }, { status: 200 });
   }
 
   // The customer-facing order pages are reachable without a session, so their
-  // access check is this token — not orderRef, which the browser generates from
-  // a timestamp plus 4 characters and is therefore guessable.
+  // access check is this token — not orderRef, which is a short human number
+  // printed in emails and read out over WhatsApp.
   const accessToken = randomBytes(32).toString("base64url");
 
   // All three payment methods are manual: the customer transfers, uploads a
@@ -80,41 +154,84 @@ export async function POST(req: NextRequest) {
   // Find existing user by email
   const existingUser = await db.user.findUnique({ where: { email: email.toLowerCase() } });
 
-  const order = await db.order.create({
-    data: {
-      userId: existingUser?.id ?? null,
-      productId,
-      orderRef,
-      accessToken,
-      amount: product.price,
-      currency: product.currency,
-      paymentMethod: paymentMethod as PaymentMethod,
-      status: OrderStatus.AWAITING_CONFIRMATION,
-      isRenewal,
-      customerName: name,
-      customerEmail: email.toLowerCase(),
-      customerPhone: phone,
-      customerGoal: goal,
-      customerNotes: notes,
-      customerLevel: level,
-    },
-  });
+  // The counter increment and the order live in one transaction, so a failed
+  // insert does not burn an order number and leave a gap in the admin list.
+  //
+  // The screenshot is claimed FIRST, with a conditional update that only one
+  // request can win. Checking `claimedAt` above is not enough on its own: a
+  // double-tap on Confirm sends two requests that both pass that check before
+  // either writes, and would otherwise create two orders for one payment.
+  let order;
+  try {
+    order = await db.$transaction(async (tx) => {
+    const won = await tx.mediaAsset.updateMany({
+      where: { id: proof.id, claimedAt: null },
+      data: { claimedAt: new Date(), claimToken: null, uploadedBy: existingUser?.id ?? null },
+    });
+    if (won.count !== 1) throw new Error("PROOF_ALREADY_CLAIMED");
 
-  // Invalidate admin stats cache since a new order was placed
+    const orderRef = await nextOrderRef(product.type, tx);
+    const created = await tx.order.create({
+      data: {
+        userId: existingUser?.id ?? null,
+        productId,
+        orderRef,
+        accessToken,
+        amount: live.price,
+        currency: live.currency,
+        paymentMethod: paymentMethod as PaymentMethod,
+        status: OrderStatus.AWAITING_CONFIRMATION,
+        isRenewal,
+        customerName: name,
+        customerEmail: email.toLowerCase(),
+        customerPhone: phone,
+        customerGoal: goal,
+        customerNotes: notes,
+        customerLevel: level,
+        paymentProofId: proof.id,
+      },
+    });
+    return created;
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === "PROOF_ALREADY_CLAIMED") {
+      return NextResponse.json(
+        { error: "صورة التحويل دي متسجلة على طلب بالفعل — ارفع صورة جديدة." },
+        { status: 400 }
+      );
+    }
+    throw err;
+  }
+
+  // Invalidate admin stats cache since a new order was placed, and the pricing
+  // cache — this order moved the promo counter, and the 100th one ends the
+  // discount for everyone after it.
   try {
     const { redis } = await import("@/lib/redis");
     await redis.del("admin:stats");
   } catch {}
+  await invalidatePricing();
 
-  // Every method is manual, so every order gets the same email: a link back to
-  // its own payment page, which is where the transfer details and the proof
-  // upload live.
+  // Real-time: the order appears in an open admin panel immediately, and the
+  // admin installed app buzzes. Neither is allowed to fail the request.
+  try {
+    publishEvent({ type: "order.created", order: toRealtime(order, product.name) });
+  } catch {}
+  void notifyAdmins({
+    title: `طلب جديد · ${order.orderRef}`,
+    body: `${name} — ${product.name} — ${(live.price / 100).toLocaleString("en-US")} ${live.currency}`,
+    url: `/admin/orders?q=${encodeURIComponent(order.orderRef)}`,
+    tag: `order-${order.orderRef}`,
+  });
+
+  // Every method is manual, so every order gets the same email: their order
+  // number and a link back to its own page, where the status lives.
   try {
     const { sendOrderConfirmationEmail } = await import("@/lib/email");
     await sendOrderConfirmationEmail({
-      to: email, name, orderRef, accessToken,
+      to: email, name, orderRef: order.orderRef, accessToken,
       productName: product.name,
-      amount: String(product.price / 100),
+      amount: String(live.price / 100),
       paymentMethod,
     });
   } catch (err) {
@@ -130,9 +247,9 @@ export async function POST(req: NextRequest) {
   );
 }
 
-// Status poll for the customer's own order page. Requires the order's
-// accessToken: orderRef is short, client-generated and shows up in emails and
-// screenshots, so on its own it can't gate customer details.
+// Status poll for the customer's own order page. Requires the order accessToken:
+// orderRef is a short human number that shows up in emails and screenshots, so
+// on its own it cannot gate customer details.
 export async function GET(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed, reset } = await rateLimit(`order-status:${ip}`, 30, 60);
@@ -152,7 +269,7 @@ export async function GET(req: NextRequest) {
       product: { select: { name: true, type: true } },
     },
   });
-  // Same 404 whether the order is missing or the token is wrong, so this can't
+  // Same 404 whether the order is missing or the token is wrong, so this cannot
   // be used to enumerate order refs.
   if (!order || !token || !timingSafeEqualStr(token, order.accessToken)) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -160,11 +277,4 @@ export async function GET(req: NextRequest) {
 
   const { accessToken: _accessToken, ...safe } = order;
   return NextResponse.json({ order: safe });
-}
-
-function timingSafeEqualStr(provided: string, expected: string): boolean {
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
 }

@@ -30,7 +30,17 @@ export const createOrderSchema = z.object({
   level: z.string().optional(),
   notes: z.string().optional(),
   isRenewal: z.boolean().default(false),
-  orderRef: z.string(), // AMAR-xxxxxx generated client-side
+  // The order number is issued by the server (SP-00001 / CO-00001) — see
+  // src/lib/order-ref.ts. It used to be minted in the browser from a timestamp,
+  // which made it both guessable and impossible to search on meaningfully.
+  // Still accepted and ignored so an old tab left open mid-deploy doesn't 400.
+  orderRef: z.string().optional(),
+
+  // The transfer screenshot, uploaded to POST /api/checkout/proof before this
+  // call. Required: an order is only created once the customer has actually
+  // paid and pressed Confirm.
+  proofAssetId: z.string().min(1, "ارفع صورة التحويل قبل تأكيد الطلب"),
+  proofClaimToken: z.string().min(1, "ارفع صورة التحويل قبل تأكيد الطلب"),
 });
 
 // ─────────────────────────────────────────────────────────────

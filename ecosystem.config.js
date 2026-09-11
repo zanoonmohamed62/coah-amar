@@ -37,5 +37,24 @@ module.exports = {
       max_restarts: 10,
       restart_delay: 4000,
     },
+    {
+      // Twice-daily training reminder push. Not a server: PM2 launches the
+      // script at each cron tick, it makes one request to the site, and exits.
+      // autorestart:false is what stops PM2 relaunching it in a loop.
+      // Times are Africa/Cairo (10:00 and 19:00).
+      name: "amar-reminders",
+      script: "scripts/send-reminders.js",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: false,
+      watch: false,
+      cron_restart: "0 10,19 * * *",
+      time: true,
+      env: {
+        NODE_ENV: "production",
+        TZ: "Africa/Cairo",
+      },
+    },
   ],
 };

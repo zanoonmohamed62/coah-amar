@@ -14,6 +14,9 @@ import {
   Sparkles,
   Trash2,
   AlertTriangle,
+  Download,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLanguage } from "@/lib/language-context";
@@ -58,6 +61,11 @@ export default function OrdersPage() {
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  // The list route is paged now — loading every order at once was the query
+  // that stops returning once this table is real.
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 25;
 
   const { data: session } = useSession();
   // Deleting an order destroys a payment record, so it is limited to the owner
@@ -76,26 +84,50 @@ export default function OrdersPage() {
     REFUNDED: { label: t.refunded, bg: "bg-zinc-500/10", text: "text-zinc-400", border: "border-zinc-500/30" },
   };
 
-  const fetchOrders = () => {
+  const fetchOrders = (targetPage = page) => {
     setLoading(true);
     const params = new URLSearchParams();
     if (statusFilter !== "all") params.set("status", statusFilter);
     if (methodFilter !== "all") params.set("method", methodFilter);
     if (searchQuery) params.set("q", searchQuery);
+    params.set("page", String(targetPage));
+    params.set("pageSize", String(PAGE_SIZE));
 
     fetch(`/api/admin/orders?${params.toString()}`)
       .then((r) => r.json())
       .then((d) => {
         setOrders(d.orders || []);
+        setTotal(typeof d.total === "number" ? d.total : 0);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   };
 
+  // Changing a filter or the search has to go back to page 1 — staying on
+  // page 4 of a result set that now has one page shows an empty table.
   useEffect(() => {
-    const timer = setTimeout(fetchOrders, 200);
-    return () => clearTimeout(timer);
+    setPage(1);
   }, [statusFilter, methodFilter, searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchOrders(page), 200);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, methodFilter, searchQuery, page]);
+
+  // A new order arriving is pushed over SSE (see AdminRealtime) — refresh the
+  // list underneath the toast so the row is there when the admin looks.
+  useEffect(() => {
+    const es = new EventSource("/api/admin/realtime");
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data?.type?.startsWith("order.")) fetchOrders(page);
+      } catch { /* ignore malformed frames */ }
+    };
+    return () => es.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, statusFilter, methodFilter, searchQuery]);
 
   async function handleOrderAction(orderRef: string, action: "confirm" | "reject" | "refund") {
     setActing(orderRef);
@@ -214,6 +246,16 @@ export default function OrdersPage() {
             <option value="PAYPAL">PayPal</option>
             <option value="TELDA">Telda</option>
           </select>
+
+          {/* Full table as CSV — the panel pages, the export does not. */}
+          <a
+            href="/api/admin/export?type=orders"
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] text-xs font-bold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-accent)] transition-colors"
+            title={isArabic ? "تحميل كل الطلبات كملف Excel" : "Download every order as a spreadsheet"}
+          >
+            <Download size={13} className="text-blue-400" />
+            <span className="hidden sm:inline">{isArabic ? "تصدير" : "Export"}</span>
+          </a>
         </div>
       </div>
 
@@ -482,6 +524,38 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {/* Pager — shown on both layouts, since both are paged. */}
+      {total > PAGE_SIZE && (
+        <div className="flex items-center justify-between gap-3 px-1">
+          <span className="text-xs text-[var(--text-muted)] tabular-nums">
+            {isArabic
+              ? `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} من ${total}`
+              : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total}`}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || loading}
+              className="min-h-9 px-3 flex items-center gap-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] text-xs font-bold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-accent)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {isArabic ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+              {isArabic ? "السابق" : "Prev"}
+            </button>
+            <span className="text-xs font-bold text-[var(--text-primary)] tabular-nums px-1">
+              {page} / {Math.max(1, Math.ceil(total / PAGE_SIZE))}
+            </span>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page * PAGE_SIZE >= total || loading}
+              className="min-h-9 px-3 flex items-center gap-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] text-xs font-bold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-accent)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {isArabic ? "التالي" : "Next"}
+              {isArabic ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Order Detail Modal / Drawer */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
@@ -530,9 +604,22 @@ export default function OrdersPage() {
 
                 {selectedOrder.customerGoal && (
                   <div className="pt-2 border-t border-[var(--border)]">
-                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">{t.notes}</span>
+                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">
+                      {isArabic ? "الهدف" : "Goal"}
+                    </span>
                     <p className="text-xs text-[var(--text-primary)] font-medium mt-0.5">
                       {selectedOrder.customerGoal}
+                    </p>
+                  </div>
+                )}
+
+                {selectedOrder.customerNotes && (
+                  <div className="pt-2 border-t border-[var(--border)]">
+                    <span className="text-[var(--text-muted)] block text-[10px] uppercase">
+                      {isArabic ? "إصابات / ملاحظات غذائية" : "Injuries / dietary notes"}
+                    </span>
+                    <p className="text-xs text-[var(--text-primary)] font-medium mt-0.5 whitespace-pre-line leading-relaxed">
+                      {selectedOrder.customerNotes}
                     </p>
                   </div>
                 )}

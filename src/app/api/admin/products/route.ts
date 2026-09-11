@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guard";
 import { createProductSchema, updateProductSchema } from "@/lib/validations";
 import { ProductType } from "@prisma/client";
+import { invalidatePricing } from "@/lib/pricing";
 
 export async function GET(_req: NextRequest) {
   const { error } = await requireAdmin();
@@ -30,5 +31,6 @@ export async function POST(req: NextRequest) {
   const parsed = createProductSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const product = await db.product.create({ data: { ...parsed.data, type: parsed.data.type as ProductType } });
+  await invalidatePricing();
   return NextResponse.json({ product }, { status: 201 });
 }

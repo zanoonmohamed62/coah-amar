@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guard";
 import { updateProductSchema } from "@/lib/validations";
 import { ProductType } from "@prisma/client";
+import { invalidatePricing } from "@/lib/pricing";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -23,6 +24,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const data = parsed.data;
   const product = await db.product.update({ where: { id }, data: { ...data, ...(data.type ? { type: data.type as ProductType } : {}) } });
+  await invalidatePricing();
   return NextResponse.json({ product });
 }
 
@@ -31,5 +33,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (error) return error;
   const { id } = await params;
   await db.product.update({ where: { id }, data: { isActive: false } });
+  await invalidatePricing();
   return NextResponse.json({ success: true });
 }

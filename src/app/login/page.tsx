@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/language-context";
 import { useSettings } from "@/lib/use-settings";
+import { PwaWelcomeGate } from "@/components/client/PwaWelcomeGate";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -195,6 +196,8 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense>
+      {/* Installed app only: "مرحباً" first, then this login page. */}
+      <PwaWelcomeGate />
       <LoginForm />
     </Suspense>
   );

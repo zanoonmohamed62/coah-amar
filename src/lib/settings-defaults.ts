@@ -16,10 +16,18 @@ export const SETTING_DEFAULTS = {
   site_name: "THE AMAR",
   instagram_url: "https://instagram.com/amar.fitness",
   youtube_url: "https://youtube.com/@amar.el.7ewety?si=crwo5B3iAO_C1ufW",
-  // Empty string = fall back to the legacy static file at private-assets/AMARX-SPLIT.pdf.
-  // Set by the admin "Training Plan File" uploader (see /admin/settings) to the id of a
-  // MediaAsset row once a PDF has been uploaded through the UI.
+  // The split ships as TWO PDFs, one per language, and each has its own slot.
+  // Empty = fall back to the file on disk for that language
+  // (private-assets/AMAR.X.SPLIT.ENGLISH.pdf / ...ARABIC.pdf).
+  //
+  // `active_split_media_id` (no suffix) is the original single-file setting and
+  // is still honoured as the ENGLISH slot so an existing upload keeps working.
+  // It used to be the only slot, which meant uploading one file replaced both
+  // languages with it — an Arabic customer would open the Arabic tab and be
+  // shown the English plan.
   active_split_media_id: "",
+  active_split_media_id_en: "",
+  active_split_media_id_ar: "",
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS;

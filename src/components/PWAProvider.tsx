@@ -3,26 +3,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { Wifi, X, Plus } from "lucide-react";
 import { usePWAInstall } from "@/lib/pwa-install-context";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export function PWAProvider() {
   const { canInstall, triggerInstall } = usePWAInstall();
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
-  // ── Register Service Worker ───────────────────────────
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-
-    navigator.serviceWorker
-      .register("/sw.js", { scope: "/app" })
-      .then((reg) => {
-        // Check for updates every time page focuses
-        const checkUpdate = () => reg.update();
-        window.addEventListener("focus", checkUpdate);
-        return () => window.removeEventListener("focus", checkUpdate);
-      })
-      .catch(console.error);
-  }, []);
+  // Service-worker registration lives in ServiceWorkerRegistrar (rendered
+  // below), shared with the admin panel — push needs a worker there too.
 
   // ── Install prompt capture (shared with the Hero "Install App" button
   // via PWAInstallProvider — one source of truth for canInstall) ─────
@@ -54,6 +43,8 @@ export function PWAProvider() {
 
   return (
     <>
+      <ServiceWorkerRegistrar />
+
       {/* ── Offline indicator ── */}
       {!isOnline && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 bg-[#1a1f2e] border border-blue-500/30 text-blue-400 text-xs font-semibold rounded-[var(--radius-pill)] shadow-2xl shadow-blue-500/10 backdrop-blur-md">

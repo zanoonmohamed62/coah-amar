@@ -158,10 +158,14 @@ export function TwoPathsSection() {
     ? "٢٩٩ ج.م"
     : "299 EGP";
 
+  // Zero once the promo is over. This used to fall back to 40 whenever the two
+  // prices were equal — which is precisely the "promo ended" case — so the
+  // "-40%" badge stayed on the homepage forever after the 100th buyer.
   const discountPct1 = (() => {
+    if (!splitPromoActive) return 0;
     const orig = offer1Price?.originalPrice ?? 49900;
     const cur = offer1Price?.price ?? 29900;
-    return orig > cur ? Math.round((1 - cur / orig) * 100) : 40;
+    return orig > cur ? Math.round((1 - cur / orig) * 100) : 0;
   })();
 
   const origPrice2 = offer2Price?.originalPrice
@@ -177,9 +181,10 @@ export function TwoPathsSection() {
     : "1,499 EGP";
 
   const discountPct2 = (() => {
+    if (!coachingPromoActive) return 0;
     const orig = offer2Price?.originalPrice ?? 249900;
     const cur = offer2Price?.price ?? 149900;
-    return orig > cur ? Math.round((1 - cur / orig) * 100) : 40;
+    return orig > cur ? Math.round((1 - cur / orig) * 100) : 0;
   })();
 
   return (
@@ -223,14 +228,18 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer1_sub" value={get("pricing", "offer1_sub", t.twoPaths.offer1.sub)} /></p>
                 </div>
                 <div className="text-right">
-                  {/* Original price crossed out with EUR equivalent */}
-                  <div className="flex items-center justify-end mb-1">
-                    <div dir="ltr" className="inline-flex items-center gap-1.5 line-through text-slate-500 tracking-tight">
-                      <span className="text-sm sm:text-base font-semibold">€ 19</span>
-                      <span className="text-xs sm:text-sm text-slate-600 font-normal">/</span>
-                      <span className="text-xs sm:text-sm font-medium">{origPrice1}</span>
+                  {/* Original price crossed out — only while the launch discount
+                      runs. After the 100th buyer the full price is simply the
+                      price, and striking it through would be a lie. */}
+                  {discountPct1 > 0 && (
+                    <div className="flex items-center justify-end mb-1">
+                      <div dir="ltr" className="inline-flex items-center gap-1.5 line-through text-slate-500 tracking-tight">
+                        <span className="text-sm sm:text-base font-semibold">€ 19</span>
+                        <span className="text-xs sm:text-sm text-slate-600 font-normal">/</span>
+                        <span className="text-xs sm:text-sm font-medium">{origPrice1}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Current price with -40% badge */}
                   <div className="flex items-center gap-2 justify-end">
@@ -240,7 +249,7 @@ export function TwoPathsSection() {
                       </span>
                     )}
                     <div dir="ltr" className="flex items-baseline gap-2">
-                      <span className="text-lg sm:text-xl font-bold text-slate-300">€ 11</span>
+                      <span className="text-lg sm:text-xl font-bold text-slate-300">€ {discountPct1 > 0 ? 11 : 19}</span>
                       <span className="text-base text-slate-500 font-normal">/</span>
                       <p className="text-3xl font-extrabold text-white tracking-tight">
                         {curPrice1}
@@ -329,14 +338,16 @@ export function TwoPathsSection() {
                   <p className="text-slate-400 text-sm mt-1"><EditableText sectionId="pricing" fieldId="offer2_sub" value={get("pricing", "offer2_sub", t.twoPaths.offer2.sub)} /></p>
                 </div>
                 <div className="text-right">
-                  {/* Original price crossed out with EUR equivalent */}
-                  <div className="flex items-center justify-end mb-1">
-                    <div dir="ltr" className="inline-flex items-center gap-1.5 line-through text-slate-500 tracking-tight">
-                      <span className="text-sm sm:text-base font-semibold">€ 119</span>
-                      <span className="text-xs sm:text-sm text-slate-600 font-normal">/</span>
-                      <span className="text-xs sm:text-sm font-medium">{origPrice2}</span>
+                  {/* Crossed out only while the launch discount runs. */}
+                  {discountPct2 > 0 && (
+                    <div className="flex items-center justify-end mb-1">
+                      <div dir="ltr" className="inline-flex items-center gap-1.5 line-through text-slate-500 tracking-tight">
+                        <span className="text-sm sm:text-base font-semibold">€ 119</span>
+                        <span className="text-xs sm:text-sm text-slate-600 font-normal">/</span>
+                        <span className="text-xs sm:text-sm font-medium">{origPrice2}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Current price with -40% badge */}
                   <div className="flex items-center gap-2 justify-end">
@@ -346,7 +357,7 @@ export function TwoPathsSection() {
                       </span>
                     )}
                     <div dir="ltr" className="flex items-baseline gap-2">
-                      <span className="text-lg sm:text-xl font-bold text-blue-300">€ 71</span>
+                      <span className="text-lg sm:text-xl font-bold text-blue-300">€ {discountPct2 > 0 ? 71 : 119}</span>
                       <span className="text-base text-slate-500 font-normal">/</span>
                       <p className="text-3xl font-extrabold text-blue-400 tracking-tight">
                         {curPrice2}

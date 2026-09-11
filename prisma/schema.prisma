@@ -66,7 +66,10 @@ model User {
 
   orders       Order[]
   entitlements Entitlement[]
+  pushSubs     PushSubscription[]
 
+  // Admin → Customers lists CUSTOMER rows newest first, a page at a time.
+  @@index([role, createdAt])
   @@map("users")
 }
 
@@ -155,6 +158,13 @@ model Order {
 
   entitlement   Entitlement?
 
+  // Every hot query on this table filters by one of these. Without them each is
+  // a full scan — invisible at fifty orders, the slow query at fifty thousand.
+  @@index([customerEmail])          // duplicate-order guard, "my orders" before activation
+  @@index([userId])                 // "my orders" after activation
+  @@index([status, createdAt])      // admin queue: awaiting confirmation, newest first
+  @@index([createdAt])              // admin list, unfiltered
+  @@index([productId, status])      // launch-promo counter
   @@map("orders")
 }
 
@@ -178,6 +188,8 @@ model Entitlement {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
+  // Checked on every open of the plan (/api/split/version) and every portal load.
+  @@index([userId, status])
   @@map("entitlements")
 }
 
@@ -263,6 +275,14 @@ model MediaAsset {
   isProtected  Boolean  @default(true) // true = requires entitlement
   uploadedBy   String?  // admin user id — null for customer-uploaded payment proofs (no session yet)
 
+  // Pre-order payment screenshots. An order no longer exists while the customer
+  // is still on the checkout page — it is created only when they press Confirm —
+  // so the screenshot is uploaded first and handed back with this unguessable
+  // token. POST /api/orders attaches the asset only to whoever presents the
+  // token, and stamps `claimedAt` so one upload can't be pinned to two orders.
+  claimToken   String?  @unique
+  claimedAt    DateTime?
+
   createdAt    DateTime @default(now())
 
   exerciseImages Exercise[] @relation("ExerciseImage")
@@ -306,6 +326,56 @@ model SiteRevision {
   publishedBy String?
 
   @@map("site_revisions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ORDER SERIALS
+// ─────────────────────────────────────────────────────────────
+
+// One row per sequence ("split" / "coaching"). The admin searches orders by
+// this human number, so the two products deliberately count separately —
+// SP-00001 and CO-00001 both exist and say at a glance what was bought.
+//
+// A row-level `increment` is atomic in Postgres, so two checkouts confirming in
+// the same millisecond get different numbers without a table lock.
+model Counter {
+  key       String   @id
+  value     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("counters")
+}
+
+// ─────────────────────────────────────────────────────────────
+// WEB PUSH
+// ─────────────────────────────────────────────────────────────
+
+// One row per installed browser/PWA that accepted notifications. A user can
+// have several (phone + laptop), so `endpoint` is the unique key, not userId.
+// A push that comes back 404/410 means the browser dropped the subscription;
+// that row is deleted rather than retried forever.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  // "ADMIN" rows get order alerts; "CUSTOMER" rows get training reminders.
+  role      Role     @default(CUSTOMER)
+  lang      String   @default("ar")
+
+  // Set when a send fails permanently, so a dead row is cleaned up rather than
+  // retried on every broadcast.
+  failedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 // ─────────────────────────────────────────────────────────────

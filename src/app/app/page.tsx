@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { 
   FileText, 
   MessageCircle, 
@@ -49,6 +50,21 @@ type Entitlement = {
 
 export default function AppHome() {
   const { data: session } = useSession();
+  const router = useRouter();
+
+  // The installed app always starts at /app (manifest start_url). For the
+  // admin, that meant opening the app from a new-order notification's home
+  // screen icon and landing in the customer portal. In the installed app only,
+  // an admin goes straight to the panel; in a browser tab they can still
+  // preview the portal as customers see it.
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  useEffect(() => {
+    if (role !== "ADMIN") return;
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (standalone) router.replace("/admin");
+  }, [role, router]);
   const { isArabic } = useLanguage();
   const getSetting = useSettings();
   const waNumber = getSetting("whatsapp_number").replace(/[^0-9]/g, "");
@@ -85,7 +101,10 @@ export default function AppHome() {
   }, [session]);
 
   const ArrowIcon = isArabic ? ChevronLeft : ChevronRight;
-  const activePlan = entitlements.find((e) => !e.isExpired) || entitlements[0];
+  // Only a real, current entitlement counts. The fallback to `entitlements[0]`
+  // used to surface an expired or revoked plan as if it were the active one.
+  const activePlan = entitlements.find((e) => e.status === "ACTIVE" && !e.isExpired);
+  const isActivated = Boolean(activePlan);
 
   const quickActions = [
     {
@@ -151,9 +170,18 @@ export default function AppHome() {
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 {isArabic ? `أهلاً، ${athleteName}` : `Hello, ${athleteName}`}
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-400 text-[10px] font-bold">
-                <CheckCircle2 size={11} /> {isArabic ? "مفعل" : "Active"}
-              </span>
+              {/* "Active" only for an account an admin has actually activated —
+                  this badge used to be hard-coded, so anyone who had merely
+                  signed in with Google was told their account was active. */}
+              {isActivated ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-400 text-[10px] font-bold">
+                  <CheckCircle2 size={11} /> {isArabic ? "مفعل" : "Active"}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/12 border border-amber-400/30 text-amber-400 text-[10px] font-bold">
+                  {isArabic ? "غير مفعل" : "Not activated"}
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
               {isArabic
@@ -172,7 +200,9 @@ export default function AppHome() {
             <span>{isArabic ? "جدولك التدريبي النشط" : "Your Active Split"}</span>
           </h2>
           <span className="text-xs text-blue-400 font-semibold">
-            {activePlan ? (activePlan.daysLeft !== null ? `${activePlan.daysLeft} ${isArabic ? "يوم متبقي" : "days left"}` : (isArabic ? "متاح دائماً" : "Lifetime Access")) : (isArabic ? "جاهز للاستخدام" : "Ready")}
+            {activePlan
+              ? (activePlan.daysLeft !== null ? `${activePlan.daysLeft} ${isArabic ? "يوم متبقي" : "days left"}` : (isArabic ? "متاح دائماً" : "Lifetime Access"))
+              : (isArabic ? "لسه مش مفعّل" : "Not activated yet")}
           </span>
         </div>
 
@@ -194,22 +224,30 @@ export default function AppHome() {
               </h3>
 
               <p className="text-sm text-slate-300 leading-relaxed">
-                {isArabic
-                  ? "جدولك مصمم بتقنية الهايبرد تريننج لضمان التطور العضلي والقوة، ومحمي بعلامتك المائية، ويعمل بدون اتصال بالإنترنت (Offline Mode)."
-                  : "Built with scientific hybrid training progression, watermarked for your account, and fully cached for instant offline gym access."}
+                {isActivated
+                  ? (isArabic
+                    ? "جدولك مصمم بتقنية الهايبرد تريننج لضمان التطور العضلي والقوة، ومحمي بعلامتك المائية، ويعمل بدون اتصال بالإنترنت (Offline Mode)."
+                    : "Built with scientific hybrid training progression, watermarked for your account, and fully cached for instant offline gym access.")
+                  : (isArabic
+                    ? "الجدول لسه مش متاح على حسابك. اشترك، حوّل، وارفع صورة التحويل — وأول ما نأكد الطلب هيتفعّل على نفس الإيميل اللي كتبته في الفورم."
+                    : "The plan isn't on your account yet. Subscribe, transfer and upload your screenshot — once we confirm the order it's activated on the same email you entered at checkout.")}
               </p>
             </div>
 
             {/* CTA Pill Buttons with Realistic iOS 3D Glass Styling */}
             <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0">
               <Link
-                href="/app/my-split"
+                href={isActivated ? "/app/my-split" : "/#split"}
                 className="relative group h-12 px-6 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-bold text-sm rounded-[18px] transition-all duration-200 flex items-center justify-center gap-2.5 shadow-[0_8px_24px_rgba(37,99,235,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] active:scale-[0.98] border border-blue-300/30 overflow-hidden"
               >
                 {/* Specular gloss top reflection */}
                 <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
                 <RealisticDocumentIcon className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
-                <span>{isArabic ? "فتح جدول التمرين" : "Open My Split"}</span>
+                <span>
+                  {isActivated
+                    ? (isArabic ? "فتح جدول التمرين" : "Open My Split")
+                    : (isArabic ? "اشترك واحصل على الجدول" : "Get the split")}
+                </span>
                 <ArrowIcon size={16} />
               </Link>
 

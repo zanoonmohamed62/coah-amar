@@ -100,6 +100,14 @@ jobs:
             echo "🔄 Reloading PM2..."
             pm2 reload amar-site --update-env || pm2 start npm --name "amar-site" -- start
 
+            # Twice-daily training reminder job (see ecosystem.config.js). Started
+            # from the ecosystem file so its cron schedule is registered; on later
+            # deploys this just refreshes it. Never allowed to fail the deploy —
+            # a missing reminder is not a reason to leave the site half-updated.
+            echo "⏰ Registering training reminder job..."
+            pm2 startOrReload ecosystem.config.js --only amar-reminders --update-env || true
+            pm2 save || true
+
             # Health check — a reload that leaves the app crash-looping would
             # otherwise report success while the site is down. Poll the local
             # port until it answers, and fail the deploy if it never does.

@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Loader2, WifiOff, Lock, MessageCircle } from "lucide-react";
+import { Loader2, Lock, MessageCircle } from "lucide-react";
 import { RealisticOfflineWifiIcon } from "@/components/client/PwaIcons";
 import { useSettings } from "@/lib/use-settings";
 import {
@@ -15,6 +15,9 @@ import {
   getPageImages,
   savePageImage,
   prunePageImages,
+  saveDocMeta,
+  getDocMeta,
+  requestPersistentStorage,
   rememberSplitUser,
   getRememberedSplitUser,
   forgetOfflineSplit,
@@ -184,6 +187,10 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
   const urlsRef = useRef<(string | null)[]>([]);
   const jobRef = useRef(0);
   const rasterRef = useRef<{ version: string; width: number } | null>(null);
+  // Which version/width the images currently on screen belong to. Only those can
+  // be reused as-is; images from an older upload or another screen width must
+  // still be replaced.
+  const paintedRef = useRef<{ version: string; width: number } | null>(null);
   const labelRef = useRef(watermarkText);
   useEffect(() => { labelRef.current = watermarkText; }, [watermarkText]);
 
@@ -241,11 +248,19 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
     }
     urlsRef.current = Array.from({ length: total }, (_, i) => urlsRef.current[i] ?? null);
 
-    const cached = await getPageImages(userId, version, width, total);
+    const cached = await getPageImages(userId, lang, version, width, total);
     if (job !== jobRef.current) return;
+    // Pages the instant path already put on screen for this exact version and
+    // width are left alone — re-pointing an <img> at a fresh blob URL of the same
+    // picture can flash it blank. Anything from an older upload or a different
+    // width is replaced as normal.
+    const sameSet = paintedRef.current?.version === version && paintedRef.current?.width === width;
     const hits: { index: number; blob: Blob }[] = [];
-    cached.forEach((blob, index) => { if (blob) hits.push({ index, blob }); });
+    cached.forEach((blob, index) => {
+      if (blob && !(sameSet && urlsRef.current[index])) hits.push({ index, blob });
+    });
     if (hits.length) publishUrls(hits);
+    paintedRef.current = { version, width };
 
     const done = cached.map((b) => !!b);
     for (;;) {
@@ -267,7 +282,7 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
           canvas.height = 0;
           if (blob && job === jobRef.current) {
             publishUrls([{ index: i, blob }]);
-            void savePageImage(userId, version, width, i + 1, blob);
+            void savePageImage(userId, lang, version, width, i + 1, blob);
           }
         }
       } catch {
@@ -276,8 +291,41 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
       // Let scrolling and taps through between pages.
       await nextTask();
     }
-    if (job === jobRef.current) void prunePageImages(userId, version, width);
-  }, [userId, publishUrls]);
+    if (job === jobRef.current) void prunePageImages(userId, lang, version, width);
+  }, [userId, lang, publishUrls]);
+
+  // ── Opening an already-downloaded plan ────────────────────────────────────
+  //
+  // Everything needed to show the plan — how many pages, their shape, and the
+  // rendered image of each — is already on the device after the first read. So
+  // paint from that directly and let pdf.js load afterwards, in the background,
+  // for the things only it can do (in-plan links, and a sharper page when the
+  // customer zooms past the stored resolution).
+  //
+  // Before this, every open — reopening the app, switching the EN/AR tab,
+  // coming back to the tab — waited on pdf.js parsing a 1.4 MB document on the
+  // main thread before a single page appeared, which is what made a plan that
+  // was fully cached still feel like it was downloading from scratch.
+  const paintCached = useCallback(async (version: string): Promise<boolean> => {
+    const el = viewerRef.current;
+    if (!userId || !el) return false;
+    const meta = await getDocMeta(userId, lang, version);
+    if (!meta) return false;
+
+    const width = rasterWidthFor(el.clientWidth || window.innerWidth);
+    const images = await getPageImages(userId, lang, version, width, meta.numPages);
+    const hits: { index: number; blob: Blob }[] = [];
+    images.forEach((blob, index) => { if (blob) hits.push({ index, blob }); });
+    if (hits.length === 0) return false;
+
+    rasterRef.current = { version, width };
+    paintedRef.current = { version, width };
+    setPageAspect(meta.aspect > 0 ? meta.aspect : 0.5625);
+    setNumPages(meta.numPages);
+    publishUrls(hits);
+    setStatus("ready");
+    return hits.length === meta.numPages;
+  }, [userId, lang, publishUrls]);
 
   // In-plan links (the language picker, jumps between sections), read once per
   // document and laid over the images as percentages of the page.
@@ -345,21 +393,28 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
 
     const previous = pdfRef.current;
     pdfRef.current = pdf;
+    let aspect = 0;
     try {
       const first = await pdf.getPage(1);
       const vp = first.getViewport({ scale: 1 });
-      if (vp.width > 0) setPageAspect(vp.height / vp.width);
+      if (vp.width > 0) {
+        aspect = vp.height / vp.width;
+        setPageAspect(aspect);
+      }
     } catch {
       /* keep the default */
     }
     setNumPages(pdf.numPages);
     setStatus("ready");
+    // Remembered so the next open can lay the document out and show its stored
+    // pages without opening the PDF at all.
+    if (userId && aspect > 0) void saveDocMeta(userId, lang, version, { numPages: pdf.numPages, aspect });
     void buildPages(pdf, version);
     void loadLinks(pdf);
     if (previous && previous !== pdf) {
       try { previous.destroy(); } catch { /* ignore */ }
     }
-  }, [buildPages, loadLinks]);
+  }, [buildPages, loadLinks, userId, lang]);
 
   const hideEverything = useCallback(() => {
     jobRef.current++;
@@ -372,15 +427,29 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
   }, [releaseUrls]);
 
   // ── Loading the document ──────────────────────────────────────────────────
+  //
+  // Order of business, fastest first:
+  //   1. Paint the pages already stored on this device. No network, no pdf.js.
+  //   2. Load pdf.js quietly for links, zoom, and any page not stored yet.
+  //   3. Ask the server whether this session may still read the plan, and
+  //      whether a newer file has been uploaded.
+  //
+  // Step 3 does not gate step 1: the stored pages were only ever written after
+  // an authenticated, entitled download, so showing them first does not widen
+  // access — and a "denied" answer pulls them straight back off the screen.
+  // Offline, step 3 simply never answers and the plan stays readable, which is
+  // the entire point of caching it.
   const loadDocument = useCallback(async () => {
     try {
-      const pdfjsLib = await import("pdfjs-dist");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
-
       if (!userId) {
         setStatus("no-access");
         return;
       }
+
+      // Ask the browser to stop treating the download as disposable. Without
+      // this both iOS and Android may evict it under storage pressure, which
+      // reads to the customer as the plan downloading itself all over again.
+      void requestPersistentStorage();
 
       // Start from the page the customer left off on, so that page is the
       // first one rendered.
@@ -397,13 +466,31 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
         getCachedVersion(userId, lang),
       ]);
 
-      if (cachedBuf) {
-        // The local copy was only ever written after an authenticated, entitled
-        // fetch, so showing it while the probe is in flight does not widen
-        // access — and the probe pulls it straight back if this session is not
-        // entitled.
-        await openPdf(pdfjsLib, cachedBuf, cachedVersion ?? "cached");
+      // 1. Stored pages on screen immediately.
+      const painted = cachedVersion ? await paintCached(cachedVersion) : false;
 
+      if (cachedBuf) {
+        const version = cachedVersion ?? "cached";
+
+        // 2. pdf.js afterwards. When every page was already painted there is
+        //    nothing urgent left for it, so it waits for the browser to be idle
+        //    rather than competing with the first scroll.
+        const openCached = async () => {
+          const pdfjsLib = await import("pdfjs-dist");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
+          await openPdf(pdfjsLib, cachedBuf, version);
+          return pdfjsLib;
+        };
+
+        const pdfjsPromise = painted
+          ? new Promise<typeof import("pdfjs-dist")>((resolve) => {
+              const run = () => resolve(openCached());
+              if (typeof requestIdleCallback === "function") requestIdleCallback(run, { timeout: 2000 });
+              else setTimeout(run, 300);
+            })
+          : openCached();
+
+        // 3. Access + freshness, once the network answers.
         void (async () => {
           const probe = await probePromise;
           if (probe.state === "denied") {
@@ -424,13 +511,27 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
             await savePdfToCache(userId, fresh, probe.version, lang);
             // The pages on screen stay until the new version's images replace
             // them one by one.
+            const pdfjsLib = await pdfjsPromise;
             await openPdf(pdfjsLib, fresh, probe.version);
           } catch { /* keep showing the cached copy */ }
         })();
+
+        // Surface a failure to open the cached bytes only when there is nothing
+        // on screen; with pages painted, a bad parse costs links and zoom, not
+        // the plan itself.
+        pdfjsPromise.catch((err) => {
+          if (painted) return;
+          const msg = err instanceof Error ? err.message : String(err);
+          setErrMsg(msg);
+          setStatus("error");
+        });
         return;
       }
 
       // Nothing cached — the probe has to settle before anything can be shown.
+      const pdfjsLib = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
+
       const probe = await probePromise;
       if (probe.state === "denied") {
         await clearOtherUsersCache("");
@@ -456,7 +557,7 @@ export default function PdfCanvas({ isArabic, lang }: Props) {
       setErrMsg(msg);
       setStatus("error");
     }
-  }, [openPdf, userId, hideEverything, lang]);
+  }, [openPdf, userId, hideEverything, lang, paintCached]);
 
   useEffect(() => {
     if (identityPending) return;

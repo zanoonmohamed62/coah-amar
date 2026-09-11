@@ -55,6 +55,11 @@ export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [loading, setLoading] = useState(true);
+  // Paged server-side — every Google sign-in is a row here, so this table is
+  // the one that grows fastest.
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 25;
 
   // New Customer Modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -78,21 +83,36 @@ export default function CustomersPage() {
   const t = adminTranslations[lang].customers;
   const tCommon = adminTranslations[lang].common;
 
-  const fetchCustomers = () => {
+  // The active/inactive filter runs on the server. It used to run over the
+  // loaded list in the browser, which is only correct while the whole table
+  // fits in one response — with paging it would have filtered just the visible
+  // page and reported "no inactive customers" when page 7 was full of them.
+  const fetchCustomers = (targetPage = page) => {
     setLoading(true);
-    fetch(`/api/admin/customers?q=${encodeURIComponent(searchQuery)}`)
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("q", searchQuery);
+    if (filter !== "all") params.set("filter", filter);
+    params.set("page", String(targetPage));
+    params.set("pageSize", String(PAGE_SIZE));
+    fetch(`/api/admin/customers?${params.toString()}`)
       .then((r) => r.json())
       .then((d) => {
         setCustomers(d.customers || []);
+        setTotal(typeof d.total === "number" ? d.total : 0);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   };
 
   useEffect(() => {
-    const timer = setTimeout(fetchCustomers, 250);
+    setPage(1);
+  }, [searchQuery, filter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchCustomers(page), 250);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, filter, page]);
 
   useEffect(() => {
     fetch("/api/admin/products")
@@ -130,11 +150,8 @@ export default function CustomersPage() {
     setCreating(false);
   };
 
-  const filteredCustomers = customers.filter((c) => {
-    if (filter === "active") return c.entitlements.length > 0;
-    if (filter === "inactive") return c.entitlements.length === 0;
-    return true;
-  });
+  // Already filtered (and paged) by the server — see fetchCustomers.
+  const filteredCustomers = customers;
 
   const closeDeleteModal = () => {
     setDeleteTarget(null);
@@ -176,7 +193,7 @@ export default function CustomersPage() {
         {/* Filter Pills */}
         <div className="flex gap-2">
           {[
-            { key: "all", label: `${tCommon.all} (${customers.length})` },
+            { key: "all", label: filter === "all" ? `${tCommon.all} (${total})` : tCommon.all },
             { key: "active", label: tCommon.active },
             { key: "inactive", label: tCommon.inactive },
           ].map(({ key, label }) => (
@@ -207,6 +224,15 @@ export default function CustomersPage() {
               } py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-accent)]`}
             />
           </div>
+
+          {/* Every customer — signed-in leads and paying members — as CSV. */}
+          <a
+            href="/api/admin/export?type=customers"
+            className="shrink-0 px-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] text-xs font-bold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-accent)] transition-colors"
+            title={isArabic ? "تحميل كل العملاء كملف Excel" : "Download every customer as a spreadsheet"}
+          >
+            {isArabic ? "تصدير" : "Export"}
+          </a>
 
           <button
             onClick={() => {
@@ -452,6 +478,35 @@ export default function CustomersPage() {
           </table>
         </div>
       </div>
+
+      {total > PAGE_SIZE && (
+        <div className="flex items-center justify-between gap-3 px-1">
+          <span className="text-xs text-[var(--text-muted)] tabular-nums">
+            {isArabic
+              ? `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} من ${total}`
+              : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total}`}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || loading}
+              className="min-h-9 px-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] text-xs font-bold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-accent)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {isArabic ? "السابق" : "Prev"}
+            </button>
+            <span className="text-xs font-bold text-[var(--text-primary)] tabular-nums px-1">
+              {page} / {Math.max(1, Math.ceil(total / PAGE_SIZE))}
+            </span>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page * PAGE_SIZE >= total || loading}
+              className="min-h-9 px-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] text-xs font-bold text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-accent)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {isArabic ? "التالي" : "Next"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirmation — irreversible and it also removes orders, so it
           asks for the athlete's email rather than a single click. */}

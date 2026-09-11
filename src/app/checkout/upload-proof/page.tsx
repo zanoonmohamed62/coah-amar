@@ -215,13 +215,13 @@ function UploadProofInner() {
     <div className="min-h-screen bg-[#07090e] px-5 py-10 sm:py-16">
       <div className="max-w-lg mx-auto space-y-5">
         {/* Order summary — the anchor that survives a reload */}
-        <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6">
+        <div className="ios-card p-6">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="min-w-0">
               <h1 className="text-lg font-extrabold text-white leading-tight">
                 {order.product.name}
               </h1>
-              <p className="text-xs text-slate-500 mt-1 font-mono">{order.orderRef}</p>
+              <p className="text-lg font-black text-blue-400 mt-1 tabular-nums select-all">{order.orderRef}</p>
             </div>
             <span
               className={`shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-[var(--radius-pill)] border ${
@@ -275,7 +275,7 @@ function UploadProofInner() {
         ) : (
           <>
             {/* Step 1 — where to send the money */}
-            <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 space-y-4">
+            <div className="ios-card p-6 space-y-4">
               <StepHead
                 n={1}
                 title={
@@ -317,13 +317,13 @@ function UploadProofInner() {
 
               <p className="text-[11px] text-amber-400/90 bg-amber-500/10 border border-amber-500/25 rounded-[var(--radius-md)] px-3 py-2.5 leading-relaxed">
                 {isArabic
-                  ? `⚠️ حوّل المبلغ بالظبط: ${amount} ${order.currency}. أي مبلغ مختلف هيأخّر التفعيل.`
-                  : `⚠️ Send exactly ${amount} ${order.currency}. A different amount will delay activation.`}
+                  ? `حوّل المبلغ بالظبط: ${amount} ${order.currency}. أي مبلغ مختلف هيأخّر التفعيل.`
+                  : `Send exactly ${amount} ${order.currency}. A different amount will delay activation.`}
               </p>
             </div>
 
             {/* Step 2 — prove it */}
-            <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 space-y-4">
+            <div className="ios-card p-6 space-y-4">
               <StepHead
                 n={2}
                 done={order.hasProof}
@@ -337,7 +337,7 @@ function UploadProofInner() {
             </div>
 
             {/* Step 3 — what happens next, so the wait is never a mystery */}
-            <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 space-y-3">
+            <div className="ios-card p-6 space-y-3">
               <StepHead n={3} title={isArabic ? "استنى التفعيل" : "We activate your access"} />
               <p className="text-xs text-slate-400 leading-relaxed flex items-start gap-2">
                 <Clock size={14} className="shrink-0 mt-0.5 text-blue-400" />

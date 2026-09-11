@@ -106,7 +106,11 @@ function TeldaQrSection({ isArabic }: { isArabic: boolean }) {
   );
 }
 
-function SplitPdfSection({ isArabic }: { isArabic: boolean }) {
+// One uploader per language. The split ships as two PDFs, and there used to be a
+// single slot here — uploading the Arabic file replaced the English one too, so
+// every English-tab customer was handed Arabic (or the reverse).
+function SplitPdfSection({ isArabic, lang }: { isArabic: boolean; lang: "en" | "ar" }) {
+  const settingKey = lang === "ar" ? "active_split_media_id_ar" : "active_split_media_id_en";
   const [activeId, setActiveId] = useState<string>("");
   const [asset, setAsset] = useState<MediaAsset | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -115,16 +119,22 @@ function SplitPdfSection({ isArabic }: { isArabic: boolean }) {
 
   const load = useCallback(async () => {
     const settingsRes = await fetch("/api/admin/settings").then(r => r.json()).catch(() => null);
-    const id = (settingsRes?.settings || []).find((s: { key: string }) => s.key === "active_split_media_id")?.value || "";
+    const all = (settingsRes?.settings || []) as { key: string; value: string }[];
+    // The English slot still honours the original single-slot key, so a file
+    // uploaded before this split into two keeps showing as current.
+    const id =
+      all.find((s) => s.key === settingKey)?.value ||
+      (lang === "en" ? all.find((s) => s.key === "active_split_media_id")?.value : "") ||
+      "";
     setActiveId(id);
     if (id) {
-      const mediaRes = await fetch("/api/admin/media").then(r => r.json()).catch(() => null);
+      const mediaRes = await fetch(`/api/admin/media?id=${encodeURIComponent(id)}`).then(r => r.json()).catch(() => null);
       const found = (mediaRes?.assets || []).find((a: MediaAsset) => a.id === id);
       setAsset(found || null);
     } else {
       setAsset(null);
     }
-  }, []);
+  }, [settingKey, lang]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -147,7 +157,7 @@ function SplitPdfSection({ isArabic }: { isArabic: boolean }) {
       const settingRes = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "active_split_media_id", value: uploadData.asset.id }),
+        body: JSON.stringify({ key: settingKey, value: uploadData.asset.id }),
       });
       if (!settingRes.ok) throw new Error();
 
@@ -168,7 +178,9 @@ function SplitPdfSection({ isArabic }: { isArabic: boolean }) {
         </div>
         <div>
           <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
-            {isArabic ? "ملف خطة التدريب (PDF)" : "Training Plan File (PDF)"}
+            {lang === "ar"
+              ? (isArabic ? "ملف الجدول — النسخة العربي" : "Plan file — Arabic version")
+              : (isArabic ? "ملف الجدول — النسخة الإنجليزي" : "Plan file — English version")}
           </h3>
           <p className="text-[11px] text-[var(--text-muted)]">
             {isArabic ? "الملف اللي بيشوفه العميل في لوحة التحكم" : "The file customers see in their portal"}
@@ -374,7 +386,8 @@ export default function AdminSettingsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <SplitPdfSection isArabic={isArabic} />
+          <SplitPdfSection isArabic={isArabic} lang="en" />
+          <SplitPdfSection isArabic={isArabic} lang="ar" />
           <TeldaQrSection isArabic={isArabic} />
           {SETTING_SECTIONS.map(({ label, icon: Icon, description, items }) => (
             <div

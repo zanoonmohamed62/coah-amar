@@ -5,7 +5,16 @@ import { OrderStatus, EntitlementStatus, Role, ProductType } from "@prisma/clien
 import bcrypt from "bcryptjs";
 import { redis } from "@/lib/redis";
 import { isSuperAdminEmail } from "@/lib/super-admin";
+import { publishEvent } from "@/lib/realtime";
+import { notifyUser } from "@/lib/push";
 
+// Paged deliberately.
+//
+// This used to return every order in one response with the customer and product
+// joined onto each. At a few hundred orders that is a slow query and a large
+// payload; at the volume this launch expects it is the request that takes the
+// panel down. The page now asks for one screen at a time and the table pages
+// through — `total` is a separate COUNT so the pager knows how far it goes.
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -13,31 +22,49 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
   const method = searchParams.get("method");
-  const q = searchParams.get("q")?.toLowerCase();
+  const q = searchParams.get("q")?.trim();
 
-  const orders = await db.order.findMany({
-    where: {
-      ...(status ? { status: status as OrderStatus } : {}),
-      ...(method ? { paymentMethod: method as "INSTAPAY" | "PAYPAL" | "TELDA" } : {}),
-      ...(q
-        ? {
-            OR: [
-              { orderRef: { contains: q, mode: "insensitive" } },
-              { customerName: { contains: q, mode: "insensitive" } },
-              { customerEmail: { contains: q, mode: "insensitive" } },
-              { customerPhone: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    include: {
-      product: { select: { id: true, name: true, type: true, price: true } },
-      user: { select: { id: true, name: true, email: true } },
-    },
-    orderBy: { createdAt: "desc" },
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+  const pageSize = Math.min(200, Math.max(1, parseInt(searchParams.get("pageSize") || "25", 10) || 25));
+
+  const where = {
+    ...(status ? { status: status as OrderStatus } : {}),
+    ...(method ? { paymentMethod: method as "INSTAPAY" | "PAYPAL" | "TELDA" } : {}),
+    ...(q
+      ? {
+          OR: [
+            // The order number first: it is what a customer sends on WhatsApp
+            // and the single most common thing the admin pastes in here.
+            { orderRef: { contains: q, mode: "insensitive" as const } },
+            { customerName: { contains: q, mode: "insensitive" as const } },
+            { customerEmail: { contains: q, mode: "insensitive" as const } },
+            { customerPhone: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [orders, total] = await Promise.all([
+    db.order.findMany({
+      where,
+      include: {
+        product: { select: { id: true, name: true, type: true, price: true } },
+        user: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.order.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    orders,
+    total,
+    page,
+    pageSize,
+    hasMore: page * pageSize < total,
   });
-
-  return NextResponse.json({ orders });
 }
 
 export async function PUT(req: NextRequest) {
@@ -160,7 +187,33 @@ export async function PUT(req: NextRequest) {
     const affectedUser = await db.user.findUnique({ where: { email: order.customerEmail }, select: { id: true } });
     if (affectedUser) {
       await redis.del(`customer:entitlements:${affectedUser.id}`);
+      // The customer's installed app learns they are in, without them having to
+      // keep checking their email.
+      void notifyUser(affectedUser.id, {
+        title: "تم تفعيل حسابك",
+        body: `طلب ${order.orderRef} اتأكد — الجدول جاهز جوه التطبيق.`,
+        url: "/app/my-split",
+        tag: `activated-${order.orderRef}`,
+      });
     }
+  } catch {}
+
+  // Any other admin with the panel open sees the row move out of the queue.
+  try {
+    publishEvent({
+      type: "order.updated",
+      order: {
+        orderRef: order.orderRef,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        productName: order.product.name,
+        amount: order.amount,
+        currency: order.currency,
+        paymentMethod: order.paymentMethod,
+        status: OrderStatus.CONFIRMED,
+        createdAt: new Date(order.createdAt).toISOString(),
+      },
+    });
   } catch {}
 
   return NextResponse.json({ success: true });

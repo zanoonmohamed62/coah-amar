@@ -44,6 +44,13 @@ NextAuth v5, JWT session strategy, two providers, both in `src/lib/auth.ts`:
   no hardcoded fallback credentials exist. (Previously there were hardcoded admin/demo accounts
   and an unauthenticated `/api/dev-login` cookie-setter; both were removed.)
 
+**Session lifetime (2026-09-11)**: customers are never timed out (JWT `maxAge` is one year);
+admins are signed out after one hour of inactivity, enforced per-role in `auth.config.ts`'s
+`authorized` callback plus the client-side `useSessionTimeout` hook, which now runs only in the
+admin shell. The old 15-minute timeout applied to customers too, and signing out wipes the
+device's offline copy of the plan (`forgetOfflineSplit`) — so every customer who left the app
+idle came back to a full re-download. That was the main cause of "the split reloads every time".
+
 `src/lib/auth.config.ts` holds the edge-safe config used by `src/middleware.ts` (route protection
 only, no DB/bcrypt access — must stay edge-safe, no `@/lib/db` or `bcryptjs` imports here).
 `src/lib/auth.ts` holds the full config with providers and DB-dependent callbacks. Both pull the
@@ -74,6 +81,10 @@ look like a real production marketing site. `/admin` and `/app` are still reacha
   saw before deciding. The hero's third stat (`stat3*`, "Client Rating") is not rendered — it had
   no real data and showed a literal `0`; its CMS fields are kept for when real ratings exist.
 - `/checkout/split`, `/checkout/coaching` — the two checkout funnels every homepage CTA links to.
+  Both render `src/components/checkout/CheckoutFlow.tsx`: details → pay & upload screenshot →
+  Confirm → order number. **No order row exists until Confirm** (see the payment section). The
+  whole draft (fields, method, step, uploaded screenshot) is mirrored to localStorage per product,
+  so a refresh at any step restores it.
 - `/checkout/upload-proof` — the durable per-order payment page (transfer details, proof upload,
   live status). Scoped by the order's `accessToken`, reachable without a session.
 - `/checkout/return` — retired PayPal return page; now just forwards old links to
@@ -111,6 +122,13 @@ them and why.
 - **Split PDF** (`requireCustomer` + entitlement check): `/api/split` (streams the PDF bytes),
   `/api/split/version` (cheap version marker so `PdfCanvas` can tell when its IndexedDB cache is
   stale without re-downloading).
+- **Checkout**: `/api/checkout/proof` (public, rate-limited) — uploads the transfer screenshot
+  before an order exists and returns `{assetId, claimToken}`.
+- **Realtime / presence / push**: `/api/admin/realtime` (SSE stream for the admin panel),
+  `/api/presence` (visitor heartbeat), `/api/push/vapid`, `/api/push/subscribe`,
+  `/api/cron/reminders` (secret-protected, fired by PM2).
+- **Export**: `/api/admin/export?type=orders|customers` — streams the full table as CSV (with a
+  BOM so Excel shows Arabic correctly).
 - **Orders**: `/api/orders` (`POST` creates; `GET ?orderRef=` is a lightweight status poll),
   `/api/orders/[orderRef]` (full detail for the customer's payment page, token-scoped),
   `/api/orders/[orderRef]/proof` (screenshot upload, token-scoped, all payment methods),
@@ -203,6 +221,14 @@ explicitly out of scope (WhatsApp-only).
   and confirms in `/admin/orders` → `CONFIRMED`, `User`+`Entitlement` created then,
   `sendAccessGrantedEmail` sent.
 
+**Order creation (2026-09-11)**: an order is created only when the customer has uploaded their
+screenshot (`POST /api/checkout/proof`) and pressed Confirm. `POST /api/orders` requires
+`proofAssetId` + `proofClaimToken`, claims the screenshot with a conditional update (so a
+double-tap cannot create two orders), and issues a server-side order number from
+`src/lib/order-ref.ts`: `SP-00001…` for the split and `CO-00001…` for coaching, on separate
+atomic counters (`Counter` table). The admin searches by this number. Orders created before
+this change keep their old `SPLIT-…`/`COACH-…` refs.
+
 **All three methods are manual** — there is exactly one process. Orders are created directly as
 `AWAITING_CONFIRMATION` (no method starts at `PENDING` any more), every method can upload a proof
 screenshot, and nothing activates an entitlement except an admin pressing Confirm. This is a
@@ -261,6 +287,19 @@ from `GET /api/split`.
   does **not** cache `/api/split` itself, since a Service Worker intercepts fetches ahead of the
   page's own `cache` options, and a cache-first SW response there would silently bypass the
   auth/entitlement check on every request after the first.
+- **Offline cache keys are language-scoped (2026-09-11)**: rendered page images and the
+  document's shape (`DocMeta`) are keyed `user:lang:version:width`. They used to omit the
+  language, and since each language has its own version string, pruning after opening one tab
+  deleted every page of the other — switching EN↔AR re-rendered the whole plan from scratch
+  every time. A cached plan now paints straight from IndexedDB before pdf.js is even imported;
+  pdf.js loads afterwards (when idle) for links and hi-res zoom. The viewer also calls
+  `navigator.storage.persist()` so the browser does not evict the download.
+- **Two uploadable files**: `/admin/settings` has one PDF slot per language
+  (`active_split_media_id_en` / `_ar`, resolved by `src/lib/split-file.ts`). There used to be one
+  slot, and uploading replaced both languages with the same file.
+- **Service worker scope is `/`** (was `/app`), registered by `ServiceWorkerRegistrar` in the
+  portal and the admin shell — push notifications need a worker on `/admin` too. The fetch
+  handler still only intercepts `/app`, `/_next/static` and `/pdfjs`.
 - **Watermarking**: every rendered page gets a semi-transparent, diagonally-repeating watermark of
   the viewing customer's email (drawn client-side from the live session onto the canvas right
   after `pdf.js` renders it, in `renderPage()` — see `drawWatermark()`). This is deliberately not
@@ -275,6 +314,48 @@ from `GET /api/split`.
   stays as-is in case it's revisited later.
 
 ---
+
+## Realtime, visitors, notifications (2026-09-11)
+
+- **Admin realtime is Server-Sent Events, not socket.io.** socket.io needs a custom HTTP
+  server in place of `next start`; SSE runs through the existing PM2/nginx path unchanged.
+  `src/lib/realtime.ts` publishes over Redis pub/sub (one shared subscriber per process fans
+  out to every open admin stream) and falls back to in-process delivery if Redis is down.
+  The stream sends `X-Accel-Buffering: no` so nginx does not hold events back.
+- **Visitors online**: `VisitorBeacon` POSTs a random session id to `/api/presence` once a
+  minute while the tab is visible; `src/lib/presence.ts` keeps a Redis sorted set and counts
+  members seen in the last 130s. Deliberately not a held-open socket per visitor.
+- **Web Push** (`src/lib/push.ts`, `src/lib/use-push.ts`, `public/sw.js` push handler): the
+  admin's installed app gets an alert per new order; activated customers can opt in to a
+  twice-daily training nudge (10:00 / 19:00 Cairo, PM2 cron app `amar-reminders` →
+  `scripts/send-reminders.js` → `/api/cron/reminders`). Entirely inert without these env vars:
+  `VAPID_PUBLIC_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same value), `VAPID_PRIVATE_KEY`,
+  `VAPID_SUBJECT`, `CRON_SECRET`. Generate keys with `npx web-push generate-vapid-keys`.
+- **Onboarding cards**: `PwaWelcomeGate` shows "مرحباً" before the login page in the installed
+  app (once per device). After login, `PwaOnboardingModal` shows activated accounts
+  تم تفعيل حسابك → الحساب مربوط بنجاح → تصفّح الجدول, and non-activated ones
+  مرحباً/إكمال إعداد حسابك → الجدول لسه مش متاح. Seen-state is stored per account as
+  `pending`/`active`, so a customer activated after their first visit still gets the activation
+  cards next time. An admin opening the installed app is redirected from `/app` to `/admin`.
+- **In-app support**: `AmarSupport.tsx` — scripted, button-only answers (works offline), with
+  WhatsApp as the escape hatch for anything outside the script.
+
+## Scale notes
+
+- The media library (`/api/admin/media`) is paged and excludes payment screenshots (`proof-*`),
+  which are viewed on their order instead; `?id=` fetches a single asset.
+- Admin orders and customers are **paged server-side** (25/page, `total` returned); the
+  customers active/inactive filter runs in SQL. Full data goes out through the CSV export.
+- Indexes exist for every hot filter: `orders(customerEmail)`, `orders(userId)`,
+  `orders(status, createdAt)`, `orders(createdAt)`, `orders(productId, status)`,
+  `entitlements(userId, status)`, `users(role, createdAt)`.
+- Public reads on every homepage visit (`/api/products`, `/api/site-content`,
+  `/api/settings/public`) are Redis-cached.
+- `GET /api/customer/orders` matches on the signed-in email as well as `userId`: a checkout
+  order has `userId: null` until the admin confirms it, so matching on `userId` alone hid the
+  very order a waiting customer wanted to see.
+- Payment screenshots (`proof-*` storage keys) are admin-only in `/api/media/[assetId]`.
+  Previously any customer with an active plan could open any screenshot by id.
 
 ## Settings as the real source of truth
 
@@ -299,6 +380,14 @@ string) is still hardcoded in various places — low-value to chase further righ
 ---
 
 ## Pricing — single source of truth
+
+**Live price derivation lives in `src/lib/pricing.ts` (2026-09-11)** and is called by BOTH
+`GET /api/products` (display, 30s Redis cache, invalidated on order/product change) and
+`POST /api/orders` (charge, computed fresh). Previously only the display derived the promo
+price; order creation recorded the raw `Product.price` column, which holds the *discounted*
+figure — so after the 100th buyer the site showed 499 while orders were still written at 299.
+The homepage cards (`two-paths.tsx`) also kept a hard-coded "-40%" fallback and struck-through
+price after the promo ended; both are now gated on `promoActive`.
 
 `Product.price` (piastres, in Postgres) is the only real price, edited only from
 `/admin/products`. The public `GET /api/products` endpoint returns it; `checkout/split/page.tsx`,
@@ -351,9 +440,11 @@ third, broken checkout page with a stale product slug) was deleted; its one inbo
   CMS text (unlike the main offer prices, a "renewal" isn't tied to a `Product` row), so it's
   editable directly in the Site Editor once a real number is confirmed.
 - **No live push when the admin uploads a new PDF** — already-open tabs pick up the change on
-  their next natural reload (via the `/api/split/version` check), not instantly. Real-time push
-  would need Web Push/WebSocket infrastructure this app doesn't have; judged disproportionate for
-  now.
+  their next natural reload (via the `/api/split/version` check), not instantly. The SSE/Web
+  Push infrastructure now exists (see "Realtime") but is not wired to PDF uploads.
+- **Unclaimed pre-order screenshots accumulate** in `private_media/` (a customer who uploads
+  and never confirms). Harmless and rate-limited (10 per 5 min per IP); a periodic cleanup of
+  `media_assets` rows that still carry a `claimToken` after a few days would reclaim the space.
 - **Media storage is local disk** (`private_media/`) — verify this survives the actual deployment
   target's filesystem lifecycle (ephemeral serverless hosts lose local files on redeploy). Note
   this also now applies to `public/uploads/` (the Site Editor's public image uploads), which has

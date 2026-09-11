@@ -14,9 +14,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const asset = await db.mediaAsset.findUnique({ where: { id: assetId } });
   if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  const role = (session!.user as { role?: string }).role;
+
+  // Payment screenshots are other people's bank details. They are admin-only,
+  // full stop — an active entitlement (the rule below, meant for exercise media)
+  // used to be enough to open ANY customer's transfer screenshot by id. Every
+  // proof, pre-order or not, is stored under a "proof-" key.
+  if (asset.storageKey.startsWith("proof-") && role !== "ADMIN") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   // Protected assets require entitlement
   if (asset.isProtected) {
-    const role = (session!.user as { role?: string }).role;
     if (role !== "ADMIN") {
       // Find any active entitlement for this user
       const userId = session!.user!.id!;
@@ -36,7 +45,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
     "Content-Type": asset.mimeType,
     "Content-Length": String(stat.size),
     "Cache-Control": "private, no-store",
-    "Content-Disposition": `inline; filename="${asset.originalName}"`,
+    // The name comes from the customer's own device, so it is encoded rather
+    // than pasted between quotes — a quote or newline in it would otherwise
+    // break the header.
+    "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(asset.originalName)}`,
   });
 
   // Stream file

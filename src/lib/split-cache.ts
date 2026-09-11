@@ -176,21 +176,76 @@ export async function clearOtherUsersCache(userId: string): Promise<void> {
 // page is now rasterised once, stored here as a JPEG, and displayed as a plain
 // <img> from then on — native, smooth scrolling with no pdf.js work at all.
 //
-// Keyed by user, PDF version and raster width: a new upload or a very different
-// screen width simply produces new images, and prunePageImages drops the old
-// set. The viewer's watermark is baked into each image, which is fine because
-// the images are per-user like the PDF they came from.
-const PAGE_PREFIX = "amarx-split-page-v1:";
+// Keyed by user, LANGUAGE, PDF version and raster width: a new upload or a very
+// different screen width simply produces new images, and prunePageImages drops
+// the old set.
+//
+// The language is part of the key for a reason. It used to be absent, and the
+// version string differs per language ("en-<mtime>" vs "ar-<mtime>") — so
+// pruning after opening the English tab deleted every Arabic page as "an old
+// version", and opening Arabic deleted every English one. Switching tabs
+// therefore re-rendered the whole plan from scratch every single time, which is
+// exactly the "it loads again from zero each time I open it" the viewer was
+// reported for. Pruning is now confined to one language's own images.
+const PAGE_PREFIX = "amarx-split-page-v2:";
 
-function pageKey(userId: string, version: string, width: number, page: number) {
-  return `${PAGE_PREFIX}${userId}:${version}:${width}:${page}`;
+function langPrefix(userId: string, lang: SplitLang) {
+  return `${PAGE_PREFIX}${userId}:${lang}:`;
+}
+
+function pageKey(userId: string, lang: SplitLang, version: string, width: number, page: number) {
+  return `${langPrefix(userId, lang)}${version}:${width}:${page}`;
+}
+
+// What the viewer needs to lay the document out before pdf.js has parsed
+// anything: how many pages there are and their shape. With this cached, a
+// reopened plan paints its stored images immediately and pdf.js loads quietly
+// afterwards for links and zoom — instead of every open waiting on a 1.4 MB
+// parse first.
+export type DocMeta = { numPages: number; aspect: number };
+
+function metaKey(userId: string, lang: SplitLang, version: string) {
+  return `${langPrefix(userId, lang)}meta:${version}`;
+}
+
+export async function saveDocMeta(userId: string, lang: SplitLang, version: string, meta: DocMeta): Promise<void> {
+  if (!userId) return;
+  try {
+    const db = await openIDB();
+    await new Promise<void>((res) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).put(meta, metaKey(userId, lang, version));
+      tx.oncomplete = () => res();
+      tx.onerror = () => res();
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
+export async function getDocMeta(userId: string, lang: SplitLang, version: string): Promise<DocMeta | null> {
+  if (!userId) return null;
+  try {
+    const db = await openIDB();
+    return await new Promise((res) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const r = tx.objectStore(IDB_STORE).get(metaKey(userId, lang, version));
+      r.onsuccess = () => {
+        const v = r.result as DocMeta | undefined;
+        res(v && typeof v.numPages === "number" && v.numPages > 0 ? v : null);
+      };
+      r.onerror = () => res(null);
+    });
+  } catch {
+    return null;
+  }
 }
 
 type StoredImage = { type: string; data: ArrayBuffer };
 
 /** One read transaction for every page; null where a page is not cached yet. */
 export async function getPageImages(
-  userId: string, version: string, width: number, count: number
+  userId: string, lang: SplitLang, version: string, width: number, count: number
 ): Promise<(Blob | null)[]> {
   const out: (Blob | null)[] = new Array(count).fill(null);
   if (!userId || count <= 0) return out;
@@ -200,7 +255,7 @@ export async function getPageImages(
       const tx = db.transaction(IDB_STORE, "readonly");
       const store = tx.objectStore(IDB_STORE);
       for (let i = 0; i < count; i++) {
-        const r = store.get(pageKey(userId, version, width, i + 1));
+        const r = store.get(pageKey(userId, lang, version, width, i + 1));
         r.onsuccess = () => {
           const v = r.result as StoredImage | undefined;
           if (v && v.data instanceof ArrayBuffer && v.data.byteLength > 0) {
@@ -218,7 +273,7 @@ export async function getPageImages(
 }
 
 export async function savePageImage(
-  userId: string, version: string, width: number, page: number, blob: Blob
+  userId: string, lang: SplitLang, version: string, width: number, page: number, blob: Blob
 ): Promise<void> {
   if (!userId) return;
   try {
@@ -229,7 +284,7 @@ export async function savePageImage(
     await new Promise<void>((res) => {
       const tx = db.transaction(IDB_STORE, "readwrite");
       const value: StoredImage = { type: blob.type || "image/jpeg", data };
-      tx.objectStore(IDB_STORE).put(value, pageKey(userId, version, width, page));
+      tx.objectStore(IDB_STORE).put(value, pageKey(userId, lang, version, width, page));
       tx.oncomplete = () => res();
       tx.onerror = () => res();
     });
@@ -238,20 +293,28 @@ export async function savePageImage(
   }
 }
 
-/** Drop this user's page images from any other version or width. */
-export async function prunePageImages(userId: string, version: string, width: number): Promise<void> {
+/**
+ * Drop this user's images for THIS language from any other version or width.
+ *
+ * Scoped to one language on purpose — see the note on PAGE_PREFIX above. The
+ * other language's cached pages are none of this call's business.
+ */
+export async function prunePageImages(userId: string, lang: SplitLang, version: string, width: number): Promise<void> {
   if (!userId) return;
   try {
     const db = await openIDB();
-    const keep = `${PAGE_PREFIX}${userId}:${version}:${width}:`;
-    const mine = `${PAGE_PREFIX}${userId}:`;
+    const mine = langPrefix(userId, lang);
+    const keep = `${mine}${version}:${width}:`;
+    const keepMeta = `${mine}meta:${version}`;
     await new Promise<void>((res) => {
       const tx = db.transaction(IDB_STORE, "readwrite");
       const store = tx.objectStore(IDB_STORE);
       const keysReq = store.getAllKeys();
       keysReq.onsuccess = () => {
         for (const k of keysReq.result) {
-          if (typeof k === "string" && k.startsWith(mine) && !k.startsWith(keep)) store.delete(k);
+          if (typeof k !== "string" || !k.startsWith(mine)) continue;
+          if (k.startsWith(keep) || k === keepMeta) continue;
+          store.delete(k);
         }
       };
       tx.oncomplete = () => res();
@@ -259,6 +322,24 @@ export async function prunePageImages(userId: string, version: string, width: nu
     });
   } catch {
     /* best-effort */
+  }
+}
+
+// ── Keeping the download on the device ──────────────────────────────────────
+//
+// Without this, both iOS and Android treat the whole IndexedDB store as
+// "best-effort" and are free to evict it under storage pressure or after a
+// stretch of not opening the app — which reads to the customer as the plan
+// having to download itself again. Granted silently for an installed PWA on
+// Chrome/Android and for a home-screen app on iOS; a plain browser tab may be
+// refused, in which case the cache still works, it is simply evictable.
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    if (!navigator.storage?.persist) return false;
+    if (await navigator.storage.persisted()) return true;
+    return await navigator.storage.persist();
+  } catch {
+    return false;
   }
 }
 

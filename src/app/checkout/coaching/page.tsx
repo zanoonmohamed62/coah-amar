@@ -1,583 +1,186 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  ArrowLeft,
-  ShieldCheck,
-  Dumbbell,
-  Apple,
-  Pill,
-  Heart,
-  BarChart3,
-  MessageCircle,
-  Lock,
-  Sparkles,
-  Send,
-  Globe,
-  Wallet,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
-import { useSettings } from "@/lib/use-settings";
 import { useSiteContent } from "@/lib/use-site-content";
 import { EditableText } from "@/components/cms/EditableText";
-import { toErrorMessage } from "@/lib/error-message";
+import { EditableImage } from "@/components/cms/EditableImage";
+import { CheckoutFlow, type ExtraField } from "@/components/checkout/CheckoutFlow";
+import {
+  RealisticWhatsAppIcon,
+  RealisticNutritionIcon,
+  RealisticActivityIcon,
+  RealisticDumbbellIcon,
+} from "@/components/client/PwaIcons";
 
-const COACHING_PRICE_EUR = 71;
+// Offer 02 — coaching (the plan plus three months of WhatsApp follow-up).
+//
+// Everything the customer fills in here — goal, experience level, injuries and
+// diet notes — is stored on the Order and shown in full on the admin's order
+// detail, alongside their transfer screenshot. Order logic lives in
+// CheckoutFlow, shared with the split page.
 
-const pillarIcons = [Dumbbell, Apple, Pill, Heart];
+const PILLAR_ICONS = [
+  RealisticActivityIcon,
+  RealisticNutritionIcon,
+  RealisticWhatsAppIcon,
+  RealisticDumbbellIcon,
+];
 
 export default function CoachingCheckoutPage() {
   const { t, isArabic } = useLanguage();
-  const router = useRouter();
-  const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
-  const getSetting = useSettings();
   const get = useSiteContent();
+  const Back = isArabic ? ChevronRight : ChevronLeft;
 
-  const [paymentMethod, setPaymentMethod] = useState<"instapay" | "paypal" | "telda">("instapay");
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    goal: t.checkout?.goalOptions?.[0] || (isArabic ? "حرق الدهون والتنشيف" : "Fat loss & shredding"),
-    level: t.checkout?.levelOptions?.[0] || (isArabic ? "مبتدئ (أقل من سنة)" : "Beginner (< 1 year)"),
-    notes: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [productId, setProductId] = useState<string | null>(null);
-  const [priceEGP, setPriceEGP] = useState<number | null>(null);
-  const [productLoading, setProductLoading] = useState(true);
-  const [productError, setProductError] = useState(false);
+  const goalOptionsAr = [
+    "حرق الدهون والتنشيف",
+    "بناء العضلات والضخامة",
+    "إعادة تشكيل الجسم (خسارة دهون وبناء عضل)",
+    "زيادة القوة واللياقة البدنية العامة",
+  ];
+  const goalOptionsEn = [
+    "Fat Loss & Definition",
+    "Muscle Building & Bulking",
+    "Body Recomposition",
+    "Strength & Athletic Performance",
+  ];
+  const levelOptionsAr = ["مبتدئ (أقل من سنة)", "متوسط (سنة - 3 سنوات)", "متقدم (أكتر من 3 سنوات)"];
+  const levelOptionsEn = ["Beginner (< 1 year)", "Intermediate (1 - 3 years)", "Advanced (3+ years)"];
 
-  const [spotsTaken, setSpotsTaken] = useState(0);
-  const [totalSpots, setTotalSpots] = useState(100);
-  const [promoActive, setPromoActive] = useState(false);
-  const [originalPriceEGP, setOriginalPriceEGP] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetch("/api/products")
-      .then((r) => r.json())
-      .then((data: { products?: { id: string; slug: string; price: number; originalPrice?: number; spotsTaken?: number; totalSpots?: number; promoActive?: boolean }[] }) => {
-        const p = (data.products || []).find((p) => p.slug === "personal-coaching" || p.slug === "coaching-3months" || p.slug === "coaching");
-        if (p) {
-          setProductId(p.id);
-          setPriceEGP(p.price / 100);
-          setOriginalPriceEGP(p.originalPrice ? p.originalPrice / 100 : null);
-          setSpotsTaken(p.spotsTaken ?? 0);
-          setTotalSpots(p.totalSpots ?? 100);
-          setPromoActive(p.promoActive ?? false);
-        }
-      })
-      .catch(() => { setProductError(true); })
-      .finally(() => { setProductLoading(false); });
-  }, []);
-
-  const discountPct =
-    promoActive && originalPriceEGP && priceEGP && originalPriceEGP > priceEGP
-      ? Math.round((1 - priceEGP / originalPriceEGP) * 100)
-      : 0;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!productId) {
-      setError(isArabic ? "لم يتم العثور على الباقة. يرجى المحاولة مرة أخرى." : "Product not found. Please try again.");
-      return;
-    }
-    setIsSubmitting(true);
-    setError("");
-
-    const ref = `COACH-${Date.now()}-${Math.random().toString(36).slice(-4).toUpperCase()}`;
-
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          paymentMethod: paymentMethod.toUpperCase(),
-          goal: formData.goal,
-          level: formData.level,
-          notes: formData.notes,
-          isRenewal: false,
-          orderRef: ref,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        // `new Error(someObject)` stringifies to "[object Object]" — flatten a
-        // structured API error into a real sentence instead.
-        throw new Error(
-          toErrorMessage(
-            data?.error,
-            isArabic ? "حدث خطأ أثناء تسجيل الطلب." : "Failed to place order."
-          )
-        );
-      }
-
-      const data = await res.json();
-
-      // Hand off to the order page rather than showing success from local state:
-      // everything the customer still needs (where to pay, proof upload, status)
-      // lives at a URL they can reload, close and come back to.
-      //
-      // Use the ref the server returned, not the one generated here: when the
-      // customer already has an open order for this product the server hands
-      // that one back instead of creating a second, and its ref is not `ref`.
-      router.push(
-        `/checkout/upload-proof?orderRef=${encodeURIComponent(
-          data.order.orderRef
-        )}&token=${encodeURIComponent(data.order.accessToken)}`
-      );
-      return;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : (isArabic ? "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً." : "An error occurred."));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const extraFields: ExtraField[] = [
+    {
+      name: "goal",
+      required: true,
+      type: "select",
+      label: { ar: "هدفك من المتابعة", en: "Your goal" },
+      placeholder: { ar: "اختر هدفك", en: "Choose your goal" },
+      options: goalOptionsAr.map((ar, i) => ({ value: goalOptionsEn[i], label: { ar, en: goalOptionsEn[i] } })),
+    },
+    {
+      name: "level",
+      required: true,
+      type: "select",
+      label: { ar: "مستواك الحالي", en: "Training experience" },
+      placeholder: { ar: "اختر مستواك", en: "Choose your level" },
+      options: levelOptionsAr.map((ar, i) => ({ value: levelOptionsEn[i], label: { ar, en: levelOptionsEn[i] } })),
+    },
+    {
+      name: "notes",
+      type: "textarea",
+      label: { ar: "إصابات أو ملاحظات غذائية (اختياري)", en: "Injuries or dietary notes (optional)" },
+      placeholder: {
+        ar: "مثلاً: مشاكل في الركبة، حساسية لاكتوز، مواعيد تمرين معينة...",
+        en: "e.g. knee issues, lactose intolerance, a fixed training schedule…",
+      },
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#07090e] pt-24 pb-20 px-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Navigation Breadcrumb */}
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-blue-400 transition-colors"
-          >
-            <ArrowIcon size={14} className={isArabic ? "rotate-180" : ""} />
-            <span>{isArabic ? "العودة للرئيسية" : "Back to Home"}</span>
-          </Link>
-        </div>
+    <div className="min-h-screen bg-[#07090e] pt-24 pb-20 px-5 sm:px-6">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[420px] bg-[radial-gradient(ellipse_at_top,rgba(37,99,235,0.14),transparent_65%)]" />
 
-        {/* ── SECTION 1: THE COACHING PROGRAM EXPLANATION & BREAKDOWN ── */}
-        <div className="mb-16">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-[0.7rem] uppercase tracking-wider rounded-[var(--radius-pill)] mb-4">
-              <EditableText sectionId="coachingDetail" fieldId="badge" value={get("coachingDetail", "badge", t.coachingDetail.badge)} />
-            </span>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight mb-4">
-              <EditableText sectionId="coachingDetail" fieldId="titleLine1" value={get("coachingDetail", "titleLine1", t.coachingDetail.titleLine1)} />{" "}
-              <span className="text-blue-500"><EditableText sectionId="coachingDetail" fieldId="titleLine2" value={get("coachingDetail", "titleLine2", t.coachingDetail.titleLine2)} /></span>
-            </h1>
-            <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed text-sm sm:text-base">
-              <EditableText multiline sectionId="coachingDetail" fieldId="desc" value={get("coachingDetail", "desc", t.coachingDetail.desc)} />
-            </p>
-          </motion.div>
+      <div className="relative max-w-6xl mx-auto">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-blue-400 transition-colors mb-8"
+        >
+          <Back size={15} />
+          <span>{isArabic ? "العودة للرئيسية" : "Back to Home"}</span>
+        </Link>
 
-          {/* 4 Pillars Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
-            {t.coachingDetail.pillars.map((pillar, i) => {
-              const IconComp = pillarIcons[i] || Dumbbell;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-lg)] p-6 hover:border-blue-500/40 transition-colors shadow-lg"
-                >
-                  <IconComp size={22} className="text-blue-400 mb-4" />
-                  <h3 className="text-lg font-bold text-white mb-4">
-                    {pillar.title}
-                  </h3>
-                  <ul className="space-y-2">
-                    {pillar.items.map((item, j) => (
-                      <li key={j} className="text-xs text-slate-400 flex items-start gap-2">
-                        <span className="text-blue-400 font-bold">•</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              );
-            })}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          {/* ── Left: what coaching actually is ── */}
+          <div className="lg:col-span-6 space-y-6">
+            <div>
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/12 border border-blue-400/28 text-blue-300 text-[11px] font-bold uppercase tracking-[0.14em] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
+                <EditableText sectionId="coachingDetail" fieldId="badge" value={get("coachingDetail", "badge", t.coachingDetail.badge)} />
+              </span>
 
-          {/* Large visual + Highlights banner */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 sm:p-8">
-            <motion.div
-              initial={{ opacity: 0, x: isArabic ? 20 : -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-              className="lg:col-span-6 relative rounded-[var(--radius-xl)] overflow-hidden border border-blue-500/30 aspect-video shadow-2xl group"
-            >
-              <Image
-                src="/assets/split-cover.png"
-                alt="Amar Coaching System"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-transparent to-transparent opacity-80" />
-
-              {/* Stats overlay */}
-              <div className={`absolute bottom-4 ${isArabic ? "right-4" : "left-4"} flex gap-3 z-10`}>
-                {t.coachingDetail.clientStats.map((s) => (
-                  <div key={s.label} className="bg-[#07090e]/90 border border-slate-700/80 rounded-[var(--radius-sm)] px-3 py-1.5 backdrop-blur-sm">
-                    <p className="text-[10px] text-slate-400">{s.label}</p>
-                    <p className="text-sm font-bold text-blue-400">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: isArabic ? -20 : 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="lg:col-span-6 space-y-4"
-            >
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-                <EditableText sectionId="coachingDetail" fieldId="visualTitle" value={get("coachingDetail", "visualTitle", t.coachingDetail.visualTitle)} />
-              </h3>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                <EditableText multiline sectionId="coachingDetail" fieldId="visualDesc" value={get("coachingDetail", "visualDesc", t.coachingDetail.visualDesc)} />
-              </p>
-
-              <div className="space-y-3 pt-2">
-                {[
-                  { icon: BarChart3, key: "feature1", fallback: t.coachingDetail.feature1 },
-                  { icon: MessageCircle, key: "feature2", fallback: t.coachingDetail.feature2 },
-                  { icon: Heart, key: "feature3", fallback: t.coachingDetail.feature3 },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <item.icon size={16} className="text-blue-400 flex-shrink-0" />
-                    <p className="text-xs sm:text-sm text-slate-300">
-                      <EditableText sectionId="coachingDetail" fieldId={item.key} value={get("coachingDetail", item.key, item.fallback)} />
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* ── SECTION 2: CHECKOUT & PAYMENT FORM ── */}
-        <div className="border-t border-slate-800 pt-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-            {/* Left: Spots & Pricing summary */}
-            <div className="lg:col-span-5 space-y-6">
-              {/* Discount Offer Banner — only shown while the launch promo is still active */}
-              {promoActive && (
-                <div className="bg-gradient-to-b from-[#0e1726]/90 to-[#070b14]/90 border border-blue-500/30 rounded-[var(--radius-lg)] p-5 shadow-inner">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
-                      <Sparkles size={16} className="text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="text-white font-bold text-sm">
-                        {isArabic ? "دفعة محدودة — الأكثر طلباً" : "Limited Batch — Most Popular"}
-                      </p>
-                      <p className="text-slate-300 text-xs mt-1">
-                        {isArabic
-                          ? `متبقي ${totalSpots - spotsTaken} مقعداً فقط في هذه الدفعة`
-                          : `${totalSpots - spotsTaken} spots remaining in this batch`}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1.5 font-semibold">
-                      <span>{spotsTaken}/{totalSpots} {isArabic ? "مشترك" : "claimed"}</span>
-                      <span className="text-blue-400">{totalSpots - spotsTaken} {isArabic ? "متبقي" : "left"}</span>
-                    </div>
-                    <div className="h-2 bg-[#080d1a] rounded-full border border-slate-800/90 overflow-hidden relative shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(spotsTaken / totalSpots) * 100}%` }}
-                        transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                        className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-300 shadow-[0_0_10px_rgba(59,130,246,0.6)] relative overflow-hidden"
-                      >
-                        <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] bg-[length:200%_100%] animate-[shimmer_2.5s_infinite]" />
-                      </motion.div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Order Summary Box */}
-              <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 space-y-4">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Sparkles size={16} className="text-blue-400" />
-                  <span>{isArabic ? "ملخص باقة المتابعة" : "Coaching Package Summary"}</span>
-                </h3>
-
-                <div className="flex items-center justify-between py-2 border-b border-slate-800 text-sm">
-                  <div>
-                    <p className="text-white font-bold">{isArabic ? "التدريب والمتابعة الشخصية" : "Personal Coaching"}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{isArabic ? "نظام متكامل لمدة ٣ شهور كاملة" : "3-Month Full Transformation System"}</p>
-                  </div>
-                  <div className="text-right">
-                    {discountPct > 0 && (
-                      <span className="text-xs text-slate-500 line-through block">
-                        {originalPriceEGP} LE
-                      </span>
-                    )}
-                    <span className="text-blue-400 font-bold">{priceEGP ?? 1499} LE</span>
-                  </div>
-                </div>
-
-                <div className="flex items-baseline justify-between pt-2">
-                  <span className="text-slate-400 text-xs">{isArabic ? "الإجمالي المطلوب" : "Total Amount"}</span>
-                  <div className="text-right">
-                    {discountPct > 0 && (
-                      <div className="flex items-center gap-1.5 justify-end mb-0.5">
-                        <span className="text-xs text-slate-500 line-through">{originalPriceEGP} LE</span>
-                        <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-400 px-1.5 py-0.5 rounded-[var(--radius-sm)]">
-                          -{discountPct}%
-                        </span>
-                      </div>
-                    )}
-                    <span className="text-2xl font-black text-white">{priceEGP ?? 1499} LE</span>
-                    <span className="text-xs text-slate-400 ml-1.5">({COACHING_PRICE_EUR} €)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Trust Badge */}
-              <div className="flex items-center gap-3 text-xs text-slate-400 px-1">
-                <ShieldCheck size={18} className="text-blue-400 shrink-0" />
-                <span>
-                  {isArabic
-                    ? "دفع آمن 100% — تواصل مباشر وفوري عبر الواتساب لبدء التقييم وتصميم خطتك"
-                    : "100% Secure Checkout · Direct WhatsApp Communication & Fast Onboarding"}
+              <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-[1.08] tracking-tight">
+                <EditableText sectionId="coachingDetail" fieldId="titleLine1" value={get("coachingDetail", "titleLine1", t.coachingDetail.titleLine1)} />{" "}
+                <span className="text-blue-500">
+                  <EditableText sectionId="coachingDetail" fieldId="titleLine2" value={get("coachingDetail", "titleLine2", t.coachingDetail.titleLine2)} />
                 </span>
-              </div>
+              </h1>
+
+              <p className="mt-4 text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
+                <EditableText multiline sectionId="coachingDetail" fieldId="desc" value={get("coachingDetail", "desc", t.coachingDetail.desc)} />
+              </p>
             </div>
 
-            {/* Right: Payment & Customer Form */}
-            <div className="lg:col-span-7">
-              <div className="bg-[#0b0f19] border border-slate-800 rounded-[var(--radius-xl)] p-6 sm:p-8">
-                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <Lock size={18} className="text-blue-400" />
-                  <span>{isArabic ? "بيانات المشترك والدفع" : "Customer & Payment Details"}</span>
-                </h2>
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {productError && (
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-[var(--radius-md)] px-4 py-3 text-sm text-amber-400">
-                      {isArabic ? "تعذّر تحميل بيانات الباقة. حاول تحديث الصفحة." : "Could not load package data. Please refresh the page."}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {t.coachingDetail.pillars.map((pillar, i) => {
+                const Icon = PILLAR_ICONS[i] ?? RealisticActivityIcon;
+                return (
+                  <div key={i} className="ios-card p-4">
+                    <div className="ios-tile ios-tile-blue w-10 h-10 mb-3">
+                      <Icon className="w-5.5 h-5.5" />
                     </div>
-                  )}
-
-                  {error && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-[var(--radius-md)] px-4 py-3 text-sm text-red-400">
-                      {error}
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      {isArabic ? "الاسم بالكامل *" : "Full Name *"}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder={isArabic ? "اسمك بالكامل" : "Your full name"}
-                      className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                        {isArabic ? "البريد الإلكتروني *" : "Email Address *"}
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="your@email.com"
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                        {isArabic ? "رقم الواتساب للتواصل والتقييم *" : "WhatsApp Phone *"}
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        minLength={7}
-                        title={isArabic ? "اكتب رقم الواتساب بالكامل مع كود الدولة" : "Enter your full WhatsApp number including country code"}
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+20 or +34..."
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                        {isArabic ? "هدفك الأساسي" : "Primary Goal"}
-                      </label>
-                      <select
-                        value={formData.goal}
-                        onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                      >
-                        {(t.checkout?.goalOptions || [
-                          isArabic ? "حرق الدهون والتنشيف" : "Fat Loss",
-                          isArabic ? "بناء العضلات والضخامة" : "Muscle Gain",
-                          isArabic ? "إعادة تشكيل الجسم" : "Body Recomposition",
-                          isArabic ? "زيادة القوة واللياقة" : "Strength & Fitness",
-                        ]).map((opt, idx) => (
-                          <option key={idx} value={opt} className="bg-[#0b0f19] text-white">
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                        {isArabic ? "مستواك الحالي في التمرين" : "Fitness Level"}
-                      </label>
-                      <select
-                        value={formData.level}
-                        onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                        className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                      >
-                        {(t.checkout?.levelOptions || [
-                          isArabic ? "مبتدئ (أقل من سنة)" : "Beginner",
-                          isArabic ? "متوسط (من سنة إلى ٣ سنوات)" : "Intermediate",
-                          isArabic ? "متقدم (أكثر من ٣ سنوات)" : "Advanced",
-                        ]).map((opt, idx) => (
-                          <option key={idx} value={opt} className="bg-[#0b0f19] text-white">
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      {isArabic ? "أي إصابات أو تفضيلات غذائية (اختياري)" : "Injuries or Dietary Notes (Optional)"}
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder={isArabic ? "مثال: حساسية ألبان، إصابة سابقة في الركبة، مواعيد خاصة..." : "e.g. food allergies, past injuries, schedule constraints..."}
-                      className="w-full bg-[#07090e] border border-slate-800 rounded-[var(--radius-md)] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/60 transition-colors"
-                    />
-                  </div>
-
-                  {/* Payment Method Selector */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-2">
-                      {isArabic ? "اختر طريقة الدفع" : "Select Payment Method"}
-                    </label>
-                    <div className="grid grid-cols-3 gap-2.5">
-                      {(["instapay", "paypal", "telda"] as const).map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => setPaymentMethod(m)}
-                          className={`py-3 rounded-[var(--radius-md)] text-xs font-bold border transition-all uppercase flex items-center justify-center gap-1.5 ${
-                            paymentMethod === m
-                              ? "border-blue-500 bg-blue-500/15 text-blue-400 shadow-md shadow-blue-500/10"
-                              : "border-slate-800 text-slate-400 hover:border-slate-700 bg-[#07090e]"
-                          }`}
-                        >
-                          {m === "instapay" && <Send size={14} />}
-                          {m === "paypal" && <Globe size={14} />}
-                          {m === "telda" && <Wallet size={14} />}
-                          <span>{m === "instapay" ? "InstaPay" : m === "paypal" ? "PayPal" : "Telda"}</span>
-                        </button>
+                    <p className="text-sm font-bold text-white tracking-tight">
+                      <EditableText sectionId="coachingDetail" fieldId={`pillar${i + 1}_title`} value={get("coachingDetail", `pillar${i + 1}_title`, pillar.title)} />
+                    </p>
+                    <ul className="mt-1.5 space-y-1">
+                      {pillar.items.map((line, k) => (
+                        <li key={k} className="flex items-start gap-2 text-xs text-slate-400 leading-relaxed">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-blue-400/70 shrink-0" />
+                          <EditableText sectionId="coachingDetail" fieldId={`pillar${i + 1}_item${k + 1}`} value={get("coachingDetail", `pillar${i + 1}_item${k + 1}`, line)} />
+                        </li>
                       ))}
-                    </div>
-
-                    {/* Payment instructions */}
-                    <div className="bg-[#07090e] border border-slate-800/80 rounded-[var(--radius-md)] p-3.5 mt-3 text-xs text-slate-400 leading-relaxed">
-                      {paymentMethod === "instapay" && (
-                        <p>
-                          📱 <strong className="text-white">InstaPay:</strong> التحويل على عنوان:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("instapay_handle")}</span>
-                        </p>
-                      )}
-                      {paymentMethod === "paypal" && (
-                        <p>
-                          🌐 <strong className="text-white">PayPal:</strong> التحويل عبر الرابط:{" "}
-                          <span className="text-blue-400 font-mono font-bold select-all">{getSetting("paypal_link").replace(/^https?:\/\//, "")}</span>
-                        </p>
-                      )}
-                      {paymentMethod === "telda" && (
-                        <div>
-                          <p>
-                            💳 <strong className="text-white">Telda:</strong> التحويل على يوزر:{" "}
-                            <span className="text-blue-400 font-mono font-bold select-all">{getSetting("telda_handle")}</span>
-                          </p>
-                          {getSetting("telda_qr_url") && (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={getSetting("telda_qr_url")}
-                              alt="Telda QR"
-                              className="w-32 h-32 object-contain bg-white rounded-[var(--radius-md)] mt-3"
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    </ul>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || productLoading || productError}
-                    className="btn-primary w-full py-4 flex items-center justify-center gap-2 group disabled:opacity-70 text-base font-bold shadow-lg shadow-blue-600/30"
-                  >
-                    <span>
-                      {isSubmitting
-                        ? isArabic ? "جاري تسجيل الطلب..." : "Processing..."
-                        : isArabic
-                        ? `اشترك في التدريب الشخصي الآن — ${(priceEGP ?? 1499).toLocaleString()} ج.م`
-                        : `Start Personal Coaching — ${(priceEGP ?? 1499).toLocaleString()} EGP`}
-                    </span>
-                    {!isSubmitting && (
-                      <ArrowIcon
-                        size={16}
-                        strokeWidth={2}
-                        className={`${isArabic ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"} transition-transform`}
-                      />
-                    )}
-                  </button>
-
-                  <p className="text-center text-xs text-slate-500">
-                    {isArabic
-                      ? "بعد الضغط هتظهرلك شاشة رفع صورة التحويل لتأكيد الدفع وبدء استمارة التقييم."
-                      : "After submitting, you'll see an upload screen to send your payment screenshot and start onboarding."}
-                  </p>
-                </form>
+            <div className="ios-card overflow-hidden">
+              <div className="relative aspect-[4/3]">
+                <EditableImage
+                  sectionId="coachingDetail"
+                  fieldId="visualImage"
+                  value={get("coachingDetail", "visualImage", "/assets/coach-amar.jpg")}
+                  alt={t.coachingDetail.visualTitle}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-[#07090e]/20 to-transparent pointer-events-none" />
+              </div>
+              <div className="p-6 space-y-3">
+                <h3 className="text-xl font-extrabold text-white leading-tight tracking-tight">
+                  <EditableText sectionId="coachingDetail" fieldId="visualTitle" value={get("coachingDetail", "visualTitle", t.coachingDetail.visualTitle)} />
+                </h3>
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  <EditableText multiline sectionId="coachingDetail" fieldId="visualDesc" value={get("coachingDetail", "visualDesc", t.coachingDetail.visualDesc)} />
+                </p>
+                <div className="space-y-2.5 pt-1">
+                  {["feature1", "feature2", "feature3"].map((key, i) => (
+                    <div key={key} className="flex items-center gap-2.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                      <p className="text-xs sm:text-sm text-slate-300">
+                        <EditableText
+                          sectionId="coachingDetail"
+                          fieldId={key}
+                          value={get("coachingDetail", key, [t.coachingDetail.feature1, t.coachingDetail.feature2, t.coachingDetail.feature3][i])}
+                        />
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* ── Right: the actual checkout ── */}
+          <div className="lg:col-span-6 lg:sticky lg:top-24">
+            <CheckoutFlow
+              slugs={["personal-coaching", "coaching", "online-coaching"]}
+              draftKey="coaching"
+              productLabel={{ ar: "المتابعة الشخصية + الجدول", en: "Personal Coaching + Split" }}
+              extraFields={extraFields}
+              deliveryNote={{
+                ar: "المتابعة بتتم بالكامل على الواتساب مع الكوتش. التطبيق بيديك الجدول بالعربي والإنجليزي ويشتغل من غير نت.",
+                en: "Coaching itself runs entirely over WhatsApp with the coach. The app gives you the plan in Arabic and English, and works offline.",
+              }}
+            />
           </div>
         </div>
       </div>

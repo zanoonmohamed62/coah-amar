@@ -4,12 +4,26 @@ import { requireAdmin } from "@/lib/auth-guard";
 import { Role, EntitlementStatus, ProductType } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+// Paged, and deliberately lighter per row.
+//
+// Every Google sign-in creates a User row (lead capture), so this table grows
+// far faster than the order table does — ten thousand visitors in a day is the
+// stated expectation. It used to load every customer at once with ALL of their
+// orders joined on, which is the query that stops returning at that size. Now:
+// one page at a time, each row carrying counts and its three most recent orders,
+// with the full history on the customer detail page.
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q") || "";
+  const q = searchParams.get("q")?.trim() || "";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+  const pageSize = Math.min(200, Math.max(1, parseInt(searchParams.get("pageSize") || "25", 10) || 25));
+  // "active" = has at least one active entitlement; "inactive" = signed in but
+  // never bought. Both are real, useful lists: one is who to serve, the other
+  // is who to follow up with.
+  const filter = searchParams.get("filter");
 
   // Search matches both the User row itself and any Order placed under a
   // different email (e.g. checkout email vs. the Google account the customer
@@ -17,53 +31,71 @@ export async function GET(req: NextRequest) {
   // customer's account invisible to a search on the email they actually used
   // at checkout. Matching via `orders.some` surfaces the linked User even when
   // the match came through an order, not the User row's own email.
-  const customers = await db.user.findMany({
-    where: {
-      role: "CUSTOMER",
-      ...(q
-        ? {
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { email: { contains: q, mode: "insensitive" } },
-              { phone: { contains: q, mode: "insensitive" } },
-              { orders: { some: { OR: [
-                { customerEmail: { contains: q, mode: "insensitive" } },
-                { customerName: { contains: q, mode: "insensitive" } },
-                { customerPhone: { contains: q, mode: "insensitive" } },
-                { orderRef: { contains: q, mode: "insensitive" } },
-              ] } } },
-            ],
-          }
-        : {}),
-    },
-    include: {
-      orders: {
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          orderRef: true,
-          status: true,
-          amount: true,
-          confirmedAt: true,
-          customerEmail: true,
-          product: { select: { name: true } },
-        },
-      },
-      entitlements: {
-        where: { status: "ACTIVE" },
-        select: {
-          id: true,
-          status: true,
-          startDate: true,
-          expiresAt: true,
-          product: { select: { name: true, type: true } },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const where = {
+    role: Role.CUSTOMER,
+    ...(filter === "active" ? { entitlements: { some: { status: EntitlementStatus.ACTIVE } } } : {}),
+    ...(filter === "inactive" ? { entitlements: { none: { status: EntitlementStatus.ACTIVE } } } : {}),
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { email: { contains: q, mode: "insensitive" as const } },
+            { phone: { contains: q, mode: "insensitive" as const } },
+            { orders: { some: { OR: [
+              { customerEmail: { contains: q, mode: "insensitive" as const } },
+              { customerName: { contains: q, mode: "insensitive" as const } },
+              { customerPhone: { contains: q, mode: "insensitive" as const } },
+              { orderRef: { contains: q, mode: "insensitive" as const } },
+            ] } } },
+          ],
+        }
+      : {}),
+  };
 
-  return NextResponse.json({ customers });
+  const [customers, total] = await Promise.all([
+    db.user.findMany({
+      where,
+      include: {
+        orders: {
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: {
+            id: true,
+            orderRef: true,
+            status: true,
+            amount: true,
+            confirmedAt: true,
+            createdAt: true,
+            customerEmail: true,
+            product: { select: { name: true } },
+          },
+        },
+        entitlements: {
+          where: { status: EntitlementStatus.ACTIVE },
+          select: {
+            id: true,
+            status: true,
+            startDate: true,
+            expiresAt: true,
+            product: { select: { name: true, type: true } },
+          },
+        },
+        _count: { select: { orders: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.user.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    customers,
+    total,
+    page,
+    pageSize,
+    hasMore: page * pageSize < total,
+  });
 }
 
 export async function POST(req: NextRequest) {

@@ -3,18 +3,7 @@ import fs from "fs";
 import path from "path";
 import { db } from "@/lib/db";
 import { requireCustomer } from "@/lib/auth-guard";
-import { getSetting } from "@/lib/settings";
-
-type SplitLang = "en" | "ar";
-
-const SPLIT_FILES: Record<SplitLang, string> = {
-  en: "AMAR.X.SPLIT.ENGLISH.pdf",
-  ar: "AMAR.X.SPLIT.ARABIC.pdf",
-};
-
-function parseLang(raw: string | null): SplitLang {
-  return raw === "ar" ? "ar" : "en";
-}
+import { activeSplitMediaId, parseLang, SPLIT_FILES } from "@/lib/split-file";
 
 // Cheap "may I read the split, and which one is current?" probe.
 //
@@ -47,12 +36,14 @@ export async function GET(req: NextRequest) {
   }
 
   const lang = parseLang(req.nextUrl.searchParams.get("lang"));
-  const activeMediaId = await getSetting("active_split_media_id");
+  const activeMediaId = await activeSplitMediaId(lang);
 
-  // When a media asset is configured, use its id as the version.
-  // Otherwise derive a version from the file's modification time so a replaced
-  // file on disk busts the client cache.
-  let version = activeMediaId || "legacy";
+  // The version is ALWAYS language-prefixed, including the uploaded-asset case.
+  // It used to be the bare asset id, which is the same string for both
+  // languages — so the viewer compared the Arabic tab's cached version against
+  // the English one, decided the Arabic copy was current when it wasn't (and
+  // vice versa), and the two tabs fought over one cache slot.
+  let version = activeMediaId ? `${lang}-${activeMediaId}` : `${lang}-legacy`;
   if (!activeMediaId) {
     try {
       const filePath = path.join(process.cwd(), "private-assets", SPLIT_FILES[lang]);

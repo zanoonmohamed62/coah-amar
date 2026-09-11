@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { db } from "@/lib/db";
 import { requireCustomer } from "@/lib/auth-guard";
-import { getSetting } from "@/lib/settings";
+import { activeSplitMediaId, parseLang, SPLIT_FILES, type SplitLang } from "@/lib/split-file";
 
 async function hasSplitAccess(userId: string): Promise<boolean> {
   const now = new Date();
@@ -18,19 +18,8 @@ async function hasSplitAccess(userId: string): Promise<boolean> {
   return !!entitlement;
 }
 
-type SplitLang = "en" | "ar";
-
-const SPLIT_FILES: Record<SplitLang, string> = {
-  en: "AMAR.X.SPLIT.ENGLISH.pdf",
-  ar: "AMAR.X.SPLIT.ARABIC.pdf",
-};
-
-function parseLang(raw: string | null): SplitLang {
-  return raw === "ar" ? "ar" : "en";
-}
-
 async function readActivePdf(lang: SplitLang): Promise<Buffer> {
-  const activeMediaId = await getSetting("active_split_media_id");
+  const activeMediaId = await activeSplitMediaId(lang);
 
   if (activeMediaId) {
     try {

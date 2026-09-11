@@ -452,3 +452,148 @@
     overscroll-behavior-y: none;
   }
 }
+
+/* ── iOS glass surface kit ───────────────────────────────────────────────────
+   One place for the card / tile / button geometry used by the checkout pages,
+   the in-app support chat, the visitor counter and the admin notification
+   toasts — so those screens look like one system instead of four.
+
+   Follows iphone-ios.md: continuous-squircle radii, a specular highlight along
+   the upper rim, multi-stop lighting gradients, and dual borders (a 1px tinted
+   edge plus an inset white hairline). No emoji, no generated iconography —
+   shape and light only. */
+
+.ios-card {
+  position: relative;
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(11, 17, 30, 0.96) 45%, rgba(7, 11, 20, 1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    0 18px 44px -16px rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+}
+
+/* The specular rim highlight every iOS glass surface carries. */
+.ios-card::before {
+  content: "";
+  position: absolute;
+  inset-inline: 2rem;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  pointer-events: none;
+}
+
+/* Continuous-squircle icon tile. Colour comes from a modifier below. */
+.ios-tile {
+  position: relative;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+
+.ios-tile::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04) 60%, transparent);
+  pointer-events: none;
+}
+
+.ios-tile-blue {
+  background: linear-gradient(180deg, rgba(147, 197, 253, 0.28) 0%, rgba(59, 130, 246, 0.26) 40%, rgba(29, 78, 216, 0.18) 75%, rgba(23, 37, 84, 0.22) 100%);
+  border-color: rgba(96, 165, 250, 0.38);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.32), 0 10px 24px -8px rgba(37, 99, 235, 0.5);
+}
+
+.ios-tile-emerald {
+  background: linear-gradient(180deg, rgba(110, 231, 183, 0.26) 0%, rgba(52, 211, 153, 0.24) 40%, rgba(16, 185, 129, 0.18) 75%, rgba(6, 95, 70, 0.22) 100%);
+  border-color: rgba(52, 211, 153, 0.38);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 10px 24px -8px rgba(16, 185, 129, 0.42);
+}
+
+.ios-tile-slate {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(203, 213, 225, 0.12) 45%, rgba(51, 65, 85, 0.24) 100%);
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.28), 0 8px 20px -8px rgba(148, 163, 184, 0.3);
+}
+
+/* Buttons — pill-adjacent iOS geometry with a gloss band and a press scale. */
+.ios-btn-blue,
+.ios-btn-emerald,
+.ios-btn-ghost {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  transition: transform 0.14s ease, filter 0.18s ease, background-color 0.18s ease;
+  overflow: hidden;
+}
+
+.ios-btn-blue::before,
+.ios-btn-emerald::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent);
+  pointer-events: none;
+}
+
+.ios-btn-blue {
+  color: #fff;
+  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 45%, #2563eb 100%);
+  border: 1px solid rgba(147, 197, 253, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), 0 10px 28px -10px rgba(37, 99, 235, 0.75);
+}
+
+.ios-btn-emerald {
+  color: #fff;
+  background: linear-gradient(180deg, #34d399 0%, #10b981 45%, #059669 100%);
+  border: 1px solid rgba(110, 231, 183, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), 0 10px 28px -10px rgba(16, 185, 129, 0.7);
+}
+
+.ios-btn-ghost {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ios-btn-ghost:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ios-btn-blue:active:not(:disabled),
+.ios-btn-emerald:active:not(:disabled),
+.ios-btn-ghost:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.ios-btn-blue:hover:not(:disabled),
+.ios-btn-emerald:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* Respect the OS setting — the press-scale and transitions are decoration. */
+@media (prefers-reduced-motion: reduce) {
+  .ios-btn-blue,
+  .ios-btn-emerald,
+  .ios-btn-ghost {
+    transition: none;
+  }
+}
