@@ -1,8 +1,4 @@
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Offline — Coach Amar",
-};
+"use client";
 
 export default function OfflinePage() {
   return (
