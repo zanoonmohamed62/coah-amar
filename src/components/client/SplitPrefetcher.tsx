@@ -82,8 +82,18 @@ async function prefetch(userId: string) {
       await prefetchLang(userId, lang);
     }
 
-    // 3. Warm the split page shell so the Service Worker caches it immediately
-    fetch("/app/my-split").catch(() => {});
+    // 3. Warm the split page shell so the Service Worker caches it immediately.
+    //    This MUST look like a real page navigation: the worker only stores a
+    //    response under its page strategy when the request accepts text/html.
+    //    A bare fetch() sends `accept: */*`, fell through to the static
+    //    cache-first branch, and left /app/my-split effectively uncached — so
+    //    opening the plan offline landed on the /app fallback instead.
+    for (const path of ["/app/my-split", "/app", "/app/account"]) {
+      fetch(path, {
+        headers: { Accept: "text/html" },
+        credentials: "same-origin",
+      }).catch(() => {});
+    }
   } catch (err) {
     console.error("[SplitPrefetcher] Error:", err);
   }

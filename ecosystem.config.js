@@ -13,7 +13,7 @@ module.exports = {
       name: "amar-site",
       script: "node_modules/.bin/next",
       args: "start",
-      cwd: "/var/www/amar-site",          // ← change to your actual deploy path on VPS
+      cwd: __dirname,                      // the deploy checkout itself (/var/www/amarel7ewety)
       instances: 1,                        // 1 instance (scale to 2+ if you have >2 CPU cores)
       exec_mode: "fork",                   // use "cluster" only if instances > 1
       autorestart: true,

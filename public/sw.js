@@ -4,7 +4,7 @@
 //  network-first pages with offline fallback
 // ═══════════════════════════════════════════════════════
 
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 const SHELL_CACHE = `amar-shell-${CACHE_VERSION}`;
 const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 
@@ -12,10 +12,16 @@ const PDF_CACHE = `amar-pdf-${CACHE_VERSION}`;
 // The landing page ("/") is included so that users coming from Instagram/TikTok
 // links get a working page even when they have no connection.
 // /api/split is NOT cached here — it's auth-gated and cached via IndexedDB.
+// /app/my-split is listed here on purpose. It is auth-gated, so a signed-out
+// install just gets a login redirect and cache.add skips it (below) — but for a
+// signed-in customer this is what makes the plan openable with no connection at
+// all, which is the whole point of the offline plan.
 const SHELL_URLS = [
   "/",
   "/pdfjs/pdf.worker.min.mjs",
   "/offline",
+  "/app",
+  "/app/my-split",
 ];
 
 // ── Install: pre-cache static assets ──────────────────
@@ -23,7 +29,20 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE).then((cache) =>
       Promise.all(
-        SHELL_URLS.map((url) => cache.add(url).catch(() => {}))
+        SHELL_URLS.map(async (url) => {
+          try {
+            // Not cache.add(): that stores whatever comes back, including a
+            // redirect to /login for an auth-gated route, which would then be
+            // served offline as the cached "plan".
+            const res = await fetch(url, {
+              headers: { Accept: "text/html" },
+              credentials: "same-origin",
+            });
+            if (res.ok && !res.redirected) await cache.put(url, res);
+          } catch {
+            /* offline at install time — warmed later by the prefetcher */
+          }
+        })
       )
     ).then(() => self.skipWaiting())
   );
@@ -123,8 +142,13 @@ async function handlePageFetch(request) {
       (await cache.match(request, { ignoreSearch: true }));
     if (cached) return cached;
 
-    // For /app pages, try /app root
+    // For /app pages, try the same path ignoring trailing slash, then /app.
+    // The split page is checked by its own path first so that opening the plan
+    // offline lands on the plan, not on the portal home.
     if (url.pathname.startsWith("/app")) {
+      const bare = url.pathname.replace(/\/+$/, "");
+      const samePage = (await cache.match(bare)) || (await cache.match(bare + "/"));
+      if (samePage) return samePage;
       const appRoot = await cache.match("/app");
       if (appRoot) return appRoot;
     }

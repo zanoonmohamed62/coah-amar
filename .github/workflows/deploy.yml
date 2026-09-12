@@ -90,6 +90,12 @@ jobs:
               # overwrites prices on an existing row — those belong to the admin.
               echo "🛒 Verifying sellable products exist..."
               node scripts/ensure-products.js
+
+              # The coach and the super admin must always be able to sign in to
+              # /admin. Only ever promotes to ADMIN — never demotes or deletes,
+              # so it can't lock anyone out or clobber an existing account.
+              echo "👤 Verifying admin accounts..."
+              node scripts/ensure-admins.js
             fi
 
             # Build application
