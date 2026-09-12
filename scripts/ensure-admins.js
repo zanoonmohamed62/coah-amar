@@ -20,8 +20,10 @@
  *      an existing row, so the ADMIN role survives their first real login.
  *   3. It is idempotent — a no-op once applied, safe on every deploy.
  *
- * Emails come from ADMIN_EMAILS (comma-separated) when set, else the list
- * below.
+ * The list below is always ensured. ADMIN_EMAILS (the Google sign-in admin
+ * allowlist read by src/lib/auth.ts) is merged in when set, never used to
+ * replace the list — an env var scoped to sign-in must not be able to silently
+ * drop a coach out of the admin roster.
  */
 
 const { Client } = require("pg");
@@ -85,11 +87,13 @@ async function main() {
     return;
   }
 
-  const emails = (
-    process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(",") : DEFAULT_ADMINS
-  )
-    .map((e) => e.trim().toLowerCase())
-    .filter((e) => e && e.includes("@"));
+  const emails = [
+    ...new Set(
+      [...DEFAULT_ADMINS, ...(process.env.ADMIN_EMAILS || "").split(",")]
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => e && e.includes("@"))
+    ),
+  ];
 
   if (emails.length === 0) {
     console.log("  no admin emails configured — nothing to do");
