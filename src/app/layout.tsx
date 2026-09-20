@@ -44,19 +44,19 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://amarel7ewety.com"),
-  title: "Coach Amar — Premium Fitness Coaching | كوتش عمار للتدريب الرياضي",
+  title: "AMAR X THE X METHOD",
   description:
-    "Personalized training, nutrition, and coaching built around your goals. Choose from a structured training plan or full personal coaching with Coach Amar.",
+    "Build your training around your body your goals and your progression Explore the AMAR X Training System or work 1on1 with Amar through personalized coaching",
   icons: {
     icon: [
-      { url: "/favicon.ico?v=6", sizes: "any" },
-      { url: "/icons/icon-192.png?v=6", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png?v=6", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.ico?v=11", sizes: "any" },
+      { url: "/favicon-192x192.png?v=11", sizes: "192x192", type: "image/png" },
+      { url: "/favicon-48x48.png?v=11", sizes: "48x48", type: "image/png" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png?v=6", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png?v=8", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/favicon.ico?v=6",
+    shortcut: "/favicon.ico?v=11",
   },
   keywords: [
     "fitness coaching",
@@ -70,9 +70,9 @@ export const metadata: Metadata = {
     "Egypt fitness",
   ],
   openGraph: {
-    title: "Coach Amar — Premium Fitness Coaching",
+    title: "AMAR X THE X METHOD",
     description:
-      "Build the body. Build the system. Personalized training and coaching.",
+      "Build your training around your body your goals and your progression Explore the AMAR X Training System or work 1on1 with Amar through personalized coaching",
     type: "website",
     images: ["/assets/coach-portrait.png"],
   },
@@ -96,8 +96,9 @@ export default function RootLayout({
       <head>
         {/* PWA & Icons */}
         <link rel="manifest" href="/manifest.json?v=8" />
-        <link rel="icon" href="/favicon.ico?v=8" sizes="any" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=8" />
+        <link rel="icon" href="/favicon.ico?v=11" sizes="any" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png?v=11" />
+        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=11" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=8" />
         <meta name="theme-color" content="#07090e" />
         <meta name="mobile-web-app-capable" content="yes" />
