@@ -4,8 +4,10 @@ const fs = require('fs');
 async function createFavicons() {
   const source = 'C:/Users/dell/.gemini/antigravity-ide/brain/46238f21-51a4-42a4-8d3a-ccb69eb14b36/.user_uploaded/media_1789938078183.jpg';
 
-  // Base square crop: 952x952
-  const base = sharp(source).extract({ left: 0, top: 4, width: 952, height: 952 });
+  // Base square crop with alpha channel guaranteed (RGBA)
+  const base = sharp(source)
+    .extract({ left: 0, top: 4, width: 952, height: 952 })
+    .ensureAlpha();
 
   // 1. 192x192 PNG for Googlebot & high-res search favicon
   const png192 = await base.clone().resize(192, 192, { kernel: 'lanczos3' }).png().toBuffer();
@@ -22,7 +24,7 @@ async function createFavicons() {
   // 4. App router icon
   fs.writeFileSync('src/app/icon.png', png192);
 
-  // 5. Valid ICO file containing 48x48 PNG
+  // 5. Valid ICO file containing 48x48 RGBA PNG (PNG color type 6)
   const icoHeader = Buffer.alloc(22);
   icoHeader.writeUInt16LE(0, 0);       // Reserved
   icoHeader.writeUInt16LE(1, 2);       // ICO type (1)
@@ -32,7 +34,7 @@ async function createFavicons() {
   icoHeader.writeUInt8(0, 8);          // Color palette (0)
   icoHeader.writeUInt8(0, 9);          // Reserved
   icoHeader.writeUInt16LE(1, 10);      // Color planes
-  icoHeader.writeUInt16LE(32, 12);     // Bits per pixel
+  icoHeader.writeUInt16LE(32, 12);     // Bits per pixel (32-bit RGBA)
   icoHeader.writeUInt32LE(png48.length, 14); // Image data size
   icoHeader.writeUInt32LE(22, 18);     // Offset of image data (header size 22)
 
@@ -40,7 +42,7 @@ async function createFavicons() {
   fs.writeFileSync('public/favicon.ico', icoBuffer);
   fs.writeFileSync('src/app/favicon.ico', icoBuffer);
 
-  console.log('Favicons generated successfully.');
+  console.log('Favicons generated successfully with RGBA color type.');
 }
 
 createFavicons().catch(err => {
